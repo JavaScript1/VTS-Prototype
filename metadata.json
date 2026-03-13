@@ -1,0 +1,5 @@
+{
+  "name": "VTS Monitoring System",
+  "description": "A professional Vessel Traffic Service monitoring dashboard with VHF communications and real-time risk alerts.",
+  "requestFramePermissions": ["geolocation"]
+}
