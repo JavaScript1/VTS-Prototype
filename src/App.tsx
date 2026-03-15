@@ -21,7 +21,17 @@ import {
   Clock,
   Filter,
   LocateFixed,
-  LogOut
+  LogOut,
+  Layout,
+  Users,
+  Lock,
+  BookOpen,
+  Volume2,
+  Monitor,
+  BarChart3,
+  Shield,
+  Plus,
+  ArrowLeft
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { MapContainer, TileLayer, Marker, Popup, CircleMarker, useMapEvents, Polygon, Polyline } from 'react-leaflet';
@@ -114,6 +124,66 @@ const ANCHORAGE_DATA = [
   { name: '圆圆沙锚地', occupancy: 92, total: 20, current: 18, status: 'full' },
   { name: '宝山锚地', occupancy: 65, total: 12, current: 8, status: 'normal' },
 ];
+
+// --- 区域设置模拟数据 ---
+
+const AREA_CATEGORIES = ['值班区域', '作业与停泊设施', '航道航行设施', '水域管控'];
+
+const AREA_TYPE_MAPPING: Record<string, Record<string, string[]>> = {
+  '值班区域': {
+    '值班台': []
+  },
+  '作业与停泊设施': {
+    '码头': ['靠泊等级', '靠泊尺度', '船舶类型限制', '船舶尺度限制', '船舶吨位限制', '最大水深', '最小水深'],
+    '泊位': ['靠泊等级', '靠泊尺度', '船舶类型限制', '船舶尺度限制', '船舶吨位限制', '最大水深', '最小水深'],
+    '锚地': ['靠泊等级', '靠泊尺度', '船舶类型限制', '船舶尺度限制', '船舶吨位限制', '最大水深', '最小水深']
+  },
+  '航道航行设施': {
+    '主航道': ['船舶尺度限制', '船舶吨位限制', '最大水深', '最小水深', '最高限速', '最低限速', '航道方向'],
+    '辅助航道': ['船舶尺度限制', '船舶吨位限制', '最大水深', '最小水深', '最高限速', '最低限速', '航道方向'],
+    '小型船舶航道': ['船舶尺度限制', '船舶吨位限制', '最大水深', '最小水深', '最高限速', '最低限速', '航道方向'],
+    '航道分割线': [],
+    '报告线': [],
+    '导堤': ['船舶类型限制', '船舶尺度限制', '最大水深', '最小水深'],
+    '物标': []
+  },
+  '水域管控': {
+    '警戒区': ['船舶类型限制', '船舶尺度限制', '最高限速', '最低限速'],
+    '禁锚区': ['船舶类型限制', '船舶尺度限制', '最大水深', '最小水深', '最高限速', '最低限速'],
+    '禁航区': ['船舶类型限制', '船舶尺度限制', '最大水深', '最小水深', '最高限速', '最低限速'],
+    '临时管控区': ['船舶类型限制', '船舶尺度限制', '船舶吨位限制', '最大水深', '最小水深', '最高限速', '最低限速', '有效期'],
+    '边坡100米水域': ['船舶类型限制', '船舶尺度限制', '船舶吨位限制', '最大水深', '最小水深', '最高限速', '最低限速'],
+    '浅水区': ['船舶类型限制', '船舶尺度限制', '船舶吨位限制', '最大水深', '最小水深', '最高限速', '最低限速'],
+    '引航作业区': ['船舶类型限制', '船舶尺度限制', '船舶吨位限制', '最大水深', '最小水深', '最高限速', '最低限速'],
+    '调头区': ['船舶类型限制', '船舶尺度限制', '船舶吨位限制', '最大水深', '最小水深', '最高限速', '最低限速']
+  }
+};
+
+const MOCK_AREAS: Record<string, any[]> = {
+  '值班区域': [
+    { id: '1', name: '外高桥值班台', time: '2026-03-05 09:42:59', type: '值班台', status: '正常', fields: {} },
+    { id: '2', name: '黄浦江值班台', time: '2026-03-05 09:42:59', type: '值班台', status: '正常', fields: {} },
+    { id: '3', name: '宝山值班台', time: '2026-03-05 09:42:59', type: '值班台', status: '正常', fields: {} },
+    { id: '4', name: '长江口值班台', time: '2026-03-05 09:42:59', type: '值班台', status: '正常', fields: {} },
+    { id: '5', name: '北槽值班台', time: '2026-03-05 09:42:59', type: '值班台', status: '正常', fields: {} },
+    { id: '6', name: '南槽值班台', time: '2026-03-05 09:42:59', type: '值班台', status: '正常', fields: {} },
+  ],
+  '作业与停泊设施': [
+    { id: '7', name: '外高桥码头', time: '2026-03-05 10:50:00', type: '码头', status: '正常', fields: { '靠泊等级': '5万吨级', '最大水深': '15m', '最小水深': '12m' } },
+    { id: '8', name: '罗泾泊位', time: '2026-03-05 11:20:00', type: '泊位', status: '正常', fields: { '靠泊尺度': '300m', '船舶类型限制': '散货船' } },
+    { id: '9', name: '吴淞口锚地', time: '2026-03-05 12:00:00', type: '锚地', status: '正常', fields: { '船舶吨位限制': '10万吨', '最大水深': '20m' } },
+  ],
+  '航道航行设施': [
+    { id: '10', name: '吴淞主航道', time: '2026-03-05 13:00:00', type: '主航道', status: '正常', fields: { '最高限速': '12节', '最低限速': '5节', '航道方向': '090/270' } },
+    { id: '11', name: '圆圆沙辅助航道', time: '2026-03-05 13:30:00', type: '辅助航道', status: '正常', fields: { '最高限速': '10节', '最大水深': '10m' } },
+    { id: '12', name: '吴淞口报告线', time: '2026-03-05 14:00:00', type: '报告线', status: '正常', fields: {} },
+  ],
+  '水域管控': [
+    { id: '13', name: '吴淞口警戒区', time: '2026-03-05 15:00:00', type: '警戒区', status: '正常', fields: { '最高限速': '8节', '船舶类型限制': '危险品船除外' } },
+    { id: '14', name: '1号禁锚区', time: '2026-03-05 15:30:00', type: '禁锚区', status: '正常', fields: { '最大水深': '25m' } },
+    { id: '15', name: '圆圆沙禁航区', time: '2026-03-05 16:00:00', type: '禁航区', status: '正常', fields: { '最高限速': '0节' } },
+  ],
+};
 
 interface IntentStep {
   label: string;
@@ -386,6 +456,413 @@ const SystemSuggestionPanel = () => (
   </motion.div>
 );
 
+// --- 后台管理组件 ---
+
+const AdminPanel = ({ onClose }: { onClose: () => void }) => {
+  const [activeMenu, setActiveMenu] = useState('区域设置');
+  const [activeSubTab, setActiveSubTab] = useState('值班区域');
+  const [isEditing, setIsEditing] = useState(false);
+  const [expandedRowId, setExpandedRowId] = useState<string | null>(null);
+  const [editData, setEditData] = useState<any>(null);
+
+  const menus = [
+    { name: '个人信息', icon: User },
+    { name: '角色管理', icon: Users },
+    { name: '权限管理', icon: Lock },
+    { name: '账号管理', icon: User },
+    { name: '区域设置', icon: MapIcon },
+    { name: '字典管理', icon: BookOpen },
+    { name: '语音设置', icon: Volume2 },
+    { name: '显示设置', icon: Monitor },
+    { name: '业务统计', icon: BarChart3 },
+    { name: '预警管理', icon: Shield },
+  ];
+
+  const handleEdit = (area: any) => {
+    setEditData({
+      ...area,
+      category: activeSubTab,
+      fields: area.fields || {}
+    });
+    setIsEditing(true);
+  };
+
+  const handleCreate = () => {
+    const category = activeSubTab;
+    const defaultType = Object.keys(AREA_TYPE_MAPPING[category])[0];
+    const defaultFields: Record<string, string> = {};
+    AREA_TYPE_MAPPING[category][defaultType].forEach(f => {
+      defaultFields[f] = '';
+    });
+    
+    setEditData({ 
+      name: '', 
+      category, 
+      type: defaultType,
+      fields: defaultFields 
+    });
+    setIsEditing(true);
+  };
+
+  if (isEditing) {
+    return (
+      <motion.div 
+        initial={{ opacity: 0, scale: 0.98 }}
+        animate={{ opacity: 1, scale: 1 }}
+        exit={{ opacity: 0, scale: 0.98 }}
+        className="fixed inset-0 z-[7000] bg-[#050a10] flex flex-col overflow-hidden"
+      >
+        <header className="h-12 border-b border-white/5 bg-[#0a101a] flex items-center justify-between px-4 shrink-0">
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2 bg-white/5 border border-white/10 rounded-lg px-3 py-1.5">
+              <span className="text-[10px] font-bold text-white/40 uppercase tracking-widest">名称:</span>
+              <input 
+                type="text" 
+                value={editData?.name}
+                onChange={(e) => setEditData({ ...editData, name: e.target.value })}
+                placeholder="请输入区域名称" 
+                className="bg-transparent border-none text-xs text-white focus:outline-none w-48"
+              />
+            </div>
+            <div className="flex gap-2">
+              <button className="bg-white/10 hover:bg-white/20 text-white px-4 py-1.5 rounded-lg text-xs font-bold transition-all">绘制</button>
+              <button className="bg-white/10 hover:bg-white/20 text-white px-4 py-1.5 rounded-lg text-xs font-bold transition-all">重绘</button>
+            </div>
+          </div>
+          <div className="flex items-center gap-3">
+            <button 
+              onClick={() => setIsEditing(false)}
+              className="bg-white/5 hover:bg-white/10 text-white/60 px-4 py-1.5 rounded-lg text-xs font-bold transition-all"
+            >
+              取消并返回
+            </button>
+            <button 
+              onClick={() => setIsEditing(false)}
+              className="bg-sky-600 hover:bg-sky-500 text-white px-4 py-1.5 rounded-lg text-xs font-bold transition-all shadow-lg shadow-sky-600/20"
+            >
+              保存并返回
+            </button>
+          </div>
+        </header>
+
+        <div className="flex-1 flex overflow-hidden">
+          <div className="flex-1 relative bg-[#0a0a0a]">
+            {/* 模拟地图视图 */}
+            <MapContainer 
+              center={[31.40, 121.52]} 
+              zoom={13} 
+              className="h-full w-full"
+              zoomControl={false}
+            >
+              <TileLayer
+                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+              />
+              <div className="absolute inset-0 pointer-events-none border-4 border-sky-500/20 z-[1000]" />
+            </MapContainer>
+            
+            <div className="absolute top-4 left-4 z-[1000] bg-[#0a101a]/90 backdrop-blur-md border border-white/10 rounded-xl p-4 w-72 shadow-2xl flex flex-col max-h-[calc(100%-2rem)]">
+              <h3 className="text-sm font-black text-white/90 mb-4 flex items-center gap-2 shrink-0">
+                <div className="w-1 h-4 bg-sky-500 rounded-full" />
+                区域信息
+              </h3>
+              <div className="space-y-4 overflow-y-auto pr-2 custom-scrollbar">
+                <div>
+                  <label className="text-[10px] font-bold text-white/30 uppercase tracking-widest block mb-1.5">类型</label>
+                  <select 
+                    value={editData?.type}
+                    onChange={(e) => {
+                      const newType = e.target.value;
+                      const newFields: Record<string, string> = {};
+                      AREA_TYPE_MAPPING[editData.category][newType].forEach(f => {
+                        newFields[f] = '';
+                      });
+                      setEditData({ ...editData, type: newType, fields: newFields });
+                    }}
+                    className="w-full bg-[#1a202a] border border-white/10 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-sky-500/50 appearance-none cursor-pointer"
+                  >
+                    {Object.keys(AREA_TYPE_MAPPING[editData?.category] || {}).map(type => (
+                      <option key={type} value={type}>{type}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <button className="bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg py-2 text-[10px] font-bold text-white/60 transition-all">点</button>
+                  <button className="bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg py-2 text-[10px] font-bold text-white/60 transition-all">线</button>
+                  <button className="bg-sky-500/20 border border-sky-500/30 rounded-lg py-2 text-[10px] font-bold text-sky-400 transition-all">面</button>
+                  <button className="bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg py-2 text-[10px] font-bold text-white/60 transition-all">清空</button>
+                </div>
+                
+                {/* 动态字段映射 */}
+                {AREA_TYPE_MAPPING[editData?.category]?.[editData?.type]?.map(field => (
+                  <div key={field}>
+                    <label className="text-[10px] font-bold text-white/30 uppercase tracking-widest block mb-1.5">{field}</label>
+                    <input 
+                      type="text" 
+                      value={editData?.fields?.[field] || ''}
+                      onChange={(e) => setEditData({ 
+                        ...editData, 
+                        fields: { ...editData.fields, [field]: e.target.value } 
+                      })}
+                      placeholder={`请输入${field}`}
+                      className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-sky-500/50" 
+                    />
+                  </div>
+                ))}
+
+                {AREA_TYPE_MAPPING[editData?.category]?.[editData?.type]?.length === 0 && (
+                  <div className="py-8 text-center border border-dashed border-white/5 rounded-xl">
+                    <p className="text-[10px] font-bold text-white/20 uppercase tracking-widest">该类型无需额外参数</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      </motion.div>
+    );
+  }
+
+  return (
+    <motion.div 
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 z-[6000] bg-[#050a10] flex flex-col overflow-hidden"
+    >
+      {/* 顶部栏 */}
+      <header className="h-12 border-b border-white/5 bg-[#0a101a] flex items-center justify-between px-4 shrink-0">
+        <div className="flex items-center gap-4">
+          <button 
+            onClick={onClose}
+            className="p-2 hover:bg-white/5 rounded-full text-white/60 hover:text-white transition-all flex items-center gap-2"
+          >
+            <ArrowLeft size={18} />
+            <span className="text-xs font-bold">返回地图</span>
+          </button>
+        </div>
+      </header>
+
+      <div className="flex-1 flex overflow-hidden">
+        {/* 侧边栏 */}
+        <aside className="w-56 border-r border-white/5 bg-[#0a101a]/50 flex flex-col shrink-0">
+          <div className="p-4 flex items-center gap-2 text-white/80 border-b border-white/5 mb-2">
+            <Settings size={16} className="text-sky-400" />
+            <span className="text-sm font-black tracking-widest">后台管理系统</span>
+          </div>
+          <div className="flex-1 overflow-y-auto py-2 px-3 space-y-1 custom-scrollbar">
+            <div className="px-3 py-2 text-[10px] font-bold text-white/20 uppercase tracking-widest">个人中心</div>
+            {menus.map(menu => (
+              <button
+                key={menu.name}
+                onClick={() => setActiveMenu(menu.name)}
+                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all group ${activeMenu === menu.name ? 'bg-sky-500/10 text-sky-400 border border-sky-500/20' : 'text-white/40 hover:text-white/60 hover:bg-white/5'}`}
+              >
+                <menu.icon size={16} className={activeMenu === menu.name ? 'text-sky-400' : 'text-white/20 group-hover:text-white/40'} />
+                <span className="text-xs font-medium">{menu.name}</span>
+              </button>
+            ))}
+          </div>
+          <div className="p-4 border-t border-white/5">
+            <button className="w-full flex items-center justify-center gap-2 py-2 text-xs font-bold text-red-400/60 hover:text-red-400 transition-all">
+              <LogOut size={14} /> 退出系统
+            </button>
+          </div>
+        </aside>
+
+        {/* 主内容区 */}
+        <main className="flex-1 bg-[#050a10] p-6 overflow-y-auto">
+          <div className="mb-6 flex items-center justify-between">
+            <h2 className="text-lg font-black tracking-tight text-white/90 flex items-center gap-3">
+              <div className="w-1 h-6 bg-sky-500 rounded-full" />
+              {activeMenu}
+            </h2>
+            <div className="text-xs text-white/30 font-mono">
+              Admin / {activeMenu}
+            </div>
+          </div>
+
+          {activeMenu === '区域设置' && (
+            <div className="space-y-4">
+              {/* 区域设置内部导航与搜索 */}
+              <div className="flex items-center justify-between bg-white/5 p-3 rounded-2xl border border-white/10">
+                <div className="flex items-center gap-4">
+                  <div className="flex bg-white/5 rounded-lg p-0.5">
+                    {AREA_CATEGORIES.map(tab => (
+                      <button
+                        key={tab}
+                        onClick={() => setActiveSubTab(tab)}
+                        className={`px-4 py-1 text-xs font-medium rounded-md transition-all ${activeSubTab === tab ? 'bg-sky-500 text-white shadow-lg shadow-sky-500/20' : 'text-white/40 hover:text-white/60'}`}
+                      >
+                        {tab}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-3">
+                  <button 
+                    onClick={handleCreate}
+                    className="bg-blue-600 hover:bg-blue-500 text-white px-4 py-1.5 rounded-lg text-xs font-bold transition-all shadow-lg shadow-blue-600/20 flex items-center gap-1"
+                  >
+                    <Plus size={14} /> 新建区域
+                  </button>
+                  <button className="bg-white/5 hover:bg-white/10 border border-white/10 text-white/60 px-4 py-1.5 rounded-lg text-xs font-bold transition-all">
+                    筛选
+                  </button>
+                </div>
+              </div>
+
+              <div className="bg-white/5 border border-white/10 rounded-2xl overflow-hidden">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="bg-white/5 border-b border-white/10">
+                      <th className="w-12 px-6 py-4"></th>
+                      <th className="px-6 py-4 text-[11px] font-bold text-white/40 uppercase tracking-widest">区域名称</th>
+                      <th className="px-6 py-4 text-[11px] font-bold text-white/40 uppercase tracking-widest">创建时间</th>
+                      <th className="px-6 py-4 text-[11px] font-bold text-white/40 uppercase tracking-widest">类型</th>
+                      <th className="px-6 py-4 text-[11px] font-bold text-white/40 uppercase tracking-widest text-right">操作</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {MOCK_AREAS[activeSubTab]?.map((area) => (
+                      <React.Fragment key={area.id}>
+                        <tr 
+                          className={`border-b border-white/5 hover:bg-white/[0.02] transition-colors cursor-pointer ${expandedRowId === area.id ? 'bg-white/[0.03]' : ''}`}
+                          onClick={() => setExpandedRowId(expandedRowId === area.id ? null : area.id)}
+                        >
+                          <td className="px-6 py-4">
+                            <ChevronRight size={14} className={`text-white/20 transition-transform ${expandedRowId === area.id ? 'rotate-90' : ''}`} />
+                          </td>
+                          <td className="px-6 py-4">
+                            <div className="flex items-center gap-3">
+                              <div className="w-2 h-2 rounded-full bg-sky-500" />
+                              <span className="text-xs font-bold text-white/90">{area.name}</span>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 text-xs text-white/40 font-mono">{area.time}</td>
+                          <td className="px-6 py-4">
+                            <span className="px-2 py-0.5 bg-white/5 border border-white/10 rounded text-[10px] font-bold text-white/60">{area.type}</span>
+                          </td>
+                          <td className="px-6 py-4 text-right">
+                            <div className="flex items-center justify-end gap-2">
+                              <button className="text-[10px] font-bold text-sky-400 hover:text-sky-300 transition-colors">查看</button>
+                              <button 
+                                onClick={(e) => { e.stopPropagation(); handleEdit(area); }}
+                                className="text-[10px] font-bold text-blue-400 hover:text-blue-300 transition-colors"
+                              >
+                                修改
+                              </button>
+                              <button className="text-[10px] font-bold text-red-400 hover:text-red-300 transition-colors">删除</button>
+                            </div>
+                          </td>
+                        </tr>
+                        <AnimatePresence>
+                          {expandedRowId === area.id && (
+                            <tr>
+                              <td colSpan={5} className="bg-black/20 p-0">
+                                <motion.div
+                                  initial={{ height: 0, opacity: 0 }}
+                                  animate={{ height: 'auto', opacity: 1 }}
+                                  exit={{ height: 0, opacity: 0 }}
+                                  className="overflow-hidden"
+                                >
+                                  <div className="p-6 grid grid-cols-3 gap-8">
+                                    <div className="space-y-3">
+                                      <h4 className="text-[10px] font-black text-white/20 uppercase tracking-[0.2em]">地理位置信息</h4>
+                                      <div className="bg-white/5 rounded-xl p-3 border border-white/5">
+                                        <p className="text-[11px] text-white/60 leading-relaxed">
+                                          中心点: 31.423°N, 121.581°E<br/>
+                                          范围: 2.5 NM 半径圆形区域
+                                        </p>
+                                      </div>
+                                    </div>
+                                    <div className="space-y-3">
+                                      <h4 className="text-[10px] font-black text-white/20 uppercase tracking-[0.2em]">业务属性</h4>
+                                      <div className="grid grid-cols-2 gap-2">
+                                        {Object.entries(area.fields || {}).map(([key, value]) => (
+                                          <div key={key} className="bg-white/5 rounded-lg p-2 border border-white/5">
+                                            <span className="text-[9px] text-white/30 block">{key}</span>
+                                            <span className="text-xs font-bold text-white/80">{value as string}</span>
+                                          </div>
+                                        ))}
+                                        {(!area.fields || Object.keys(area.fields).length === 0) && (
+                                          <div className="col-span-2 py-4 text-center">
+                                            <span className="text-[10px] text-white/20">无额外属性</span>
+                                          </div>
+                                        )}
+                                      </div>
+                                    </div>
+                                    <div className="space-y-3">
+                                      <h4 className="text-[10px] font-black text-white/20 uppercase tracking-[0.2em]">值班人员</h4>
+                                      <div className="flex -space-x-2">
+                                        {[1, 2, 3].map(i => (
+                                          <div key={i} className="w-8 h-8 rounded-full border-2 border-[#0a101a] bg-sky-500/20 flex items-center justify-center text-[10px] font-bold text-sky-400">
+                                            U{i}
+                                          </div>
+                                        ))}
+                                      </div>
+                                    </div>
+                                  </div>
+                                </motion.div>
+                              </td>
+                            </tr>
+                          )}
+                        </AnimatePresence>
+                      </React.Fragment>
+                    ))}
+                  </tbody>
+                </table>
+                
+                <div className="p-4 border-t border-white/5 flex justify-between items-center">
+                  <span className="text-[10px] font-bold text-white/20 uppercase tracking-widest">共 {MOCK_AREAS[activeSubTab]?.length} 条记录</span>
+                  <div className="flex gap-2">
+                    <button className="p-1.5 rounded-lg border border-white/10 text-white/30 hover:text-white transition-all"><ChevronLeft size={16} /></button>
+                    <button className="w-8 h-8 rounded-lg bg-sky-500 text-white text-xs font-bold shadow-lg shadow-sky-500/20">1</button>
+                    <button className="p-1.5 rounded-lg border border-white/10 text-white/30 hover:text-white transition-all"><ChevronRight size={16} /></button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {activeMenu === '预警管理' && (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {['进入禁航区', '走锚风险', '超速警报', '碰撞风险', '异常停泊'].map(type => (
+                <div key={type} className="bg-white/5 border border-white/10 rounded-2xl p-5 hover:border-sky-500/30 transition-all group">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="p-2 bg-sky-500/10 rounded-xl text-sky-400">
+                      <Shield size={20} />
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-[10px] font-bold text-white/20 uppercase tracking-widest">启用状态</span>
+                      <div className="w-8 h-4 bg-sky-500 rounded-full relative">
+                        <div className="absolute right-0.5 top-0.5 w-3 h-3 bg-white rounded-full" />
+                      </div>
+                    </div>
+                  </div>
+                  <h3 className="text-sm font-bold text-white/90 mb-2">{type}设置</h3>
+                  <p className="text-xs text-white/40 leading-relaxed mb-4">配置该预警类型的触发阈值、通知对象及响应等级。</p>
+                  <button className="w-full py-2 bg-white/5 border border-white/10 rounded-xl text-xs font-bold text-white/60 hover:bg-white/10 hover:text-white transition-all">
+                    进入配置
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {activeMenu !== '区域设置' && activeMenu !== '预警管理' && (
+            <div className="h-[400px] flex flex-col items-center justify-center text-white/20 gap-4">
+              <Layout size={64} />
+              <span className="text-sm font-medium">功能开发中...</span>
+            </div>
+          )}
+        </main>
+      </div>
+    </motion.div>
+  );
+};
+
 export default function App() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [sidebarPosition, setSidebarPosition] = useState<'left' | 'right'>('left');
@@ -402,6 +879,7 @@ export default function App() {
   const [showVesselDistribution, setShowVesselDistribution] = useState(false);
   const [showAnchorageSituation, setShowAnchorageSituation] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
+  const [isAdminView, setIsAdminView] = useState(false);
 
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
@@ -410,12 +888,16 @@ export default function App() {
 
   return (
     <div className="h-screen w-screen bg-[#0a0a0a] text-white font-sans overflow-hidden flex flex-col">
+      <AnimatePresence>
+        {isAdminView && <AdminPanel onClose={() => setIsAdminView(false)} />}
+      </AnimatePresence>
+
       {/* --- 顶部导航栏 --- */}
       <AnimatePresence>
         {showBars && (
           <motion.header 
             initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 56, opacity: 1 }}
+            animate={{ height: 40, opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
             className="border-b border-white/10 bg-[#0a0a0a] flex items-center justify-between px-4 z-[3000] shrink-0"
           >
@@ -431,7 +913,10 @@ export default function App() {
             </div>
 
             <div className="flex items-center gap-4">
-              <button className="p-2 hover:bg-white/5 rounded-full text-white/60 hover:text-white transition-colors">
+              <button 
+                onClick={() => setIsAdminView(true)}
+                className="p-2 hover:bg-white/5 rounded-full text-white/60 hover:text-white transition-colors"
+              >
                 <Settings size={20} />
               </button>
               
