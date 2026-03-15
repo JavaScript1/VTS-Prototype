@@ -561,62 +561,64 @@ const AdminPanel = ({ onClose }: { onClose: () => void }) => {
               <div className="absolute inset-0 pointer-events-none border-4 border-sky-500/20 z-[1000]" />
             </MapContainer>
             
-            <div className="absolute top-4 left-4 z-[1000] bg-[#0a101a]/90 backdrop-blur-md border border-white/10 rounded-xl p-4 w-72 shadow-2xl flex flex-col max-h-[calc(100%-2rem)]">
-              <h3 className="text-sm font-black text-white/90 mb-4 flex items-center gap-2 shrink-0">
-                <div className="w-1 h-4 bg-sky-500 rounded-full" />
-                区域信息
-              </h3>
-              <div className="space-y-4 overflow-y-auto pr-2 custom-scrollbar">
-                <div>
-                  <label className="text-[10px] font-bold text-white/30 uppercase tracking-widest block mb-1.5">类型</label>
-                  <select 
-                    value={editData?.type}
-                    onChange={(e) => {
-                      const newType = e.target.value;
-                      const newFields: Record<string, string> = {};
-                      AREA_TYPE_MAPPING[editData.category][newType].forEach(f => {
-                        newFields[f] = '';
-                      });
-                      setEditData({ ...editData, type: newType, fields: newFields });
-                    }}
-                    className="w-full bg-[#1a202a] border border-white/10 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-sky-500/50 appearance-none cursor-pointer"
-                  >
-                    {Object.keys(AREA_TYPE_MAPPING[editData?.category] || {}).map(type => (
-                      <option key={type} value={type}>{type}</option>
-                    ))}
-                  </select>
-                </div>
-                <div className="grid grid-cols-2 gap-2">
-                  <button className="bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg py-2 text-[10px] font-bold text-white/60 transition-all">点</button>
-                  <button className="bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg py-2 text-[10px] font-bold text-white/60 transition-all">线</button>
-                  <button className="bg-sky-500/20 border border-sky-500/30 rounded-lg py-2 text-[10px] font-bold text-sky-400 transition-all">面</button>
-                  <button className="bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg py-2 text-[10px] font-bold text-white/60 transition-all">清空</button>
-                </div>
-                
-                {/* 动态字段映射 */}
-                {AREA_TYPE_MAPPING[editData?.category]?.[editData?.type]?.map(field => (
-                  <div key={field}>
-                    <label className="text-[10px] font-bold text-white/30 uppercase tracking-widest block mb-1.5">{field}</label>
-                    <input 
-                      type="text" 
-                      value={editData?.fields?.[field] || ''}
-                      onChange={(e) => setEditData({ 
-                        ...editData, 
-                        fields: { ...editData.fields, [field]: e.target.value } 
-                      })}
-                      placeholder={`请输入${field}`}
-                      className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-sky-500/50" 
-                    />
+            {editData?.type !== '值班台' && (
+              <div className="absolute top-4 left-4 z-[1000] bg-[#0a101a]/90 backdrop-blur-md border border-white/10 rounded-xl p-4 w-72 shadow-2xl flex flex-col max-h-[calc(100%-2rem)]">
+                <h3 className="text-sm font-black text-white/90 mb-4 flex items-center gap-2 shrink-0">
+                  <div className="w-1 h-4 bg-sky-500 rounded-full" />
+                  区域信息
+                </h3>
+                <div className="space-y-4 overflow-y-auto pr-2 custom-scrollbar">
+                  <div>
+                    <label className="text-[10px] font-bold text-white/30 uppercase tracking-widest block mb-1.5">类型</label>
+                    <select 
+                      value={editData?.type}
+                      onChange={(e) => {
+                        const newType = e.target.value;
+                        const newFields: Record<string, string> = {};
+                        AREA_TYPE_MAPPING[editData.category][newType].forEach(f => {
+                          newFields[f] = '';
+                        });
+                        setEditData({ ...editData, type: newType, fields: newFields });
+                      }}
+                      className="w-full bg-[#1a202a] border border-white/10 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-sky-500/50 appearance-none cursor-pointer"
+                    >
+                      {Object.keys(AREA_TYPE_MAPPING[editData?.category] || {}).map(type => (
+                        <option key={type} value={type}>{type}</option>
+                      ))}
+                    </select>
                   </div>
-                ))}
+                  <div className="grid grid-cols-2 gap-2">
+                    <button className="bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg py-2 text-[10px] font-bold text-white/60 transition-all">点</button>
+                    <button className="bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg py-2 text-[10px] font-bold text-white/60 transition-all">线</button>
+                    <button className="bg-sky-500/20 border border-sky-500/30 rounded-lg py-2 text-[10px] font-bold text-sky-400 transition-all">面</button>
+                    <button className="bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg py-2 text-[10px] font-bold text-white/60 transition-all">清空</button>
+                  </div>
+                  
+                  {/* 动态字段映射 */}
+                  {AREA_TYPE_MAPPING[editData?.category]?.[editData?.type]?.map(field => (
+                    <div key={field}>
+                      <label className="text-[10px] font-bold text-white/30 uppercase tracking-widest block mb-1.5">{field}</label>
+                      <input 
+                        type="text" 
+                        value={editData?.fields?.[field] || ''}
+                        onChange={(e) => setEditData({ 
+                          ...editData, 
+                          fields: { ...editData.fields, [field]: e.target.value } 
+                        })}
+                        placeholder={`请输入${field}`}
+                        className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-sky-500/50" 
+                      />
+                    </div>
+                  ))}
 
-                {AREA_TYPE_MAPPING[editData?.category]?.[editData?.type]?.length === 0 && (
-                  <div className="py-8 text-center border border-dashed border-white/5 rounded-xl">
-                    <p className="text-[10px] font-bold text-white/20 uppercase tracking-widest">该类型无需额外参数</p>
-                  </div>
-                )}
+                  {AREA_TYPE_MAPPING[editData?.category]?.[editData?.type]?.length === 0 && (
+                    <div className="py-8 text-center border border-dashed border-white/5 rounded-xl">
+                      <p className="text-[10px] font-bold text-white/20 uppercase tracking-widest">该类型无需额外参数</p>
+                    </div>
+                  )}
+                </div>
               </div>
-            </div>
+            )}
           </div>
         </div>
       </motion.div>
@@ -767,40 +769,21 @@ const AdminPanel = ({ onClose }: { onClose: () => void }) => {
                                   exit={{ height: 0, opacity: 0 }}
                                   className="overflow-hidden"
                                 >
-                                  <div className="p-6 grid grid-cols-3 gap-8">
-                                    <div className="space-y-3">
-                                      <h4 className="text-[10px] font-black text-white/20 uppercase tracking-[0.2em]">地理位置信息</h4>
-                                      <div className="bg-white/5 rounded-xl p-3 border border-white/5">
-                                        <p className="text-[11px] text-white/60 leading-relaxed">
-                                          中心点: 31.423°N, 121.581°E<br/>
-                                          范围: 2.5 NM 半径圆形区域
-                                        </p>
-                                      </div>
-                                    </div>
+                                  <div className="p-6">
                                     <div className="space-y-3">
                                       <h4 className="text-[10px] font-black text-white/20 uppercase tracking-[0.2em]">业务属性</h4>
-                                      <div className="grid grid-cols-2 gap-2">
+                                      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                                         {Object.entries(area.fields || {}).map(([key, value]) => (
-                                          <div key={key} className="bg-white/5 rounded-lg p-2 border border-white/5">
-                                            <span className="text-[9px] text-white/30 block">{key}</span>
-                                            <span className="text-xs font-bold text-white/80">{value as string}</span>
+                                          <div key={key} className="bg-white/5 rounded-xl p-3 border border-white/5 hover:border-sky-500/30 transition-all">
+                                            <span className="text-[9px] text-white/30 block mb-1 uppercase tracking-wider font-bold">{key}</span>
+                                            <span className="text-xs font-bold text-white/90">{value as string}</span>
                                           </div>
                                         ))}
                                         {(!area.fields || Object.keys(area.fields).length === 0) && (
-                                          <div className="col-span-2 py-4 text-center">
-                                            <span className="text-[10px] text-white/20">无额外属性</span>
+                                          <div className="col-span-full py-8 text-center border border-dashed border-white/5 rounded-2xl">
+                                            <span className="text-[10px] font-bold text-white/20 uppercase tracking-widest">该区域暂无额外业务属性配置</span>
                                           </div>
                                         )}
-                                      </div>
-                                    </div>
-                                    <div className="space-y-3">
-                                      <h4 className="text-[10px] font-black text-white/20 uppercase tracking-[0.2em]">值班人员</h4>
-                                      <div className="flex -space-x-2">
-                                        {[1, 2, 3].map(i => (
-                                          <div key={i} className="w-8 h-8 rounded-full border-2 border-[#0a101a] bg-sky-500/20 flex items-center justify-center text-[10px] font-bold text-sky-400">
-                                            U{i}
-                                          </div>
-                                        ))}
                                       </div>
                                     </div>
                                   </div>
