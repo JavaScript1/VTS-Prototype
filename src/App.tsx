@@ -46,6 +46,17 @@ import {
   X
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import { 
+  LineChart, 
+  Line, 
+  XAxis, 
+  YAxis, 
+  CartesianGrid, 
+  Tooltip, 
+  ResponsiveContainer,
+  AreaChart,
+  Area
+} from 'recharts';
 import { MapContainer, TileLayer, Marker, CircleMarker, useMapEvents, Polygon, Polyline, useMap, Popup } from 'react-leaflet';
 import L from 'leaflet';
 
@@ -165,6 +176,11 @@ interface Alert {
   summary: string;
   time: string;
   level: 'emergency' | 'alarm' | 'warning' | 'caution';
+  timeline: {
+    time: string;
+    event: string;
+    type: 'info' | 'warning' | 'risk';
+  }[];
 }
 
 // --- 模拟数据 ---
@@ -193,7 +209,13 @@ const MOCK_ALERTS: Alert[] = [
     type: '进入禁航区', 
     summary: '该船偏离预定航线，进入禁航区【测试禁航区1】', 
     time: '11:42', 
-    level: 'emergency' 
+    level: 'emergency',
+    timeline: [
+      { time: '11:25:10', event: '进入吴淞口警戒区', type: 'info' },
+      { time: '11:32:45', event: '航向偏离预定航线 > 15°', type: 'warning' },
+      { time: '11:38:20', event: '接近禁航区边界', type: 'warning' },
+      { time: '11:42:05', event: '触发[进入禁航区]风险预警', type: 'risk' }
+    ]
   },
   { 
     id: 'a2', 
@@ -206,7 +228,13 @@ const MOCK_ALERTS: Alert[] = [
     type: '进入禁锚区', 
     summary: '该船在禁锚区【测试禁锚区2】内减速，疑似准备抛锚', 
     time: '11:38', 
-    level: 'alarm' 
+    level: 'alarm',
+    timeline: [
+      { time: '11:15:00', event: '通过圆圆沙报告线', type: 'info' },
+      { time: '11:25:30', event: '进入禁锚区水域', type: 'info' },
+      { time: '11:32:15', event: '航速降至 5kn 以下', type: 'warning' },
+      { time: '11:38:10', event: '检测到抛锚准备行为', type: 'risk' }
+    ]
   },
   { 
     id: 'a3', 
@@ -219,7 +247,13 @@ const MOCK_ALERTS: Alert[] = [
     type: '超速警报', 
     summary: '该船在航道内航速超过 12 节限制', 
     time: '11:25', 
-    level: 'warning' 
+    level: 'warning',
+    timeline: [
+      { time: '11:05:00', event: '进入吴淞主航道', type: 'info' },
+      { time: '11:12:30', event: '航速持续上升 (11.5kn -> 12.8kn)', type: 'warning' },
+      { time: '11:20:15', event: '超过航道限速阈值', type: 'warning' },
+      { time: '11:25:00', event: '触发[超速航行]风险预警', type: 'risk' }
+    ]
   },
   { 
     id: 'a4', 
@@ -232,7 +266,13 @@ const MOCK_ALERTS: Alert[] = [
     type: '走锚风险', 
     summary: '检测到该船在锚地内位置发生异常偏移，可能存在走锚风险', 
     time: '11:12', 
-    level: 'caution' 
+    level: 'caution',
+    timeline: [
+      { time: '10:45:00', event: '进入南槽锚地', type: 'info' },
+      { time: '11:00:15', event: '检测到位置持续漂移', type: 'warning' },
+      { time: '11:08:30', event: '偏离锚位半径 > 50m', type: 'warning' },
+      { time: '11:12:10', event: '触发[走锚风险]预警', type: 'risk' }
+    ]
   },
 ];
 
@@ -389,7 +429,7 @@ const MOCK_INTENT_STATS = [
     intent: '划江',
     confidence: 88,
     time: '2026-03-19 10:45',
-    status: '等待',
+    status: '回复等待',
     cargo: '日用品'
   },
   {
@@ -400,7 +440,7 @@ const MOCK_INTENT_STATS = [
     intent: '靠泊',
     confidence: 95,
     time: '2026-03-19 09:30',
-    status: '询问',
+    status: '主动询问',
     cargo: '原油'
   },
   {
@@ -422,7 +462,7 @@ const MOCK_INTENT_STATS = [
     intent: '进报告线',
     confidence: 90,
     time: '2026-03-19 07:50',
-    status: '指挥',
+    status: '紧急干预',
     cargo: '铁矿石'
   }
 ];
@@ -687,11 +727,43 @@ const SidebarPanel = ({
   ];
 
   const isLeft = position === 'left';
+  const [isSearchExpanded, setIsSearchExpanded] = useState(false);
 
   return (
     <div className={`flex h-full z-[3000] ${isLeft ? 'flex-row' : 'flex-row-reverse'}`}>
       {/* Navigation Rail */}
       <div className={`w-12 h-full bg-[#050505] border-${isLeft ? 'r' : 'l'} border-white/10 flex flex-col items-center py-4 gap-4`}>
+        {/* Search Icon - Expandable */}
+        <div 
+          className="relative flex items-center"
+          onMouseEnter={() => setIsSearchExpanded(true)}
+          onMouseLeave={() => setIsSearchExpanded(false)}
+        >
+          <button className={`p-2 rounded-lg transition-all ${isSearchExpanded ? 'text-sky-400 bg-sky-500/10' : 'text-white/30 hover:text-white/60'}`}>
+            <Search size={18} />
+          </button>
+          <AnimatePresence>
+            {isSearchExpanded && (
+              <motion.div
+                initial={{ width: 0, opacity: 0, x: isLeft ? -10 : 10 }}
+                animate={{ width: 200, opacity: 1, x: 0 }}
+                exit={{ width: 0, opacity: 0, x: isLeft ? -10 : 10 }}
+                className={`absolute ${isLeft ? 'left-full ml-2' : 'right-full mr-2'} z-[4000]`}
+              >
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-white/30" size={14} />
+                  <input 
+                    autoFocus
+                    type="text" 
+                    placeholder="搜索船名/MMSI..." 
+                    className="w-full bg-[#0a0a0a] border border-sky-500/30 rounded-lg py-1.5 pl-9 pr-3 text-xs text-white focus:outline-none focus:border-sky-500 shadow-2xl"
+                  />
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+
         {/* Top/Bottom Bars Toggle - Moved here */}
         <button 
           onClick={onToggleBars}
@@ -902,7 +974,11 @@ const AdminPanel = ({
   const [activeMenu, setActiveMenu] = useState(initialMenu || '区域设置');
   const [activeSubTab, setActiveSubTab] = useState('值班区域');
   const [activeScenarioTab, setActiveScenarioTab] = useState('VHF船舶会话');
-  const [activeStatsTab, setActiveStatsTab] = useState(initialStatsTab || '常规统计');
+  const [activeStatsTab, setActiveStatsTab] = useState(initialStatsTab || '值班统计');
+  const [statsTimeRange, setStatsTimeRange] = useState('今天');
+  const [statsArea, setStatsArea] = useState('全部区域');
+  const [showVhfDetails, setShowVhfDetails] = useState(false);
+  const [selectedVhfSnippet, setSelectedVhfSnippet] = useState<any>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [expandedRowId, setExpandedRowId] = useState<string | null>(null);
   const [editData, setEditData] = useState<any>(null);
@@ -1641,13 +1717,46 @@ const AdminPanel = ({
               <div className="flex items-center justify-between bg-white/5 p-3 rounded-2xl border border-white/10">
                 <div className="flex items-center gap-4">
                   <div className="flex bg-white/5 rounded-lg p-0.5">
-                    {['常规统计', '船舶风险统计', '意图统计'].map(tab => (
+                    {['值班统计', '船舶风险统计', '意图统计'].map(tab => (
                       <button
                         key={tab}
                         onClick={() => setActiveStatsTab(tab)}
                         className={`px-6 py-1.5 text-xs font-bold rounded-md transition-all ${activeStatsTab === tab ? 'bg-sky-500 text-white shadow-lg shadow-sky-500/20' : 'text-white/40 hover:text-white/60'}`}
                       >
                         {tab}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* 全局统计筛选栏 */}
+              <div className="flex items-center gap-6 bg-white/5 p-4 rounded-2xl border border-white/10">
+                <div className="flex items-center gap-3">
+                  <span className="text-[10px] font-bold text-white/30 uppercase tracking-widest">时间范围</span>
+                  <div className="flex bg-white/5 rounded-lg p-0.5">
+                    {['今天', '昨天', '最近7天', '自定义'].map(range => (
+                      <button
+                        key={range}
+                        onClick={() => setStatsTimeRange(range)}
+                        className={`px-4 py-1 text-[10px] font-bold rounded-md transition-all ${statsTimeRange === range ? 'bg-sky-500 text-white shadow-lg shadow-sky-500/20' : 'text-white/40 hover:text-white/60'}`}
+                      >
+                        {range}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div className="w-px h-4 bg-white/10"></div>
+                <div className="flex items-center gap-3">
+                  <span className="text-[10px] font-bold text-white/30 uppercase tracking-widest">值班区域</span>
+                  <div className="flex bg-white/5 rounded-lg p-0.5 overflow-x-auto max-w-[500px]">
+                    {['全部区域', ...MOCK_AREAS['值班区域'].map(a => a.name)].map(area => (
+                      <button
+                        key={area}
+                        onClick={() => setStatsArea(area)}
+                        className={`px-4 py-1 text-[10px] font-bold rounded-md transition-all whitespace-nowrap ${statsArea === area ? 'bg-sky-500 text-white shadow-lg shadow-sky-500/20' : 'text-white/40 hover:text-white/60'}`}
+                      >
+                        {area}
                       </button>
                     ))}
                   </div>
@@ -1782,9 +1891,9 @@ const AdminPanel = ({
                         <option value="">全部状态</option>
                         <option value="批准">批准</option>
                         <option value="拒绝">拒绝</option>
-                        <option value="等待">等待</option>
-                        <option value="询问">询问</option>
-                        <option value="指挥">指挥</option>
+                        <option value="回复等待">回复等待</option>
+                        <option value="主动询问">主动询问</option>
+                        <option value="紧急干预">紧急干预</option>
                       </select>
                     </div>
                     <div className="flex items-center gap-2">
@@ -1840,8 +1949,8 @@ const AdminPanel = ({
                                 <span className={`px-2 py-0.5 border rounded text-[10px] font-bold ${
                                   item.status === '批准' ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' :
                                   item.status === '拒绝' ? 'bg-red-500/10 border-red-500/20 text-red-400' :
-                                  item.status === '等待' ? 'bg-orange-500/10 border-orange-500/20 text-orange-400' :
-                                  item.status === '询问' ? 'bg-yellow-500/10 border-yellow-500/20 text-yellow-400' :
+                                  item.status === '回复等待' ? 'bg-orange-500/10 border-orange-500/20 text-orange-400' :
+                                  item.status === '主动询问' ? 'bg-yellow-500/10 border-yellow-500/20 text-yellow-400' :
                                   'bg-blue-500/10 border-blue-500/20 text-blue-400'
                                 }`}>
                                   {item.status}
@@ -1864,10 +1973,122 @@ const AdminPanel = ({
                 </div>
               )}
 
-              {activeStatsTab === '常规统计' && (
-                <div className="h-[400px] flex flex-col items-center justify-center text-white/20 gap-4">
-                  <BarChart3 size={64} />
-                  <span className="text-sm font-medium">常规统计功能开发中...</span>
+              {activeStatsTab === '值班统计' && (
+                <div className="space-y-6">
+                  {/* 核心指标卡片 */}
+                  <div className="grid grid-cols-3 gap-4">
+                    <div className="bg-white/5 border border-white/10 rounded-2xl p-6 hover:bg-white/[0.08] transition-all group">
+                      <div className="flex items-center justify-between mb-4">
+                        <div className="w-10 h-10 rounded-xl bg-sky-500/20 flex items-center justify-center group-hover:scale-110 transition-transform">
+                          <MessageSquare size={20} className="text-sky-400" />
+                        </div>
+                        <span className="text-[10px] font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full">+12%</span>
+                      </div>
+                      <div className="text-2xl font-black text-white mb-1">1,284</div>
+                      <div className="text-[11px] font-bold text-white/30 uppercase tracking-widest">对话次数</div>
+                    </div>
+                    
+                    <div className="bg-white/5 border border-white/10 rounded-2xl p-6 hover:bg-white/[0.08] transition-all group">
+                      <div className="flex items-center justify-between mb-4">
+                        <div className="w-10 h-10 rounded-xl bg-blue-500/20 flex items-center justify-center group-hover:scale-110 transition-transform">
+                          <Activity size={20} className="text-blue-400" />
+                        </div>
+                        <span className="text-[10px] font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full">+5%</span>
+                      </div>
+                      <div className="text-2xl font-black text-white mb-1">456</div>
+                      <div className="text-[11px] font-bold text-white/30 uppercase tracking-widest">指挥次数</div>
+                    </div>
+
+                    <div className="bg-white/5 border border-white/10 rounded-2xl p-6 hover:bg-white/[0.08] transition-all group">
+                      <div className="flex items-center justify-between mb-4">
+                        <div className="w-10 h-10 rounded-xl bg-indigo-500/20 flex items-center justify-center group-hover:scale-110 transition-transform">
+                          <Check size={20} className="text-indigo-400" />
+                        </div>
+                        <span className="text-[10px] font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full">+8%</span>
+                      </div>
+                      <div className="text-2xl font-black text-white mb-1">892</div>
+                      <div className="text-[11px] font-bold text-white/30 uppercase tracking-widest">回答次数</div>
+                    </div>
+                  </div>
+
+                  {/* 详细统计图表占位 */}
+                  <div className="bg-white/5 border border-white/10 rounded-2xl p-8">
+                    <div className="flex items-center justify-between mb-8">
+                      <div>
+                        <h3 className="text-sm font-bold text-white/90">值班趋势分析</h3>
+                        <p className="text-[11px] text-white/30 mt-1">过去 24 小时值班员交互数据趋势</p>
+                      </div>
+                      <div className="flex gap-2">
+                        <button className="px-3 py-1 bg-white/10 rounded-md text-[10px] font-bold text-white/60 hover:text-white transition-colors">导出报告</button>
+                        <button 
+                          onClick={() => setShowVhfDetails(true)}
+                          className="px-3 py-1 bg-sky-500 rounded-md text-[10px] font-bold text-white shadow-lg shadow-sky-500/20"
+                        >
+                          查看详情
+                        </button>
+                      </div>
+                    </div>
+                    
+                    <div className="h-[240px] w-full">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <AreaChart
+                          data={[
+                            { time: '00:00', count: 45 },
+                            { time: '02:00', count: 32 },
+                            { time: '04:00', count: 28 },
+                            { time: '06:00', count: 56 },
+                            { time: '08:00', count: 124 },
+                            { time: '10:00', count: 189 },
+                            { time: '12:00', count: 145 },
+                            { time: '14:00', count: 167 },
+                            { time: '16:00', count: 210 },
+                            { time: '18:00', count: 178 },
+                            { time: '20:00', count: 134 },
+                            { time: '22:00', count: 89 },
+                          ]}
+                          margin={{ top: 10, right: 10, left: -20, bottom: 0 }}
+                        >
+                          <defs>
+                            <linearGradient id="colorCount" x1="0" y1="0" x2="0" y2="1">
+                              <stop offset="5%" stopColor="#0ea5e9" stopOpacity={0.3}/>
+                              <stop offset="95%" stopColor="#0ea5e9" stopOpacity={0}/>
+                            </linearGradient>
+                          </defs>
+                          <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
+                          <XAxis 
+                            dataKey="time" 
+                            axisLine={false}
+                            tickLine={false}
+                            tick={{ fill: 'rgba(255,255,255,0.3)', fontSize: 10 }}
+                            dy={10}
+                          />
+                          <YAxis 
+                            axisLine={false}
+                            tickLine={false}
+                            tick={{ fill: 'rgba(255,255,255,0.3)', fontSize: 10 }}
+                          />
+                          <Tooltip 
+                            contentStyle={{ 
+                              backgroundColor: '#0a0a0a', 
+                              border: '1px solid rgba(255,255,255,0.1)',
+                              borderRadius: '8px',
+                              fontSize: '12px'
+                            }}
+                            itemStyle={{ color: '#0ea5e9' }}
+                          />
+                          <Area 
+                            type="monotone" 
+                            dataKey="count" 
+                            stroke="#0ea5e9" 
+                            strokeWidth={2}
+                            fillOpacity={1} 
+                            fill="url(#colorCount)" 
+                            name="对话次数"
+                          />
+                        </AreaChart>
+                      </ResponsiveContainer>
+                    </div>
+                  </div>
                 </div>
               )}
             </div>
@@ -1881,7 +2102,181 @@ const AdminPanel = ({
           )}
         </main>
 
-        {/* 历史回放面板 */}
+        {/* VHF 对话详情弹窗 */}
+        <AnimatePresence>
+          {showVhfDetails && (
+            <div className="fixed inset-0 z-[5000] flex items-center justify-center p-8">
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                onClick={() => setShowVhfDetails(false)}
+                className="absolute inset-0 bg-black/80 backdrop-blur-sm"
+              />
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                className="relative w-full max-w-6xl h-[80vh] bg-[#0a0a0a] border border-white/10 rounded-3xl shadow-2xl overflow-hidden flex flex-col"
+              >
+                {/* 弹窗头部 */}
+                <div className="p-6 border-b border-white/10 flex items-center justify-between bg-white/5">
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 rounded-2xl bg-sky-500/20 flex items-center justify-center">
+                      <MessageSquare className="text-sky-400" size={24} />
+                    </div>
+                    <div>
+                      <h2 className="text-xl font-black text-white">VHF 对话详情回放</h2>
+                      <p className="text-xs text-white/30 mt-1">船舶：中远海运 123 (MMSI: 413123456) | 时间：2026-03-19 10:05</p>
+                    </div>
+                  </div>
+                  <button 
+                    onClick={() => setShowVhfDetails(false)}
+                    className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center text-white/40 hover:text-white hover:bg-white/10 transition-all"
+                  >
+                    <X size={20} />
+                  </button>
+                </div>
+
+                {/* 弹窗内容 */}
+                <div className="flex-1 flex overflow-hidden">
+                  {/* 左侧：对话历史 */}
+                  <div className="w-1/2 border-r border-white/10 flex flex-col bg-[#050505]">
+                    <div className="p-4 border-b border-white/5 bg-white/5 flex items-center justify-between">
+                      <span className="text-[10px] font-bold text-white/40 uppercase tracking-widest">对话记录</span>
+                      <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-1">
+                          <div className="w-2 h-2 rounded-full bg-sky-500"></div>
+                          <span className="text-[10px] text-white/40">VTS 中心</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <div className="w-2 h-2 rounded-full bg-emerald-500"></div>
+                          <span className="text-[10px] text-white/40">船舶</span>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex-1 overflow-y-auto p-6 space-y-6">
+                      {[
+                        { id: 1, time: "10:05:22", sender: "VTS Center", isVts: true, text: "中远海运 123，这里是 VTS 中心，请报告您的当前航向。", lat: 30.123, lng: 122.456 },
+                        { id: 2, time: "10:05:45", sender: "COSCO SHIPPING 123", isVts: false, text: "VTS 中心，我是中远海运 123，当前航向 095，航速 12 节。", lat: 30.125, lng: 122.460 },
+                        { id: 3, time: "10:06:10", sender: "VTS Center", isVts: true, text: "收到，请保持当前航向，注意避让前方 2 海里处的渔船。", lat: 30.127, lng: 122.465 },
+                        { id: 4, time: "10:06:35", sender: "COSCO SHIPPING 123", isVts: false, text: "收到，正在调整航向避让，谢谢提醒。", lat: 30.129, lng: 122.470 },
+                      ].map((msg) => (
+                        <motion.div
+                          key={msg.id}
+                          whileHover={{ x: 4 }}
+                          onClick={() => setSelectedVhfSnippet(msg)}
+                          className={`group cursor-pointer p-4 rounded-2xl transition-all ${selectedVhfSnippet?.id === msg.id ? 'bg-sky-500/10 border border-sky-500/30' : 'bg-white/5 border border-transparent hover:border-white/10'}`}
+                        >
+                          <div className="flex items-center justify-between mb-2">
+                            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${msg.isVts ? 'bg-sky-500/20 text-sky-400' : 'bg-emerald-500/20 text-emerald-400'}`}>
+                              {msg.sender}
+                            </span>
+                            <span className="text-[10px] text-white/20 font-mono">{msg.time}</span>
+                          </div>
+                          <p className="text-sm text-white/80 leading-relaxed mb-3">{msg.text}</p>
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2 text-sky-400 opacity-0 group-hover:opacity-100 transition-opacity">
+                              <Volume2 size={14} />
+                              <span className="text-[10px] font-bold uppercase tracking-wider">点击播放音频</span>
+                            </div>
+                            {selectedVhfSnippet?.id === msg.id && (
+                              <div className="flex items-center gap-1 text-emerald-400">
+                                <MapPin size={12} />
+                                <span className="text-[10px] font-bold">已同步轨迹位置</span>
+                              </div>
+                            )}
+                          </div>
+                        </motion.div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* 右侧：历史轨迹地图 */}
+                  <div className="w-1/2 relative bg-[#0a0a0a]">
+                    <div className="absolute top-4 left-4 z-[4001] bg-[#050505]/80 backdrop-blur-md border border-white/10 rounded-xl p-3 shadow-2xl">
+                      <div className="flex items-center gap-2 mb-2">
+                        <History size={14} className="text-sky-400" />
+                        <span className="text-[10px] font-bold text-white uppercase tracking-widest">历史轨迹回放</span>
+                      </div>
+                      <div className="space-y-1">
+                        <div className="text-[10px] text-white/40">当前位置：{selectedVhfSnippet ? `${selectedVhfSnippet.lat.toFixed(3)}, ${selectedVhfSnippet.lng.toFixed(3)}` : '请选择对话片段'}</div>
+                        <div className="text-[10px] text-white/40">轨迹点数：124 点</div>
+                      </div>
+                    </div>
+
+                    <div className="h-full w-full">
+                      <MapContainer
+                        center={[30.125, 122.460]}
+                        zoom={14}
+                        className="h-full w-full"
+                        zoomControl={false}
+                      >
+                        <TileLayer
+                          url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+                          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
+                        />
+                        {/* 历史轨迹线 */}
+                        <Polyline 
+                          positions={[
+                            [30.120, 122.450],
+                            [30.123, 122.456],
+                            [30.125, 122.460],
+                            [30.127, 122.465],
+                            [30.129, 122.470],
+                            [30.132, 122.475]
+                          ]}
+                          color="#0ea5e9"
+                          weight={3}
+                          opacity={0.6}
+                          dashArray="10, 10"
+                        />
+                        {/* 船舶当前位置标记 */}
+                        {selectedVhfSnippet && (
+                          <Marker 
+                            position={[selectedVhfSnippet.lat, selectedVhfSnippet.lng]}
+                            icon={L.divIcon({
+                              className: 'custom-div-icon',
+                              html: `
+                                <div class="relative">
+                                  <div class="absolute -translate-x-1/2 -translate-y-1/2 w-4 h-4 bg-sky-500 rounded-full shadow-[0_0_15px_rgba(14,165,233,0.8)] border-2 border-white animate-pulse"></div>
+                                  <div class="absolute -translate-x-1/2 -translate-y-1/2 w-12 h-12 bg-sky-500/20 rounded-full animate-ping"></div>
+                                </div>
+                              `,
+                              iconSize: [0, 0]
+                            })}
+                          />
+                        )}
+                      </MapContainer>
+                    </div>
+
+                    {/* 底部播放控制 */}
+                    <div className="absolute bottom-6 left-6 right-6 z-[4001] bg-[#050505]/90 backdrop-blur-md border border-white/10 rounded-2xl p-4 shadow-2xl">
+                      <div className="flex items-center gap-4">
+                        <button className="w-10 h-10 rounded-full bg-sky-500 flex items-center justify-center text-white shadow-lg shadow-sky-500/20 hover:scale-105 transition-transform">
+                          <Play size={18} fill="currentColor" />
+                        </button>
+                        <div className="flex-1">
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="text-[10px] font-bold text-white/60">轨迹回放进度</span>
+                            <span className="text-[10px] font-mono text-white/40">10:05:22 / 10:06:35</span>
+                          </div>
+                          <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
+                            <motion.div 
+                              initial={{ width: 0 }}
+                              animate={{ width: selectedVhfSnippet ? `${(selectedVhfSnippet.id / 4) * 100}%` : '0%' }}
+                              className="h-full bg-sky-500 shadow-[0_0_10px_rgba(14,165,233,0.5)]"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+            </div>
+          )}
+        </AnimatePresence>
         <AnimatePresence>
           {playbackData && (
             <motion.div
@@ -1983,14 +2378,14 @@ const AdminPanel = ({
                         <MessageSquare size={14} className="text-sky-400" />
                         <span className="text-[10px] font-bold text-white/40 uppercase tracking-widest">当时对话记录</span>
                       </div>
-                      <div className="space-y-3">
+                      <div className="space-y-2">
                         {playbackData.event.dialogue.map((chat: any, idx: number) => (
-                          <div key={idx} className={`flex flex-col gap-1 ${chat.sender.includes('VTS') ? 'items-end' : 'items-start'}`}>
-                            <div className="flex items-center gap-2 mb-1">
+                          <div key={idx} className={`flex flex-col gap-0.5 ${chat.sender.includes('VTS') ? 'items-end' : 'items-start'}`}>
+                            <div className="flex items-center gap-2 mb-0.5">
                               <span className="text-[9px] font-bold text-white/30 uppercase">{chat.sender}</span>
                               <span className="text-[9px] font-mono text-white/20">{chat.time}</span>
                             </div>
-                            <div className={`text-xs p-4 rounded-2xl max-w-[90%] ${
+                            <div className={`text-xs p-1.5 rounded-2xl max-w-[90%] ${
                               chat.sender.includes('VTS') 
                                 ? 'bg-sky-500 text-white rounded-tr-none shadow-lg shadow-sky-500/20' 
                                 : 'bg-white/10 text-white/80 rounded-tl-none border border-white/10'
@@ -2483,14 +2878,14 @@ const DynamicPlaybackView = ({
               <MessageSquare size={16} className="text-sky-400" />
               <h4 className="text-xs font-black text-white uppercase tracking-wider">历史通讯记录</h4>
             </div>
-            <div className="space-y-3 max-h-48 overflow-y-auto custom-scrollbar pr-2">
+            <div className="space-y-2 max-h-48 overflow-y-auto custom-scrollbar pr-2">
               {session.event.dialogue.map((chat: any, idx: number) => (
-                <div key={idx} className={`space-y-1 ${progress < (idx + 1) * 20 ? 'opacity-20' : 'opacity-100 transition-opacity duration-500'}`}>
+                <div key={idx} className={`space-y-0.5 ${progress < (idx + 1) * 20 ? 'opacity-20' : 'opacity-100 transition-opacity duration-500'}`}>
                   <div className="flex justify-between items-center">
                     <span className="text-[9px] font-bold text-white/30 uppercase">{chat.sender}</span>
                     <span className="text-[8px] font-mono text-white/20">{chat.time.split(' ')[1]}</span>
                   </div>
-                  <p className="text-[10px] text-white/70 leading-relaxed bg-white/5 p-2 rounded-lg border border-white/5">
+                  <p className="text-[10px] text-white/70 leading-relaxed bg-white/5 p-1 rounded-lg border border-white/5">
                     {chat.content}
                   </p>
                 </div>
@@ -2510,6 +2905,7 @@ export default function App() {
   const [showBars, setShowBars] = useState(true);
   const [activeTab, setActiveTab] = useState<SidebarTab>('vhf');
   const [selectedIntent, setSelectedIntent] = useState<number | null>(null);
+  const [selectedAlert, setSelectedAlert] = useState<string | null>(null);
   const [intents, setIntents] = useState<IntentItem[]>(INTENT_DATA);
   const [editingIntentIndex, setEditingIntentIndex] = useState<number | null>(null);
   const [editForm, setEditForm] = useState<{ action: string; details: string }>({ action: '', details: '' });
@@ -2570,14 +2966,7 @@ export default function App() {
             className="border-b border-white/10 bg-[#0a0a0a] flex items-center justify-between px-4 z-[3000] shrink-0"
           >
             <div className="flex items-center gap-4">
-              <div className="w-64 relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-white/30" size={16} />
-                <input 
-                  type="text" 
-                  placeholder="搜索船舶..." 
-                  className="w-full bg-white/5 border border-white/10 rounded-lg py-1.5 pl-10 pr-4 text-xs focus:outline-none focus:border-sky-500/50 transition-all"
-                />
-              </div>
+              {/* Search moved to rail */}
             </div>
 
             {/* 中心标题 */}
@@ -2668,11 +3057,11 @@ export default function App() {
           onToggleBars={() => setShowBars(!showBars)}
         >
           {activeTab === 'vhf' && (
-            <div className="p-3 space-y-6">
+            <div className="p-3 space-y-3">
               {MOCK_VHF_MESSAGES.map((msg) => (
                 <div key={msg.id} className={`flex flex-col ${msg.isVTS ? 'items-end' : 'items-start'}`}>
                   {/* Header */}
-                  <div className={`flex items-center gap-2 mb-1.5 ${msg.isVTS ? 'flex-row-reverse' : 'flex-row'}`}>
+                  <div className={`flex items-center gap-2 mb-1 ${msg.isVTS ? 'flex-row-reverse' : 'flex-row'}`}>
                     <span className="text-[11px] font-bold text-white/80">{msg.sender}</span>
                     <div className={`flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold ${msg.isVTS ? 'bg-sky-600/40 text-sky-200' : 'bg-sky-900/40 text-sky-300'}`}>
                       <Radio size={10} className={msg.isVTS ? 'text-sky-300' : 'text-sky-400'} />
@@ -2688,7 +3077,7 @@ export default function App() {
                   
                   {/* Bubble */}
                   <div className={`flex items-center gap-2 ${msg.isVTS ? 'flex-row-reverse' : 'flex-row'}`}>
-                    <div className={`max-w-[90%] p-2.5 rounded-lg text-[11px] leading-relaxed relative ${
+                    <div className={`max-w-[90%] p-1.5 rounded-lg text-[11px] leading-relaxed relative ${
                       msg.isVTS 
                         ? 'bg-sky-500/10 text-sky-100 border border-sky-500/30 shadow-[0_0_15px_rgba(14,165,233,0.1)]' 
                         : 'bg-white/5 text-white/90 border border-white/10'
@@ -2739,15 +3128,15 @@ export default function App() {
                     </div>
                     <div className="bg-orange-500/10 border border-orange-500/20 rounded-md p-1 text-center">
                       <div className="text-sm font-bold text-orange-500">8</div>
-                      <div className="text-[6px] font-bold uppercase text-orange-500/70">等待</div>
+                      <div className="text-[6px] font-bold uppercase text-orange-500/70">回复等待</div>
                     </div>
                     <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-md p-1 text-center">
                       <div className="text-sm font-bold text-yellow-500">5</div>
-                      <div className="text-[6px] font-bold uppercase text-yellow-500/70">询问</div>
+                      <div className="text-[6px] font-bold uppercase text-yellow-500/70">主动询问</div>
                     </div>
                     <div className="bg-blue-500/10 border border-blue-500/20 rounded-md p-1 text-center">
                       <div className="text-sm font-bold text-blue-500">15</div>
-                      <div className="text-[6px] font-bold uppercase text-blue-500/70">指挥</div>
+                      <div className="text-[6px] font-bold uppercase text-blue-500/70">紧急干预</div>
                     </div>
                   </div>
                 </div>
@@ -2791,9 +3180,12 @@ export default function App() {
                             <span className="text-[8px] tracking-tighter">W:{item.width}</span>
                             <span className="text-[8px] tracking-tighter">D:{item.draft}</span>
                           </div>
-                          <span className="text-xs font-black text-white mt-0.5">
-                            {item.path.find(p => p.status === 'active')?.action || '正在执行'}
-                          </span>
+                          <div className="flex items-center gap-2 mt-0.5">
+                            <span className="text-xs font-black text-white">
+                              {item.path.find(p => p.status === 'active')?.action || '正在执行'}
+                            </span>
+                            <span className="text-[9px] font-mono text-white/30">{item.occurrenceTime.split(' ')[1]}</span>
+                          </div>
                         </div>
                       </div>
                       <div className="flex items-center gap-1 px-1.5 py-0.5 bg-white/5 rounded-full border border-white/5">
@@ -2802,17 +3194,6 @@ export default function App() {
                       </div>
                     </div>
 
-                    {/* Ship Details Grid */}
-                    <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 mb-2 px-1">
-                      <div className="flex items-center justify-between">
-                        <span className="text-[9px] text-white/30">货物类型</span>
-                        <span className="text-[9px] font-bold text-white/70">{item.cargoType}</span>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <span className="text-[9px] text-white/30">发生时间</span>
-                        <span className="text-[9px] font-bold text-sky-400/80">{item.occurrenceTime.split(' ')[1]}</span>
-                      </div>
-                    </div>
 
                     {/* Progress Bar Section */}
                     <div className="relative px-3 mb-2 mt-1">
@@ -2976,7 +3357,9 @@ export default function App() {
                   <motion.div 
                     key={alert.id} 
                     layout
+                    onClick={() => setSelectedAlert(selectedAlert === alert.id ? null : alert.id)}
                     className={`bg-[#121212] border border-white/5 rounded-xl overflow-hidden hover:border-white/10 transition-all cursor-pointer group relative ${
+                      selectedAlert === alert.id ? 'ring-1 ring-sky-500/30' :
                       alert.level === 'emergency' ? 'ring-1 ring-red-500/20' : 
                       alert.level === 'alarm' ? 'ring-1 ring-orange-500/20' : 
                       alert.level === 'warning' ? 'ring-1 ring-yellow-500/20' : ''
@@ -3009,13 +3392,16 @@ export default function App() {
                               <span className="text-[8px] tracking-tighter">W:{alert.width}</span>
                               <span className="text-[8px] tracking-tighter">D:{alert.draft}</span>
                             </div>
-                            <span className={`text-xs font-black mt-0.5 ${
-                              alert.level === 'emergency' ? 'text-red-400' : 
-                              alert.level === 'alarm' ? 'text-orange-400' : 
-                              alert.level === 'warning' ? 'text-yellow-400' : 'text-blue-400'
-                            }`}>
-                              {alert.type}
-                            </span>
+                            <div className="flex items-center gap-2 mt-0.5">
+                              <span className={`text-xs font-black ${
+                                alert.level === 'emergency' ? 'text-red-400' : 
+                                alert.level === 'alarm' ? 'text-orange-400' : 
+                                alert.level === 'warning' ? 'text-yellow-400' : 'text-blue-400'
+                              }`}>
+                                {alert.type}
+                              </span>
+                              <span className="text-[9px] font-mono text-white/30">{alert.time}</span>
+                            </div>
                           </div>
                         </div>
                         <div className={`flex items-center gap-1 px-1.5 py-0.5 rounded-full border ${
@@ -3041,18 +3427,6 @@ export default function App() {
                         </p>
                       </div>
 
-                      {/* Details Grid */}
-                      <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 mb-2 px-1">
-                        <div className="flex items-center justify-between">
-                          <span className="text-[9px] text-white/30">发生时间</span>
-                          <span className="text-[9px] font-bold text-white/70">{alert.time}</span>
-                        </div>
-                        <div className="flex items-center justify-between">
-                          <span className="text-[9px] text-white/30">状态</span>
-                          <span className="text-[9px] font-bold text-sky-400/80">待处理</span>
-                        </div>
-                      </div>
-
                       {/* Action Buttons */}
                       <div className="flex gap-1.5 px-1 mt-2">
                         <button className="flex-1 py-1 bg-white/5 hover:bg-white/10 border border-white/5 rounded-lg text-[9px] font-bold text-white/60 transition-colors">
@@ -3063,6 +3437,66 @@ export default function App() {
                         </button>
                       </div>
                     </div>
+
+                    {/* Timeline Section */}
+                    <AnimatePresence>
+                      {selectedAlert === alert.id && (
+                        <motion.div
+                          initial={{ height: 0, opacity: 0 }}
+                          animate={{ height: 'auto', opacity: 1 }}
+                          exit={{ height: 0, opacity: 0 }}
+                          className="overflow-hidden border-t border-white/5"
+                        >
+                          <div className="p-1.5 space-y-1.5">
+                            {alert.timeline.map((event, idx) => (
+                              <div key={idx} className="relative pl-3.5 group/item">
+                                {/* Timeline Line */}
+                                {idx !== alert.timeline.length - 1 && (
+                                  <div className="absolute left-[1.5px] top-2.5 bottom-[-12px] w-[1px] bg-white/5" />
+                                )}
+                                
+                                {/* Timeline Dot */}
+                                <div className={`absolute left-0 top-1 w-1 h-1 rounded-full border transition-all duration-500 ${
+                                  event.type === 'risk' ? 'bg-red-500 border-red-400 shadow-[0_0_4px_rgba(239,68,68,0.5)]' :
+                                  event.type === 'warning' ? 'bg-orange-500 border-orange-400' :
+                                  'bg-white/10 border-white/20'
+                                }`} />
+
+                                <div className="space-y-0.5">
+                                  <div className="flex items-center gap-1">
+                                    <span className="text-[7px] font-mono text-white/30">{event.time}</span>
+                                    <div className={`px-1 py-0.5 rounded text-[6px] font-black uppercase tracking-widest ${
+                                      event.type === 'risk' ? 'bg-red-500/10 text-red-400 border border-red-500/20' :
+                                      event.type === 'warning' ? 'bg-orange-500/10 text-orange-400 border border-orange-500/20' :
+                                      'bg-white/5 text-white/40 border border-white/5'
+                                    }`}>
+                                      {event.type === 'risk' ? '风险触发' : event.type === 'warning' ? '异常检测' : '常规记录'}
+                                    </div>
+                                  </div>
+                                  <p className={`text-[8px] leading-relaxed transition-colors ${
+                                    event.type === 'risk' ? 'text-white/80' : 'text-white/40'
+                                  }`}>
+                                    {event.event}
+                                  </p>
+                                </div>
+                              </div>
+                            ))}
+
+                            <div className="pt-2 border-t border-white/5 flex justify-center">
+                              <button 
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setSelectedAlert(null);
+                                }}
+                                className="flex items-center gap-1 text-[7px] font-black uppercase tracking-[0.2em] text-sky-500/60 hover:text-sky-400 transition-colors"
+                              >
+                                收起详情 <ChevronDown size={6} className="rotate-180" />
+                              </button>
+                            </div>
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
                   </motion.div>
                 ))}
               </div>
