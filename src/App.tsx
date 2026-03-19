@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { 
   Search, 
   Bell, 
@@ -13,6 +13,8 @@ import {
   User, 
   ChevronRight, 
   ChevronLeft,
+  ChevronDown,
+  Check,
   Map as MapIcon,
   Radio,
   AlertTriangle,
@@ -37,12 +39,13 @@ import {
   History,
   FileText,
   Play,
+  Pause,
   MapPin,
   Presentation,
   X
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { MapContainer, TileLayer, Marker, CircleMarker, useMapEvents, Polygon, Polyline, useMap } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, CircleMarker, useMapEvents, Polygon, Polyline, useMap, Popup } from 'react-leaflet';
 import L from 'leaflet';
 
 // 地图状态持久化组件
@@ -192,11 +195,113 @@ const ANCHORAGE_DATA = [
 const AREA_CATEGORIES = ['值班区域', '作业与停泊设施', '航道航行设施', '水域管控'];
 
 const MOCK_RISK_STATS = [
-  { id: '1', name: '远洋 123', mmsi: '413000001', type: '货轮', length: 190, width: 32, cargo: '铁矿石', draft: 11.2, risk: '超速航行', speed: 15.4, heading: 125, wind: '4级', wave: '0.8m', visibility: '8km', time: '2026-03-17 09:15:22' },
-  { id: '2', name: '海丰 77', mmsi: '413000002', type: '集装箱船', length: 145, width: 24, cargo: '日用品', draft: 8.5, risk: '偏离航道', speed: 12.1, heading: 210, wind: '5级', wave: '1.2m', visibility: '5km', time: '2026-03-17 10:02:45' },
-  { id: '3', name: '振华 15', mmsi: '413000003', type: '工程船', length: 220, width: 45, cargo: '重型设备', draft: 9.8, risk: '非法锚泊', speed: 0.1, heading: 45, wind: '3级', wave: '0.5m', visibility: '10km', time: '2026-03-17 11:30:10' },
-  { id: '4', name: '中海 99', mmsi: '413000004', type: '油轮', length: 250, width: 48, cargo: '原油', draft: 14.5, risk: '碰撞风险', speed: 10.5, heading: 180, wind: '6级', wave: '2.0m', visibility: '3km', time: '2026-03-17 12:45:33' },
-  { id: '5', name: '顺风 6', mmsi: '413000005', type: '散货船', length: 110, width: 18, cargo: '煤炭', draft: 6.2, risk: '异常停泊', speed: 0.0, heading: 90, wind: '4级', wave: '0.7m', visibility: '7km', time: '2026-03-17 13:20:15' },
+  { 
+    id: '1', 
+    name: '远洋 123', 
+    mmsi: '413000001', 
+    type: '货轮', 
+    length: 190, 
+    width: 32, 
+    cargo: '铁矿石', 
+    draft: 11.2, 
+    risk: '超速航行', 
+    speed: 15.4, 
+    heading: 125, 
+    wind: '4级', 
+    wave: '0.8m', 
+    visibility: '8km', 
+    time: '2026-03-17 09:15:22', 
+    coords: [31.35, 121.55] as [number, number],
+    timeline: [
+      { time: '09:00:15', event: '进入吴淞口警戒区', type: 'info' },
+      { time: '09:05:42', event: '航速持续上升 (12.5kn -> 14.2kn)', type: 'warning' },
+      { time: '09:12:10', event: '接近航道限速区域', type: 'info' },
+      { time: '09:15:22', event: '触发[超速航行]风险预警', type: 'risk' }
+    ]
+  },
+  { 
+    id: '2', 
+    name: '海丰 77', 
+    mmsi: '413000002', 
+    type: '集装箱船', 
+    length: 145, 
+    width: 24, 
+    cargo: '日用品', 
+    draft: 8.5, 
+    risk: '偏离航道', 
+    speed: 12.1, 
+    heading: 210, 
+    wind: '5级', 
+    wave: '1.2m', 
+    visibility: '5km', 
+    time: '2026-03-17 10:02:45', 
+    coords: [31.38, 121.58] as [number, number],
+    timeline: [
+      { time: '09:45:00', event: '通过圆圆沙报告线', type: 'info' },
+      { time: '09:55:30', event: '航向发生异常偏转', type: 'warning' },
+      { time: '10:02:45', event: '偏离主航道中心线 > 50m', type: 'risk' }
+    ]
+  },
+  { 
+    id: '3', 
+    name: '振华 15', 
+    mmsi: '413000003', 
+    type: '工程船', 
+    length: 220, 
+    width: 45, 
+    cargo: '重型设备', 
+    draft: 9.8, 
+    risk: '非法锚泊', 
+    speed: 0.1, 
+    heading: 45, 
+    wind: '3级', 
+    wave: '0.5m', 
+    visibility: '10km', 
+    time: '2026-03-17 11:30:10', 
+    coords: [31.42, 121.62] as [number, number],
+    timeline: [
+      { time: '11:10:00', event: '进入非锚泊作业区', type: 'info' },
+      { time: '11:20:15', event: '航速降至 0.5kn 以下', type: 'warning' },
+      { time: '11:30:10', event: '检测到锚泊行为', type: 'risk' }
+    ]
+  },
+  { 
+    id: '4', 
+    name: '中海 99', 
+    mmsi: '413000004', 
+    type: '油轮', 
+    length: 250, 
+    width: 48, 
+    cargo: '原油', 
+    draft: 14.5, 
+    risk: '碰撞风险', 
+    speed: 10.5, 
+    heading: 180, 
+    wind: '6级', 
+    wave: '2.0m', 
+    visibility: '3km', 
+    time: '2026-03-17 12:45:33', 
+    coords: [31.45, 121.65] as [number, number],
+    timeline: [
+      { time: '12:30:00', event: '能见度降至 3km 以下', type: 'warning' },
+      { time: '12:40:15', event: '与前方船舶 DCPA < 0.2nm', type: 'warning' },
+      { time: '12:45:33', event: '触发碰撞高风险预警', type: 'risk' }
+    ]
+  },
+  { 
+    id: '5', 
+    name: '顺风 6', 
+    mmsi: '413000005', 
+    type: '散货船', 
+    length: 110, 
+    width: 18, 
+    cargo: '煤炭', draft: 6.2, risk: '异常停泊', speed: 0.0, heading: 90, wind: '4级', wave: '0.7m', visibility: '7km', time: '2026-03-17 13:20:15', coords: [31.48, 121.68] as [number, number],
+    timeline: [
+      { time: '13:05:00', event: '进入航道边缘水域', type: 'info' },
+      { time: '13:15:30', event: '主机疑似发生故障停航', type: 'warning' },
+      { time: '13:20:15', event: '航道内异常停泊', type: 'risk' }
+    ]
+  },
 ];
 
 const AREA_TYPE_MAPPING: Record<string, Record<string, string[]>> = {
@@ -620,11 +725,13 @@ const SystemSuggestionPanel = () => (
 const AdminPanel = ({ 
   onClose, 
   playbackData, 
-  setPlaybackData 
+  setPlaybackData,
+  setDynamicPlaybackSession
 }: { 
   onClose: () => void,
   playbackData: any,
-  setPlaybackData: (data: any) => void
+  setPlaybackData: (data: any) => void,
+  setDynamicPlaybackSession: (data: any) => void
 }) => {
   const [activeMenu, setActiveMenu] = useState('区域设置');
   const [activeSubTab, setActiveSubTab] = useState('值班区域');
@@ -1383,30 +1490,30 @@ const AdminPanel = ({
 
               {activeStatsTab === '船舶风险统计' ? (
                 <div className="space-y-4">
-                  {/* 筛选栏 */}
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-white/5 p-4 rounded-2xl border border-white/10">
-                    <div className="space-y-1.5">
-                      <label className="text-[10px] font-bold text-white/30 uppercase tracking-widest">船舶类型</label>
-                      <select className="w-full bg-white/5 border border-white/10 rounded-lg py-1.5 px-3 text-xs text-white/80 focus:outline-none focus:border-sky-500/50">
-                        <option value="">全部类型</option>
-                        <option value="货轮">货轮</option>
-                        <option value="油轮">油轮</option>
-                        <option value="集装箱船">集装箱船</option>
-                      </select>
-                    </div>
-                    <div className="space-y-1.5">
-                      <label className="text-[10px] font-bold text-white/30 uppercase tracking-widest">货物类型</label>
-                      <input type="text" placeholder="输入货物..." className="w-full bg-white/5 border border-white/10 rounded-lg py-1.5 px-3 text-xs text-white/80 focus:outline-none focus:border-sky-500/50" />
-                    </div>
-                    <div className="space-y-1.5">
-                      <label className="text-[10px] font-bold text-white/30 uppercase tracking-widest">风险行为</label>
-                      <select className="w-full bg-white/5 border border-white/10 rounded-lg py-1.5 px-3 text-xs text-white/80 focus:outline-none focus:border-sky-500/50">
+                  {/* 筛选栏 - 精简缩小版 */}
+                  <div className="flex flex-wrap items-center gap-3 bg-white/5 p-3 rounded-2xl border border-white/10">
+                    <div className="flex items-center gap-2">
+                      <label className="text-[10px] font-bold text-white/30 uppercase tracking-widest whitespace-nowrap">风险行为</label>
+                      <select className="bg-white/5 border border-white/10 rounded-lg py-1 px-2 text-[11px] text-white/80 focus:outline-none focus:border-sky-500/50 min-w-[120px]">
                         <option value="">全部行为</option>
                         <option value="超速航行">超速航行</option>
                         <option value="偏离航道">偏离航道</option>
                         <option value="非法锚泊">非法锚泊</option>
+                        <option value="进入禁航区">进入禁航区</option>
+                        <option value="异常停泊">异常停泊</option>
                       </select>
                     </div>
+                    <div className="flex items-center gap-2">
+                      <label className="text-[10px] font-bold text-white/30 uppercase tracking-widest whitespace-nowrap">MMSI</label>
+                      <input 
+                        type="text" 
+                        placeholder="输入MMSI码..." 
+                        className="bg-white/5 border border-white/10 rounded-lg py-1 px-3 text-[11px] text-white/80 focus:outline-none focus:border-sky-500/50 w-40" 
+                      />
+                    </div>
+                    <button className="ml-auto px-6 py-1 bg-sky-500 hover:bg-sky-400 text-white text-[11px] font-bold rounded-lg transition-all shadow-lg shadow-sky-500/20">
+                      查询
+                    </button>
                   </div>
 
                   {/* 数据表格 */}
@@ -1419,6 +1526,7 @@ const AdminPanel = ({
                             <th className="px-6 py-4 text-[11px] font-bold text-white/40 uppercase tracking-widest">货物类型</th>
                             <th className="px-6 py-4 text-[11px] font-bold text-white/40 uppercase tracking-widest">风险行为</th>
                             <th className="px-6 py-4 text-[11px] font-bold text-white/40 uppercase tracking-widest">触发时间</th>
+                            <th className="px-6 py-4 text-[11px] font-bold text-white/40 uppercase tracking-widest">操作</th>
                           </tr>
                         </thead>
                         <tbody>
@@ -1438,6 +1546,29 @@ const AdminPanel = ({
                                 </span>
                               </td>
                               <td className="px-6 py-4 text-[10px] text-white/40 font-mono">{item.time}</td>
+                              <td className="px-6 py-4">
+                                <button 
+                                  onClick={() => setPlaybackData({
+                                    vessel: { name: item.name, mmsi: item.mmsi, type: item.type },
+                                    event: {
+                                      time: item.time,
+                                      coords: item.coords,
+                                      type: 'risk',
+                                      label: item.risk,
+                                      desc: `检测到该船存在[${item.risk}]风险行为，触发预警。当时航速为${item.speed}kn，航向${item.heading}°。`,
+                                      timeline: (item as any).timeline,
+                                      dialogue: [
+                                        { sender: '系统', content: `检测到${item.name}触发${item.risk}预警。`, time: item.time },
+                                        { sender: '吴淞交管', content: `收到，正在核实该船状态。`, time: item.time }
+                                      ]
+                                    }
+                                  })}
+                                  className="flex items-center gap-2 px-3 py-1.5 bg-sky-500/10 hover:bg-sky-500/20 border border-sky-500/30 rounded-lg text-sky-400 text-[10px] font-bold transition-all group"
+                                >
+                                  <History size={12} className="group-hover:rotate-[-45deg] transition-transform" />
+                                  历史回放
+                                </button>
+                              </td>
                             </tr>
                           ))}
                         </tbody>
@@ -1515,24 +1646,37 @@ const AdminPanel = ({
 
                 {/* 内容 */}
                 <div className="p-6 space-y-6 max-h-[60vh] overflow-y-auto custom-scrollbar">
-                  {/* 坐标与轨迹 */}
-                  <div className="space-y-3">
-                    <div className="flex items-center gap-2">
-                      <MapPin size={14} className="text-sky-400" />
-                      <span className="text-[10px] font-bold text-white/40 uppercase tracking-widest">地理位置与轨迹</span>
-                    </div>
-                    <div className="p-4 bg-white/5 rounded-2xl border border-white/5 space-y-3">
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs text-white/60">当前坐标</span>
-                        <span className="text-xs font-mono text-white/90">{playbackData.event.coords?.[0]}, {playbackData.event.coords?.[1]}</span>
+                  {/* 船舶上下文事件时间轴 */}
+                  {playbackData.event.timeline && (
+                    <div className="space-y-4">
+                      <div className="flex items-center gap-2">
+                        <Clock size={14} className="text-sky-400" />
+                        <span className="text-[10px] font-bold text-white/40 uppercase tracking-widest">船舶上下文事件 (最近)</span>
                       </div>
-                      <div className="h-px bg-white/5" />
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs text-white/60">轨迹状态</span>
-                        <span className="text-[10px] px-2 py-0.5 bg-emerald-500/10 text-emerald-400 rounded-full font-bold">正常航迹</span>
+                      <div className="relative pl-4 space-y-6 before:absolute before:left-[5px] before:top-2 before:bottom-2 before:w-px before:bg-white/10">
+                        {playbackData.event.timeline.map((item: any, idx: number) => (
+                          <div key={idx} className="relative">
+                            {/* 时间轴圆点 */}
+                            <div className={`absolute -left-[15px] top-1.5 w-2 h-2 rounded-full border-2 border-[#111] ${
+                              item.type === 'risk' ? 'bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.5)]' : 
+                              item.type === 'warning' ? 'bg-amber-500' : 'bg-sky-500'
+                            }`} />
+                            
+                            <div className="flex flex-col gap-1">
+                              <span className="text-[10px] font-mono text-white/30">{item.time}</span>
+                              <div className={`text-xs p-2 rounded-lg border ${
+                                item.type === 'risk' ? 'bg-red-500/10 border-red-500/20 text-red-200' :
+                                item.type === 'warning' ? 'bg-amber-500/5 border-amber-500/10 text-amber-200/80' :
+                                'bg-white/5 border-white/5 text-white/70'
+                              }`}>
+                                {item.event}
+                              </div>
+                            </div>
+                          </div>
+                        ))}
                       </div>
                     </div>
-                  </div>
+                  )}
 
                   {/* 环节细节 */}
                   <div className="space-y-3">
@@ -1582,7 +1726,10 @@ const AdminPanel = ({
 
                 {/* 底部操作 */}
                 <div className="p-4 bg-white/5 border-t border-white/10 flex gap-3">
-                  <button className="flex-1 py-2.5 bg-sky-500 hover:bg-sky-400 text-white text-xs font-bold rounded-xl transition-all shadow-lg shadow-sky-500/20 flex items-center justify-center gap-2">
+                  <button 
+                    onClick={() => setDynamicPlaybackSession(playbackData)}
+                    className="flex-1 py-2.5 bg-sky-500 hover:bg-sky-400 text-white text-xs font-bold rounded-xl transition-all shadow-lg shadow-sky-500/20 flex items-center justify-center gap-2"
+                  >
                     <Play size={14} /> 开始动态回放
                   </button>
                   <button 
@@ -1597,6 +1744,482 @@ const AdminPanel = ({
           )}
         </AnimatePresence>
       </div>
+    </motion.div>
+  );
+};
+
+// --- 动态回放视图组件 ---
+
+const DynamicPlaybackView = ({ 
+  session, 
+  onClose 
+}: { 
+  session: any, 
+  onClose: () => void 
+}) => {
+  const [isPlaying, setIsPlaying] = useState(true);
+  const [progress, setProgress] = useState(0);
+  const [playbackSpeed, setPlaybackSpeed] = useState(1);
+  const [selectedAreas, setSelectedAreas] = useState<Set<string>>(new Set());
+  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set(Object.keys(MOCK_AREAS)));
+  
+  // 生成模拟轨迹数据 (基于原始坐标点)
+  const trajectory = useMemo(() => {
+    const center = session.event.coords;
+    const points: [number, number][] = [];
+    const steps = 100;
+    
+    // 模拟一段带有转弯的轨迹
+    for (let i = 0; i < steps; i++) {
+      const t = i / steps;
+      const lat = center[0] - 0.02 + 0.04 * t + Math.sin(t * 5) * 0.005;
+      const lng = center[1] - 0.02 + 0.04 * t + Math.cos(t * 5) * 0.005;
+      points.push([lat, lng]);
+    }
+    return points;
+  }, [session]);
+
+  const currentPos = trajectory[Math.floor((progress / 100) * (trajectory.length - 1))];
+
+  useEffect(() => {
+    let interval: any;
+    if (isPlaying && progress < 100) {
+      interval = setInterval(() => {
+        setProgress(prev => Math.min(prev + 0.5 * playbackSpeed, 100));
+      }, 50);
+    }
+    return () => clearInterval(interval);
+  }, [isPlaying, playbackSpeed, progress]);
+
+  const toggleArea = (id: string) => {
+    const newSelected = new Set(selectedAreas);
+    if (newSelected.has(id)) {
+      newSelected.delete(id);
+    } else {
+      newSelected.add(id);
+    }
+    setSelectedAreas(newSelected);
+  };
+
+  const toggleCategory = (category: string) => {
+    const newExpanded = new Set(expandedCategories);
+    if (newExpanded.has(category)) {
+      newExpanded.delete(category);
+    } else {
+      newExpanded.add(category);
+    }
+    setExpandedCategories(newExpanded);
+  };
+
+  const toggleAllInCategory = (category: string, areas: any[]) => {
+    const newSelected = new Set(selectedAreas);
+    const allSelected = areas.every(a => selectedAreas.has(a.id));
+    
+    areas.forEach(a => {
+      if (allSelected) {
+        newSelected.delete(a.id);
+      } else {
+        newSelected.add(a.id);
+      }
+    });
+    setSelectedAreas(newSelected);
+  };
+
+  // 为选中的区域生成模拟地图元素
+  const areaMapElements = useMemo(() => {
+    const elements: any[] = [];
+    Object.values(MOCK_AREAS).flat().forEach(area => {
+      if (selectedAreas.has(area.id)) {
+        // 随机生成一个中心点附近的区域
+        const center = session.event.coords;
+        const offsetLat = (Math.random() - 0.5) * 0.04;
+        const offsetLng = (Math.random() - 0.5) * 0.04;
+        const areaCenter: [number, number] = [center[0] + offsetLat, center[1] + offsetLng];
+        
+        elements.push({
+          id: area.id,
+          name: area.name,
+          type: area.type,
+          center: areaCenter,
+          // 模拟一个多边形
+          bounds: [
+            [areaCenter[0] - 0.005, areaCenter[1] - 0.005],
+            [areaCenter[0] + 0.005, areaCenter[1] - 0.005],
+            [areaCenter[0] + 0.005, areaCenter[1] + 0.005],
+            [areaCenter[0] - 0.005, areaCenter[1] + 0.005],
+          ] as [number, number][]
+        });
+      }
+    });
+    return elements;
+  }, [selectedAreas, session.event.coords]);
+
+  return (
+    <motion.div 
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 z-[9999] bg-[#0a0a0a] flex flex-col"
+    >
+      {/* 顶部控制栏 */}
+      <div className="h-20 bg-black/80 backdrop-blur-xl border-b border-white/10 flex flex-col z-[10]">
+        <div className="flex-1 flex items-center justify-between px-6">
+          <div className="flex items-center gap-4">
+            <button 
+              onClick={onClose}
+              className="p-2 hover:bg-white/10 rounded-lg text-white/60 hover:text-white transition-all"
+            >
+              <ArrowLeft size={20} />
+            </button>
+            <div className="h-8 w-px bg-white/10" />
+            <div>
+              <h2 className="text-sm font-black text-white uppercase tracking-wider">动态轨迹回放: {session.vessel.name}</h2>
+              <p className="text-[10px] text-white/40 font-bold uppercase tracking-widest">
+                事件时间: {session.event.time} | 风险类型: {session.event.label}
+              </p>
+            </div>
+          </div>
+          
+          <div className="flex items-center gap-4">
+            <button
+              onClick={() => setIsPlaying(!isPlaying)}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg font-bold text-xs transition-all shadow-lg ${
+                isPlaying 
+                  ? 'bg-amber-500/20 text-amber-500 border border-amber-500/30 hover:bg-amber-500/30' 
+                  : 'bg-sky-500 text-white hover:bg-sky-600 shadow-sky-500/20'
+              }`}
+            >
+              {isPlaying ? <Pause size={14} fill="currentColor" /> : <Play size={14} fill="currentColor" />}
+              <span className="uppercase tracking-widest">{isPlaying ? '暂停' : '播放'}</span>
+            </button>
+
+            <div className="flex bg-white/5 rounded-lg p-1 border border-white/10">
+              {[1, 2, 4, 8].map(speed => (
+                <button
+                  key={speed}
+                  onClick={() => setPlaybackSpeed(speed)}
+                  className={`px-3 py-1 text-[10px] font-black rounded transition-all ${
+                    playbackSpeed === speed ? 'bg-sky-500 text-white' : 'text-white/40 hover:text-white/60'
+                  }`}
+                >
+                  {speed}X
+                </button>
+              ))}
+            </div>
+            <button 
+              onClick={onClose}
+              className="px-4 py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-xs font-bold transition-all"
+            >
+              退出回放
+            </button>
+          </div>
+        </div>
+
+        {/* 顶部时间轴 */}
+        <div className="h-8 px-6 flex items-center gap-4 border-t border-white/5 bg-white/[0.02]">
+          <span className="text-[9px] font-bold text-white/30 uppercase tracking-widest">时间轴</span>
+          <div className="flex-1 h-1 bg-white/10 rounded-full relative">
+            <div 
+              className="absolute top-0 left-0 h-full bg-sky-500 rounded-full shadow-[0_0_10px_rgba(14,165,233,0.5)]"
+              style={{ width: `${progress}%` }}
+            />
+            {/* 时间刻度 */}
+            {[0, 25, 50, 75, 100].map(p => (
+              <div 
+                key={p} 
+                className="absolute top-[-4px] w-px h-3 bg-white/20"
+                style={{ left: `${p}%` }}
+              >
+                <span className="absolute top-4 left-1/2 -translate-x-1/2 text-[8px] font-mono text-white/20 whitespace-nowrap">
+                  {p === 0 ? 'T-15m' : p === 50 ? 'T-0' : p === 100 ? 'T+15m' : ''}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      <div className="flex-1 flex overflow-hidden">
+        {/* 左侧区域面板 - 树形结构 */}
+        <div className="w-64 bg-black/40 backdrop-blur-md border-r border-white/10 flex flex-col z-[10]">
+          <div className="p-4 border-b border-white/10 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <MapIcon size={16} className="text-sky-400" />
+              <h3 className="text-xs font-black text-white uppercase tracking-wider">辖区管理面板</h3>
+            </div>
+            <span className="text-[9px] font-bold text-sky-400/60 uppercase tracking-widest bg-sky-500/10 px-1.5 py-0.5 rounded">
+              已选 {selectedAreas.size}
+            </span>
+          </div>
+          <div className="flex-1 overflow-y-auto custom-scrollbar p-2">
+            <div className="space-y-1">
+              {Object.entries(MOCK_AREAS).map(([category, areas]) => {
+                const isExpanded = expandedCategories.has(category);
+                const allSelected = areas.every(a => selectedAreas.has(a.id));
+                const someSelected = areas.some(a => selectedAreas.has(a.id)) && !allSelected;
+
+                return (
+                  <div key={category} className="space-y-0.5">
+                    {/* 分类节点 */}
+                    <div className="flex items-center gap-2 p-2 hover:bg-white/5 rounded-lg transition-all group">
+                      <button 
+                        onClick={() => toggleCategory(category)}
+                        className="p-0.5 hover:bg-white/10 rounded text-white/40 transition-all"
+                      >
+                        {isExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+                      </button>
+                      <div 
+                        onClick={() => toggleAllInCategory(category, areas)}
+                        className="flex-1 flex items-center gap-2 cursor-pointer"
+                      >
+                        <div className={`w-3.5 h-3.5 rounded border flex items-center justify-center transition-all ${
+                          allSelected ? 'bg-sky-500 border-sky-500' : someSelected ? 'bg-sky-500/40 border-sky-500/60' : 'border-white/20'
+                        }`}>
+                          {allSelected && <Check size={10} className="text-white" strokeWidth={4} />}
+                          {someSelected && <div className="w-1.5 h-0.5 bg-white rounded-full" />}
+                        </div>
+                        <span className="text-[11px] font-bold text-white/60 group-hover:text-white transition-colors">{category}</span>
+                      </div>
+                    </div>
+
+                    {/* 子区域列表 */}
+                    <AnimatePresence>
+                      {isExpanded && (
+                        <motion.div 
+                          initial={{ height: 0, opacity: 0 }}
+                          animate={{ height: 'auto', opacity: 1 }}
+                          exit={{ height: 0, opacity: 0 }}
+                          className="overflow-hidden ml-6 space-y-0.5"
+                        >
+                          {areas.map(area => (
+                            <div 
+                              key={area.id}
+                              onClick={() => toggleArea(area.id)}
+                              className="flex items-center gap-2 p-2 hover:bg-white/5 rounded-lg cursor-pointer group transition-all"
+                            >
+                              <div className={`w-3.5 h-3.5 rounded border flex items-center justify-center transition-all ${
+                                selectedAreas.has(area.id) ? 'bg-sky-500 border-sky-500' : 'border-white/20'
+                              }`}>
+                                {selectedAreas.has(area.id) && <Check size={10} className="text-white" strokeWidth={4} />}
+                              </div>
+                              <div className="flex flex-col">
+                                <span className={`text-[11px] transition-colors ${selectedAreas.has(area.id) ? 'text-white font-bold' : 'text-white/40 group-hover:text-white/60'}`}>
+                                  {area.name}
+                                </span>
+                                <span className="text-[8px] text-white/20">{area.type}</span>
+                              </div>
+                            </div>
+                          ))}
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+          <div className="p-4 border-t border-white/10 bg-white/[0.02]">
+            <button 
+              onClick={() => setSelectedAreas(new Set())}
+              className="w-full py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-white/40 hover:text-white text-[10px] font-bold transition-all"
+            >
+              重置选择
+            </button>
+          </div>
+        </div>
+
+        {/* 地图区域 */}
+        <div className="flex-1 relative">
+          <MapContainer 
+            center={session.event.coords} 
+            zoom={14} 
+            className="h-full w-full"
+            zoomControl={false}
+          >
+          <TileLayer
+            url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
+            attribution='Tiles &copy; Esri'
+          />
+          <TileLayer
+            url="https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}"
+          />
+          
+          {/* 渲染选中的辖区 */}
+          {areaMapElements.map(element => (
+            <React.Fragment key={element.id}>
+              <Polygon 
+                positions={element.bounds}
+                pathOptions={{ 
+                  color: '#0ea5e9', 
+                  fillColor: '#0ea5e9', 
+                  fillOpacity: 0.2, 
+                  weight: 2,
+                  dashArray: '5, 5'
+                }}
+              >
+                <Popup>
+                  <div className="p-2">
+                    <h4 className="text-xs font-bold text-sky-500 mb-1">{element.name}</h4>
+                    <p className="text-[10px] text-gray-500">类型: {element.type}</p>
+                  </div>
+                </Popup>
+              </Polygon>
+              <Marker 
+                position={element.center}
+                icon={L.divIcon({
+                  className: 'custom-div-icon',
+                  html: `
+                    <div class="flex flex-col items-center">
+                      <div class="px-2 py-1 bg-sky-500/80 backdrop-blur-md border border-white/20 rounded text-[9px] font-bold text-white whitespace-nowrap shadow-lg">
+                        ${element.name}
+                      </div>
+                      <div class="w-2 h-2 bg-sky-500 rotate-45 -mt-1 border-r border-b border-white/20"></div>
+                    </div>
+                  `,
+                  iconSize: [100, 40],
+                  iconAnchor: [50, 40]
+                })}
+              />
+            </React.Fragment>
+          ))}
+          
+          {/* 完整轨迹线 */}
+          <Polyline 
+            positions={trajectory} 
+            pathOptions={{ color: '#38bdf8', weight: 3, opacity: 0.3, dashArray: '10, 10' }} 
+          />
+          
+          {/* 已走过的轨迹线 */}
+          <Polyline 
+            positions={trajectory.slice(0, Math.floor((progress / 100) * (trajectory.length - 1)) + 1)} 
+            pathOptions={{ color: '#38bdf8', weight: 4, opacity: 0.8 }} 
+          />
+
+          {/* 风险点标记 */}
+          <CircleMarker 
+            center={session.event.coords} 
+            pathOptions={{ color: '#ef4444', fillColor: '#ef4444', fillOpacity: 0.4 }} 
+            radius={15}
+          >
+            <Popup>
+              <div className="p-2 text-xs font-bold text-red-500">
+                风险触发点: {session.event.label}
+              </div>
+            </Popup>
+          </CircleMarker>
+
+          {/* 当前船舶位置 */}
+          {currentPos && (
+            <Marker 
+              position={currentPos}
+              icon={L.divIcon({
+                className: 'custom-div-icon',
+                html: `
+                  <div class="relative">
+                    <div class="w-8 h-8 bg-sky-500 rounded-full flex items-center justify-center border-2 border-white shadow-lg shadow-sky-500/50">
+                      <svg viewBox="0 0 24 24" width="16" height="16" stroke="white" stroke-width="3" fill="none" style="transform: rotate(45deg)">
+                        <path d="M12 2L19 21L12 17L5 21L12 2Z" />
+                      </svg>
+                    </div>
+                    <div class="absolute -top-8 left-1/2 -translate-x-1/2 bg-black/80 backdrop-blur-md border border-white/10 px-2 py-1 rounded text-[9px] font-bold text-white whitespace-nowrap">
+                      ${session.vessel.name}
+                    </div>
+                  </div>
+                `,
+                iconSize: [32, 32],
+                iconAnchor: [16, 16]
+              })}
+            />
+          )}
+        </MapContainer>
+
+        {/* 底部进度条 */}
+        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 w-[80%] max-w-4xl z-[10]">
+          <div className="bg-black/60 backdrop-blur-xl border border-white/10 rounded-2xl p-4 flex items-center gap-6 shadow-2xl">
+            <button 
+              onClick={() => setIsPlaying(!isPlaying)}
+              className="w-12 h-12 bg-sky-500 hover:bg-sky-400 text-white rounded-full flex items-center justify-center transition-all shadow-lg shadow-sky-500/20"
+            >
+              {isPlaying ? <Pause size={24} /> : <Play size={24} fill="currentColor" />}
+            </button>
+            
+            <div className="flex-1 space-y-2">
+              <div className="flex justify-between text-[10px] font-mono text-white/40 uppercase tracking-widest">
+                <span>回放进度</span>
+                <span>{Math.floor(progress)}%</span>
+              </div>
+              <div className="h-2 bg-white/5 rounded-full overflow-hidden relative group cursor-pointer">
+                <div 
+                  className="h-full bg-sky-500 transition-all duration-100" 
+                  style={{ width: `${progress}%` }}
+                />
+                <input 
+                  type="range" 
+                  min="0" 
+                  max="100" 
+                  value={progress}
+                  onChange={(e) => setProgress(parseFloat(e.target.value))}
+                  className="absolute inset-0 opacity-0 cursor-pointer"
+                />
+              </div>
+            </div>
+
+            <div className="flex flex-col items-end gap-1">
+              <span className="text-[10px] font-black text-sky-400 uppercase tracking-widest">实时航速</span>
+              <span className="text-xl font-mono font-bold text-white">
+                {(12 + Math.sin(progress / 10) * 2).toFixed(1)} <span className="text-xs text-white/40">KN</span>
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* 右侧事件面板 */}
+        <div className="absolute top-24 right-8 w-72 z-[10] space-y-4">
+          <div className="bg-black/60 backdrop-blur-xl border border-white/10 rounded-2xl p-4 shadow-2xl">
+            <div className="flex items-center gap-2 mb-4">
+              <Activity size={16} className="text-sky-400" />
+              <h4 className="text-xs font-black text-white uppercase tracking-wider">实时状态监控</h4>
+            </div>
+            <div className="space-y-3">
+              <div className="flex justify-between items-center p-2 bg-white/5 rounded-lg border border-white/5">
+                <span className="text-[10px] text-white/40 font-bold uppercase">当前经度</span>
+                <span className="text-[10px] font-mono text-white/80">{currentPos?.[1].toFixed(5)}°E</span>
+              </div>
+              <div className="flex justify-between items-center p-2 bg-white/5 rounded-lg border border-white/5">
+                <span className="text-[10px] text-white/40 font-bold uppercase">当前纬度</span>
+                <span className="text-[10px] font-mono text-white/80">{currentPos?.[0].toFixed(5)}°N</span>
+              </div>
+              <div className="flex justify-between items-center p-2 bg-white/5 rounded-lg border border-white/5">
+                <span className="text-[10px] text-white/40 font-bold uppercase">预警状态</span>
+                <span className={`text-[10px] font-bold uppercase ${progress > 80 ? 'text-red-400 animate-pulse' : 'text-emerald-400'}`}>
+                  {progress > 80 ? '风险触发' : '正常航行'}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-black/60 backdrop-blur-xl border border-white/10 rounded-2xl p-4 shadow-2xl">
+            <div className="flex items-center gap-2 mb-4">
+              <MessageSquare size={16} className="text-sky-400" />
+              <h4 className="text-xs font-black text-white uppercase tracking-wider">历史通讯记录</h4>
+            </div>
+            <div className="space-y-3 max-h-48 overflow-y-auto custom-scrollbar pr-2">
+              {session.event.dialogue.map((chat: any, idx: number) => (
+                <div key={idx} className={`space-y-1 ${progress < (idx + 1) * 20 ? 'opacity-20' : 'opacity-100 transition-opacity duration-500'}`}>
+                  <div className="flex justify-between items-center">
+                    <span className="text-[9px] font-bold text-white/30 uppercase">{chat.sender}</span>
+                    <span className="text-[8px] font-mono text-white/20">{chat.time.split(' ')[1]}</span>
+                  </div>
+                  <p className="text-[10px] text-white/70 leading-relaxed bg-white/5 p-2 rounded-lg border border-white/5">
+                    {chat.content}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
     </motion.div>
   );
 };
@@ -1619,6 +2242,7 @@ export default function App() {
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [isAdminView, setIsAdminView] = useState(false);
   const [playbackData, setPlaybackData] = useState<{ vessel: any, event: any } | null>(null);
+  const [dynamicPlaybackSession, setDynamicPlaybackSession] = useState<{ vessel: any, event: any } | null>(null);
 
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
@@ -1628,11 +2252,21 @@ export default function App() {
   return (
     <div className="h-screen w-screen bg-[#0a0a0a] text-white font-sans overflow-hidden flex flex-col">
       <AnimatePresence>
+        {dynamicPlaybackSession && (
+          <DynamicPlaybackView 
+            session={dynamicPlaybackSession} 
+            onClose={() => setDynamicPlaybackSession(null)} 
+          />
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
         {isAdminView && (
           <AdminPanel 
             onClose={() => setIsAdminView(false)} 
             playbackData={playbackData}
             setPlaybackData={setPlaybackData}
+            setDynamicPlaybackSession={setDynamicPlaybackSession}
           />
         )}
       </AnimatePresence>
