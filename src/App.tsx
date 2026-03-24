@@ -3491,25 +3491,30 @@ export default function App() {
 
               {/* 意图识别列表 */}
               <div className="flex-1 space-y-2 overflow-y-auto pr-1 custom-scrollbar">
-                {intents
-                  .filter(item => {
-                    if (intentFilter === '全部') return true;
-                    const activeAction = item.path.find(p => p.status === 'active')?.action || '';
-                    return activeAction.includes(intentFilter);
-                  })
-                  .map((item, i) => (
-                <motion.div 
-                  key={i} 
-                  layout
-                  onClick={() => {
-                    if (editingIntentIndex !== i) {
-                      setSelectedIntent(selectedIntent === i ? null : i);
-                    }
-                  }}
-                  className={`bg-[#121212] border border-white/5 rounded-xl overflow-hidden hover:border-white/10 transition-all cursor-pointer group relative ${
-                    selectedIntent === i ? 'ring-1 ring-sky-500/30' : ''
-                  }`}
-                >
+                <AnimatePresence mode="popLayout">
+                  {intents
+                    .filter(item => {
+                      if (intentFilter === '全部') return true;
+                      const activeAction = item.path.find(p => p.status === 'active')?.action || '';
+                      return activeAction.includes(intentFilter);
+                    })
+                    .map((item, i) => (
+                      <motion.div 
+                        key={item.ship + i} 
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, scale: 0.95 }}
+                        transition={{ duration: 0.2, delay: i * 0.03 }}
+                        layout
+                        onClick={() => {
+                          if (editingIntentIndex !== i) {
+                            setSelectedIntent(selectedIntent === i ? null : i);
+                          }
+                        }}
+                        className={`bg-[#121212] border border-white/5 rounded-xl overflow-hidden hover:border-white/10 transition-all cursor-pointer group relative ${
+                          selectedIntent === i ? 'ring-1 ring-sky-500/30' : ''
+                        }`}
+                      >
                   {/* Header Section */}
                   <div className="p-2 bg-gradient-to-b from-white/[0.02] to-transparent">
                     <div className="flex items-center justify-between mb-2">
@@ -3651,8 +3656,9 @@ export default function App() {
                   </AnimatePresence>
                 </motion.div>
               ))}
+                </AnimatePresence>
+              </div>
             </div>
-          </div>
         )}
 
           {activeTab === 'warning' && (
@@ -3692,18 +3698,23 @@ export default function App() {
 
               {/* 预警列表 */}
               <div className="flex-1 space-y-2 overflow-y-auto pr-1 custom-scrollbar">
-                {MOCK_ALERTS.map((alert) => (
-                  <motion.div 
-                    key={alert.id} 
-                    layout
-                    onClick={() => setSelectedAlert(selectedAlert === alert.id ? null : alert.id)}
-                    className={`bg-[#121212] border border-white/5 rounded-xl overflow-hidden hover:border-white/10 transition-all cursor-pointer group relative ${
-                      selectedAlert === alert.id ? 'ring-1 ring-sky-500/30' :
-                      alert.level === 'emergency' ? 'ring-1 ring-red-500/20' : 
-                      alert.level === 'alarm' ? 'ring-1 ring-orange-500/20' : 
-                      alert.level === 'warning' ? 'ring-1 ring-yellow-500/20' : ''
-                    }`}
-                  >
+                <AnimatePresence mode="popLayout">
+                  {MOCK_ALERTS.map((alert, i) => (
+                    <motion.div 
+                      key={alert.id} 
+                      initial={{ opacity: 0, x: -10 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      exit={{ opacity: 0, scale: 0.95 }}
+                      transition={{ duration: 0.2, delay: i * 0.03 }}
+                      layout
+                      onClick={() => setSelectedAlert(selectedAlert === alert.id ? null : alert.id)}
+                      className={`bg-[#121212] border border-white/5 rounded-xl overflow-hidden hover:border-white/10 transition-all cursor-pointer group relative ${
+                        selectedAlert === alert.id ? 'ring-1 ring-sky-500/30' :
+                        alert.level === 'emergency' ? 'ring-1 ring-red-500/20' : 
+                        alert.level === 'alarm' ? 'ring-1 ring-orange-500/20' : 
+                        alert.level === 'warning' ? 'ring-1 ring-yellow-500/20' : ''
+                      }`}
+                    >
                     {/* Header Section */}
                     <div className="p-2 bg-gradient-to-b from-white/[0.02] to-transparent">
                       <div className="flex items-center justify-between mb-2">
@@ -3838,6 +3849,7 @@ export default function App() {
                     </AnimatePresence>
                   </motion.div>
                 ))}
+                </AnimatePresence>
               </div>
             </div>
           )}
