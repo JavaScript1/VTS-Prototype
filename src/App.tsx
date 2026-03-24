@@ -36,6 +36,7 @@ import {
   Plus,
   ArrowLeft,
   Ship,
+  Anchor,
   Activity,
   History,
   FileText,
@@ -152,10 +153,13 @@ const SHIP_POSITIONS = [...Array(40)].map((_, i) => ({
 
 // --- 类型定义 ---
 
-type SidebarTab = 'vhf' | 'intent' | 'warning';
+type SidebarTab = 'vhf' | 'intent' | 'warning' | 'anchorage';
 
 interface VHFMessage {
   id: string;
+  sessionId: string;
+  sessionIntent?: string;
+  sessionType?: 'intent' | 'alert';
   sender: string;
   content: string;
   time: string;
@@ -186,15 +190,72 @@ interface Alert {
 // --- 模拟数据 ---
 
 const MOCK_VHF_MESSAGES: VHFMessage[] = [
-  { id: '1', sender: '运兴96', content: '吴淞控制中心[运兴96]。', time: '16:32:34', date: '2025-12-17', duration: '1.99s', isVTS: false },
-  { id: '2', sender: '交管_127705', content: '请讲。', time: '16:32:35', date: '2025-12-17', duration: '0.58s', isVTS: true },
-  { id: '3', sender: '易航158', content: '在9号锚地这个锚这个位置可以锚泊吧。', time: '16:32:39', date: '2025-12-17', duration: '2.69s', isVTS: false },
-  { id: '4', sender: '永发589', content: '吴淞交管吴淞交管，[永发589]。', time: '16:32:46', date: '2025-12-17', duration: '2.45s', isVTS: false },
-  { id: '5', sender: '永发589', content: '，[永发589]呃，粮油码头。', time: '16:32:51', date: '2025-12-17', duration: '2.84s', isVTS: false },
-  { id: '6', sender: '永发589', content: '苏个角粮油码头出口出口准备在圆圆沙啊，由南向北穿越走和塘上水。', time: '16:32:57', date: '2025-12-17', duration: '5.43s', isVTS: false },
-  { id: '7', sender: '交管_30736', content: '开车了，好安全报。', time: '16:32:59', date: '2025-12-17', duration: '1.72s', isVTS: true },
-  { id: '8', sender: 'spk_127707', content: '好的，那现在可以出港池吧。', time: '16:33:02', date: '2025-12-17', duration: '2.03s', isVTS: false },
-  { id: '9', sender: '交管_114824', content: '可以可以。', time: '16:33:05', date: '2025-12-17', duration: '0.93s', isVTS: true },
+  { id: '1', sessionId: 's1', sessionIntent: '呼叫应答', sessionType: 'intent', sender: '运兴96', content: '吴淞控制中心[运兴96]。', time: '16:32:34', date: '2025-12-17', duration: '1.99s', isVTS: false },
+  { id: '2', sessionId: 's1', sessionIntent: '呼叫应答', sessionType: 'intent', sender: '交管_127705', content: '请讲。', time: '16:32:35', date: '2025-12-17', duration: '0.58s', isVTS: true },
+  { id: '3', sessionId: 's2', sessionIntent: '锚地咨询', sessionType: 'intent', sender: '易航158', content: '在9号锚地这个锚这个位置可以锚泊吧。', time: '16:32:39', date: '2025-12-17', duration: '2.69s', isVTS: false },
+  { id: '4', sessionId: 's3', sessionIntent: '动态报备', sessionType: 'intent', sender: '永发589', content: '吴淞交管吴淞交管，[永发589]。', time: '16:32:46', date: '2025-12-17', duration: '2.45s', isVTS: false },
+  { id: '5', sessionId: 's3', sessionIntent: '动态报备', sessionType: 'intent', sender: '永发589', content: '，[永发589]呃，粮油码头。', time: '16:32:51', date: '2025-12-17', duration: '2.84s', isVTS: false },
+  { id: '6', sessionId: 's3', sessionIntent: '动态报备', sessionType: 'intent', sender: '永发589', content: '苏个角粮油码头出口出口准备在圆圆沙啊，由南向北穿越走和塘上水。', time: '16:32:57', date: '2025-12-17', duration: '5.43s', isVTS: false },
+  { id: '7', sessionId: 's3', sessionIntent: '动态报备', sessionType: 'intent', sender: '交管_30736', content: '开车了，好安全报。', time: '16:32:59', date: '2025-12-17', duration: '1.72s', isVTS: true },
+  { id: '8', sessionId: 's4', sessionIntent: '出港咨询', sessionType: 'intent', sender: 'spk_127707', content: '好的，那现在可以出港池吧。', time: '16:33:02', date: '2025-12-17', duration: '2.03s', isVTS: false },
+  { id: '9', sessionId: 's4', sessionIntent: '出港咨询', sessionType: 'intent', sender: '交管_114824', content: '可以可以。', time: '16:33:05', date: '2025-12-17', duration: '0.93s', isVTS: true },
+  { id: '10', sessionId: 's5', sessionIntent: '进入禁航区', sessionType: 'alert', sender: '海丰国际', content: '吴淞交管，我船目前航向偏离，正在尝试修正。', time: '16:33:10', date: '2025-12-17', duration: '3.12s', isVTS: false },
+  { id: '11', sessionId: 's5', sessionIntent: '进入禁航区', sessionType: 'alert', sender: '交管_127705', content: '请立即向左修正航向，避开圆圆沙禁航区。', time: '16:33:15', date: '2025-12-17', duration: '2.45s', isVTS: true },
+];
+
+const MOCK_ANCHORAGES = [
+  { 
+    id: 'a1', 
+    name: '6号锚地', 
+    capacity: 20, 
+    occupied: 18, 
+    expiringCount: 3, 
+    status: '拥挤',
+    shipTypes: [
+      { type: '散货船', count: 8 },
+      { type: '集装箱船', count: 6 },
+      { type: '油船', count: 4 }
+    ]
+  },
+  { 
+    id: 'a2', 
+    name: '圆圆沙锚地', 
+    capacity: 15, 
+    occupied: 12, 
+    expiringCount: 5, 
+    status: '正常',
+    shipTypes: [
+      { type: '散货船', count: 5 },
+      { type: '杂货船', count: 4 },
+      { type: '工程船', count: 3 }
+    ]
+  },
+  { 
+    id: 'a3', 
+    name: '10号锚地', 
+    capacity: 25, 
+    occupied: 10, 
+    expiringCount: 1, 
+    status: '空闲',
+    shipTypes: [
+      { type: '集装箱船', count: 4 },
+      { type: '油船', count: 3 },
+      { type: '其他', count: 3 }
+    ]
+  },
+  { 
+    id: 'a4', 
+    name: '绿华山锚地', 
+    capacity: 30, 
+    occupied: 28, 
+    expiringCount: 8, 
+    status: '拥挤',
+    shipTypes: [
+      { type: '散货船', count: 12 },
+      { type: '油船', count: 10 },
+      { type: '集装箱船', count: 6 }
+    ]
+  },
 ];
 
 const MOCK_ALERTS: Alert[] = [
@@ -607,6 +668,105 @@ const INTENT_DATA: IntentItem[] = [
       { time: '10:55 UTC', tag: '航点通过', content: '圆圆沙报告线通过。航速 11.8 节。', status: 'completed' },
       { time: '09:45 UTC', tag: '初始序列', content: '圆圆沙锚地起锚序列启动。', status: 'initial' }
     ]
+  },
+  {
+    ship: '中远海运',
+    shipType: '集装箱船',
+    cargoType: '电子产品',
+    length: '366m',
+    width: '51m',
+    draft: '14.5m',
+    speed: '4.2kn',
+    past: '外高桥',
+    current: '外高桥码头',
+    destination: '洋山港',
+    confidence: 95,
+    time: '11:45',
+    occurrenceTime: '2026-03-19 11:45',
+    details: '该船正在外高桥码头进行离泊作业，预计离泊后经南槽航道前往洋山港。',
+    path: [
+      { label: '外高桥', status: 'active', action: '离泊中' },
+      { label: '南槽航道', status: 'pending', action: '航行' },
+      { label: '洋山港', status: 'pending', action: '靠泊' }
+    ],
+    timeline: [
+      { time: '11:40 UTC', tag: '实时监控', content: '解缆作业开始。拖轮已到位。', status: 'active' },
+      { time: '11:30 UTC', tag: '离泊申请', content: 'VTS 批准离泊申请。', status: 'completed' }
+    ]
+  },
+  {
+    ship: '盛世油轮',
+    shipType: '油船',
+    cargoType: '原油',
+    length: '245m',
+    width: '42m',
+    draft: '12.8m',
+    speed: '2.5kn',
+    past: '长江口',
+    current: '10号锚地',
+    destination: '10号锚地',
+    confidence: 88,
+    time: '11:52',
+    occurrenceTime: '2026-03-19 11:52',
+    details: '该船已抵达10号锚地，目前正在减速准备抛锚，等待后续进港指令。',
+    path: [
+      { label: '长江口', status: 'completed', action: '进港航行' },
+      { label: '10号锚地', status: 'active', action: '准备抛锚' },
+      { label: '10号锚地', status: 'pending', action: '锚泊' }
+    ],
+    timeline: [
+      { time: '11:50 UTC', tag: '实时监控', content: '航速降至 3 节以下。准备抛锚。', status: 'active' },
+      { time: '11:45 UTC', tag: '位置报告', content: '进入10号锚地水域。', status: 'completed' }
+    ]
+  },
+  {
+    ship: '东海拖01',
+    shipType: '拖船',
+    cargoType: '无',
+    length: '45m',
+    width: '12m',
+    draft: '4.2m',
+    speed: '8.5kn',
+    past: '北槽',
+    current: '主航道',
+    destination: '南槽',
+    confidence: 90,
+    time: '12:05',
+    occurrenceTime: '2026-03-19 12:05',
+    details: '该船正在穿越主航道，从北槽前往南槽执行拖带任务，需注意避让主航道直航船舶。',
+    path: [
+      { label: '北槽', status: 'completed', action: '航行' },
+      { label: '主航道', status: 'active', action: '穿越主航道' },
+      { label: '南槽', status: 'pending', action: '执行任务' }
+    ],
+    timeline: [
+      { time: '12:00 UTC', tag: '实时监控', content: '开始穿越主航道。已通报周边船舶。', status: 'active' },
+      { time: '11:55 UTC', tag: '穿越申请', content: 'VTS 提醒注意避让进港大船。', status: 'completed' }
+    ]
+  },
+  {
+    ship: '运兴96',
+    shipType: '货船',
+    cargoType: '杂货',
+    length: '96m',
+    width: '16m',
+    draft: '5.5m',
+    speed: '9.2kn',
+    past: '长江口',
+    current: '吴淞口',
+    destination: '黄浦江',
+    confidence: 90,
+    time: '16:32',
+    occurrenceTime: '2025-12-17 16:32',
+    details: '该船正在吴淞口水域航行，准备划江进入黄浦江。',
+    path: [
+      { label: '长江口', status: 'completed', action: '进港' },
+      { label: '吴淞口', status: 'active', action: '划江' },
+      { label: '黄浦江', status: 'pending', action: '靠泊' }
+    ],
+    timeline: [
+      { time: '16:32 UTC', tag: '实时监控', content: '呼叫吴淞中心。', status: 'active' }
+    ]
   }
 ];
 
@@ -724,6 +884,7 @@ const SidebarPanel = ({
     { id: 'vhf' as const, icon: Radio, label: 'VHF' },
     { id: 'intent' as const, icon: LocateFixed, label: '意图' },
     { id: 'warning' as const, icon: AlertTriangle, label: '预警' },
+    { id: 'anchorage' as const, icon: Anchor, label: '锚地' },
   ];
 
   const isLeft = position === 'left';
@@ -1198,6 +1359,19 @@ const AdminPanel = ({
             <h2 className="text-lg font-black tracking-tight text-white/90 flex items-center gap-3">
               <div className="w-1 h-6 bg-sky-500 rounded-full" />
               {activeMenu}
+              {activeMenu === '业务统计' && (
+                <div className="flex bg-white/5 rounded-lg p-0.5 ml-4">
+                  {['值班统计', '船舶风险统计', '意图统计'].map(tab => (
+                    <button
+                      key={tab}
+                      onClick={() => setActiveStatsTab(tab)}
+                      className={`px-4 py-1.5 text-[11px] font-bold rounded-md transition-all whitespace-nowrap ${activeStatsTab === tab ? 'bg-sky-500 text-white shadow-lg shadow-sky-500/20' : 'text-white/40 hover:text-white/60'}`}
+                    >
+                      {tab}
+                    </button>
+                  ))}
+                </div>
+              )}
             </h2>
             <div className="text-xs text-white/30 font-mono">
               Admin / {activeMenu}
@@ -1713,83 +1887,115 @@ const AdminPanel = ({
 
           {activeMenu === '业务统计' && (
             <div className="space-y-6">
-              {/* 业务统计顶部 Tab */}
-              <div className="flex items-center justify-between bg-white/5 p-3 rounded-2xl border border-white/10">
-                <div className="flex items-center gap-4">
-                  <div className="flex bg-white/5 rounded-lg p-0.5">
-                    {['值班统计', '船舶风险统计', '意图统计'].map(tab => (
-                      <button
-                        key={tab}
-                        onClick={() => setActiveStatsTab(tab)}
-                        className={`px-6 py-1.5 text-xs font-bold rounded-md transition-all ${activeStatsTab === tab ? 'bg-sky-500 text-white shadow-lg shadow-sky-500/20' : 'text-white/40 hover:text-white/60'}`}
-                      >
-                        {tab}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </div>
-
-              {/* 全局统计筛选栏 */}
-              <div className="flex items-center gap-6 bg-white/5 p-4 rounded-2xl border border-white/10">
-                <div className="flex items-center gap-3">
-                  <span className="text-[10px] font-bold text-white/30 uppercase tracking-widest">时间范围</span>
+              {/* 统一筛选组件 */}
+              <div className="flex items-center gap-4 bg-white/5 p-2.5 rounded-2xl border border-white/10 overflow-x-auto no-scrollbar">
+                {/* 2. 时间范围 */}
+                <div className="flex items-center gap-2 shrink-0">
+                  <span className="text-[10px] font-bold text-white/30 uppercase tracking-widest whitespace-nowrap">时间范围</span>
                   <div className="flex bg-white/5 rounded-lg p-0.5">
                     {['今天', '昨天', '最近7天', '自定义'].map(range => (
                       <button
                         key={range}
                         onClick={() => setStatsTimeRange(range)}
-                        className={`px-4 py-1 text-[10px] font-bold rounded-md transition-all ${statsTimeRange === range ? 'bg-sky-500 text-white shadow-lg shadow-sky-500/20' : 'text-white/40 hover:text-white/60'}`}
+                        className={`px-3 py-1 text-[10px] font-bold rounded-md transition-all whitespace-nowrap ${statsTimeRange === range ? 'bg-sky-500 text-white shadow-lg shadow-sky-500/20' : 'text-white/40 hover:text-white/60'}`}
                       >
                         {range}
                       </button>
                     ))}
                   </div>
                 </div>
-                <div className="w-px h-4 bg-white/10"></div>
-                <div className="flex items-center gap-3">
-                  <span className="text-[10px] font-bold text-white/30 uppercase tracking-widest">值班区域</span>
-                  <div className="flex bg-white/5 rounded-lg p-0.5 overflow-x-auto max-w-[500px]">
+
+                <div className="w-px h-4 bg-white/10 shrink-0"></div>
+
+                {/* 3. 值班区域 - 改为 Select */}
+                <div className="flex items-center gap-2 shrink-0">
+                  <span className="text-[10px] font-bold text-white/30 uppercase tracking-widest whitespace-nowrap">值班区域</span>
+                  <select 
+                    value={statsArea}
+                    onChange={(e) => setStatsArea(e.target.value)}
+                    className="bg-white/5 border border-white/10 rounded-lg py-1 px-2 text-[11px] text-white/80 focus:outline-none focus:border-sky-500/50 min-w-[120px] cursor-pointer hover:bg-white/10 transition-colors"
+                  >
                     {['全部区域', ...MOCK_AREAS['值班区域'].map(a => a.name)].map(area => (
-                      <button
-                        key={area}
-                        onClick={() => setStatsArea(area)}
-                        className={`px-4 py-1 text-[10px] font-bold rounded-md transition-all whitespace-nowrap ${statsArea === area ? 'bg-sky-500 text-white shadow-lg shadow-sky-500/20' : 'text-white/40 hover:text-white/60'}`}
-                      >
-                        {area}
-                      </button>
+                      <option key={area} value={area} className="bg-[#1a1c20] text-white">{area}</option>
                     ))}
-                  </div>
+                  </select>
                 </div>
+
+                {/* 4. 业务特定筛选 */}
+                {activeStatsTab === '船舶风险统计' && (
+                  <>
+                    <div className="w-px h-4 bg-white/10 shrink-0"></div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <label className="text-[10px] font-bold text-white/30 uppercase tracking-widest whitespace-nowrap">风险行为</label>
+                      <select className="bg-white/5 border border-white/10 rounded-lg py-1 px-2 text-[11px] text-white/80 focus:outline-none focus:border-sky-500/50 min-w-[100px] cursor-pointer hover:bg-white/10 transition-colors">
+                        <option value="" className="bg-[#1a1c20] text-white">全部行为</option>
+                        <option value="超速航行" className="bg-[#1a1c20] text-white">超速航行</option>
+                        <option value="偏离航道" className="bg-[#1a1c20] text-white">偏离航道</option>
+                        <option value="非法锚泊" className="bg-[#1a1c20] text-white">非法锚泊</option>
+                        <option value="进入禁航区" className="bg-[#1a1c20] text-white">进入禁航区</option>
+                        <option value="异常停泊" className="bg-[#1a1c20] text-white">异常停泊</option>
+                      </select>
+                    </div>
+                    <div className="w-px h-4 bg-white/10 shrink-0"></div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <label className="text-[10px] font-bold text-white/30 uppercase tracking-widest whitespace-nowrap">MMSI</label>
+                      <input 
+                        type="text" 
+                        placeholder="MMSI..." 
+                        className="bg-white/5 border border-white/10 rounded-lg py-1 px-2 text-[11px] text-white/80 focus:outline-none focus:border-sky-500/50 w-24" 
+                      />
+                    </div>
+                  </>
+                )}
+
+                {activeStatsTab === '意图统计' && (
+                  <>
+                    <div className="w-px h-4 bg-white/10 shrink-0"></div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <label className="text-[10px] font-bold text-white/30 uppercase tracking-widest whitespace-nowrap">意图种类</label>
+                      <select className="bg-white/5 border border-white/10 rounded-lg py-1 px-2 text-[11px] text-white/80 focus:outline-none focus:border-sky-500/50 min-w-[100px] cursor-pointer hover:bg-white/10 transition-colors">
+                        <option value="" className="bg-[#1a1c20] text-white">全部种类</option>
+                        <option value="前往锚地" className="bg-[#1a1c20] text-white">前往锚地</option>
+                        <option value="抛锚" className="bg-[#1a1c20] text-white">抛锚</option>
+                        <option value="起锚" className="bg-[#1a1c20] text-white">起锚</option>
+                        <option value="前往泊位" className="bg-[#1a1c20] text-white">前往泊位</option>
+                        <option value="靠泊" className="bg-[#1a1c20] text-white">靠泊</option>
+                        <option value="离泊" className="bg-[#1a1c20] text-white">离泊</option>
+                        <option value="上引水" className="bg-[#1a1c20] text-white">上引水</option>
+                        <option value="下引水" className="bg-[#1a1c20] text-white">下引水</option>
+                      </select>
+                    </div>
+                    <div className="w-px h-4 bg-white/10 shrink-0"></div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <label className="text-[10px] font-bold text-white/30 uppercase tracking-widest whitespace-nowrap">意图状态</label>
+                      <select className="bg-white/5 border border-white/10 rounded-lg py-1 px-2 text-[11px] text-white/80 focus:outline-none focus:border-sky-500/50 min-w-[100px] cursor-pointer hover:bg-white/10 transition-colors">
+                        <option value="" className="bg-[#1a1c20] text-white">全部状态</option>
+                        <option value="批准" className="bg-[#1a1c20] text-white">批准</option>
+                        <option value="拒绝" className="bg-[#1a1c20] text-white">拒绝</option>
+                        <option value="回复等待" className="bg-[#1a1c20] text-white">回复等待</option>
+                      </select>
+                    </div>
+                    <div className="w-px h-4 bg-white/10 shrink-0"></div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <label className="text-[10px] font-bold text-white/30 uppercase tracking-widest whitespace-nowrap">MMSI</label>
+                      <input 
+                        type="text" 
+                        placeholder="MMSI..." 
+                        className="bg-white/5 border border-white/10 rounded-lg py-1 px-2 text-[11px] text-white/80 focus:outline-none focus:border-sky-500/50 w-24" 
+                      />
+                    </div>
+                  </>
+                )}
+
+                <div className="flex-1"></div>
+
+                <button className="shrink-0 px-6 py-1.5 bg-sky-500 hover:bg-sky-400 text-white text-[11px] font-bold rounded-lg transition-all shadow-lg shadow-sky-500/20">
+                  查询
+                </button>
               </div>
 
               {activeStatsTab === '船舶风险统计' && (
                 <div className="space-y-4">
-                  {/* 筛选栏 - 精简缩小版 */}
-                  <div className="flex flex-wrap items-center gap-3 bg-white/5 p-3 rounded-2xl border border-white/10">
-                    <div className="flex items-center gap-2">
-                      <label className="text-[10px] font-bold text-white/30 uppercase tracking-widest whitespace-nowrap">风险行为</label>
-                      <select className="bg-white/5 border border-white/10 rounded-lg py-1 px-2 text-[11px] text-white/80 focus:outline-none focus:border-sky-500/50 min-w-[120px]">
-                        <option value="">全部行为</option>
-                        <option value="超速航行">超速航行</option>
-                        <option value="偏离航道">偏离航道</option>
-                        <option value="非法锚泊">非法锚泊</option>
-                        <option value="进入禁航区">进入禁航区</option>
-                        <option value="异常停泊">异常停泊</option>
-                      </select>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <label className="text-[10px] font-bold text-white/30 uppercase tracking-widest whitespace-nowrap">MMSI</label>
-                      <input 
-                        type="text" 
-                        placeholder="输入MMSI码..." 
-                        className="bg-white/5 border border-white/10 rounded-lg py-1 px-3 text-[11px] text-white/80 focus:outline-none focus:border-sky-500/50 w-40" 
-                      />
-                    </div>
-                    <button className="ml-auto px-6 py-1 bg-sky-500 hover:bg-sky-400 text-white text-[11px] font-bold rounded-lg transition-all shadow-lg shadow-sky-500/20">
-                      查询
-                    </button>
-                  </div>
 
                   {/* 数据表格 */}
                   <div className="bg-white/5 border border-white/10 rounded-2xl overflow-hidden">
@@ -1863,51 +2069,6 @@ const AdminPanel = ({
 
               {activeStatsTab === '意图统计' && (
                 <div className="space-y-4">
-                  {/* 筛选栏 */}
-                  <div className="flex flex-wrap items-center gap-3 bg-white/5 p-3 rounded-2xl border border-white/10">
-                    <div className="flex items-center gap-2">
-                      <label className="text-[10px] font-bold text-white/30 uppercase tracking-widest whitespace-nowrap">意图种类</label>
-                      <select className="bg-white/5 border border-white/10 rounded-lg py-1 px-2 text-[11px] text-white/80 focus:outline-none focus:border-sky-500/50 min-w-[120px]">
-                        <option value="">全部种类</option>
-                        <option value="前往锚地">前往锚地</option>
-                        <option value="抛锚">抛锚</option>
-                        <option value="起锚">起锚</option>
-                        <option value="前往泊位">前往泊位</option>
-                        <option value="靠泊">靠泊</option>
-                        <option value="离泊">离泊</option>
-                        <option value="上引水">上引水</option>
-                        <option value="下引水">下引水</option>
-                        <option value="进报告线">进报告线</option>
-                        <option value="出报告线">出报告线</option>
-                        <option value="划江">划江</option>
-                        <option value="掉头">掉头</option>
-                        <option value="船舶失控">船舶失控</option>
-                        <option value="船舶故障">船舶故障</option>
-                      </select>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <label className="text-[10px] font-bold text-white/30 uppercase tracking-widest whitespace-nowrap">意图状态</label>
-                      <select className="bg-white/5 border border-white/10 rounded-lg py-1 px-2 text-[11px] text-white/80 focus:outline-none focus:border-sky-500/50 min-w-[120px]">
-                        <option value="">全部状态</option>
-                        <option value="批准">批准</option>
-                        <option value="拒绝">拒绝</option>
-                        <option value="回复等待">回复等待</option>
-                        <option value="主动询问">主动询问</option>
-                        <option value="紧急干预">紧急干预</option>
-                      </select>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <label className="text-[10px] font-bold text-white/30 uppercase tracking-widest whitespace-nowrap">MMSI</label>
-                      <input 
-                        type="text" 
-                        placeholder="输入MMSI码..." 
-                        className="bg-white/5 border border-white/10 rounded-lg py-1 px-3 text-[11px] text-white/80 focus:outline-none focus:border-sky-500/50 w-40" 
-                      />
-                    </div>
-                    <button className="ml-auto px-6 py-1 bg-sky-500 hover:bg-sky-400 text-white text-[11px] font-bold rounded-lg transition-all shadow-lg shadow-sky-500/20">
-                      查询
-                    </button>
-                  </div>
 
                   {/* 数据表格 */}
                   <div className="bg-white/5 border border-white/10 rounded-2xl overflow-hidden">
@@ -2904,9 +3065,12 @@ export default function App() {
   const [sidebarPosition, setSidebarPosition] = useState<'left' | 'right'>('left');
   const [showBars, setShowBars] = useState(true);
   const [activeTab, setActiveTab] = useState<SidebarTab>('vhf');
+  const [vhfViewMode, setVhfViewMode] = useState<'list' | 'flow'>('list');
   const [selectedIntent, setSelectedIntent] = useState<number | null>(null);
   const [selectedAlert, setSelectedAlert] = useState<string | null>(null);
+  const [selectedAnchorage, setSelectedAnchorage] = useState<string | null>(null);
   const [intents, setIntents] = useState<IntentItem[]>(INTENT_DATA);
+  const [intentFilter, setIntentFilter] = useState('全部');
   const [editingIntentIndex, setEditingIntentIndex] = useState<number | null>(null);
   const [editForm, setEditForm] = useState<{ action: string; details: string }>({ action: '', details: '' });
   const [currentTime, setCurrentTime] = useState(new Date());
@@ -3057,39 +3221,210 @@ export default function App() {
           onToggleBars={() => setShowBars(!showBars)}
         >
           {activeTab === 'vhf' && (
-            <div className="p-3 space-y-3">
-              {MOCK_VHF_MESSAGES.map((msg) => (
-                <div key={msg.id} className={`flex flex-col ${msg.isVTS ? 'items-end' : 'items-start'}`}>
-                  {/* Header */}
-                  <div className={`flex items-center gap-2 mb-1 ${msg.isVTS ? 'flex-row-reverse' : 'flex-row'}`}>
-                    <span className="text-[11px] font-bold text-white/80">{msg.sender}</span>
-                    <div className={`flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold ${msg.isVTS ? 'bg-sky-600/40 text-sky-200' : 'bg-sky-900/40 text-sky-300'}`}>
-                      <Radio size={10} className={msg.isVTS ? 'text-sky-300' : 'text-sky-400'} />
-                      {msg.duration}
-                    </div>
-                    <span className="text-[10px] font-mono text-white/30">{msg.date} {msg.time}</span>
-                    {msg.isVTS && (
-                      <div className="w-5 h-5 bg-sky-500 rounded-full flex items-center justify-center">
-                        <User size={12} className="text-white" />
-                      </div>
-                    )}
-                  </div>
-                  
-                  {/* Bubble */}
-                  <div className={`flex items-center gap-2 ${msg.isVTS ? 'flex-row-reverse' : 'flex-row'}`}>
-                    <div className={`max-w-[90%] p-1.5 rounded-lg text-[11px] leading-relaxed relative ${
-                      msg.isVTS 
-                        ? 'bg-sky-500/10 text-sky-100 border border-sky-500/30 shadow-[0_0_15px_rgba(14,165,233,0.1)]' 
-                        : 'bg-white/5 text-white/90 border border-white/10'
-                    }`}>
-                      {msg.content}
-                    </div>
-                    <button className="p-1 text-sky-500/50 hover:text-sky-400 transition-colors">
-                      <Settings size={14} />
-                    </button>
-                  </div>
+            <div className="flex flex-col h-full">
+              {/* VHF Header/Toggle */}
+              <div className="p-2 border-b border-white/5 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                  <span className="text-[10px] font-black text-white/40 uppercase tracking-widest">VHF 实时监控</span>
                 </div>
-              ))}
+                <div className="flex bg-white/5 p-0.5 rounded-md">
+                  <button 
+                    onClick={() => setVhfViewMode('list')}
+                    className={`px-2 py-1 text-[8px] font-black uppercase tracking-widest rounded transition-all ${
+                      vhfViewMode === 'list' ? 'bg-sky-500 text-white' : 'text-white/40 hover:text-white/60'
+                    }`}
+                  >
+                    列表
+                  </button>
+                  <button 
+                    onClick={() => setVhfViewMode('flow')}
+                    className={`px-2 py-1 text-[8px] font-black uppercase tracking-widest rounded transition-all ${
+                      vhfViewMode === 'flow' ? 'bg-sky-500 text-white' : 'text-white/40 hover:text-white/60'
+                    }`}
+                  >
+                    对话流
+                  </button>
+                </div>
+              </div>
+
+              <div className="flex-1 overflow-y-auto p-2 space-y-2 custom-scrollbar">
+                {vhfViewMode === 'list' ? (
+                  MOCK_VHF_MESSAGES.map((msg) => (
+                    <div key={msg.id} className={`flex flex-col ${msg.isVTS ? 'items-end' : 'items-start'}`}>
+                      {/* Header */}
+                      <div className={`flex items-center gap-2 mb-0.5 ${msg.isVTS ? 'flex-row-reverse' : 'flex-row'}`}>
+                        <span className="text-[10px] font-bold text-white/80">{msg.sender}</span>
+                        <div className={`flex items-center gap-1 px-1 py-0.5 rounded text-[9px] font-bold ${msg.isVTS ? 'bg-sky-600/40 text-sky-200' : 'bg-sky-900/40 text-sky-300'}`}>
+                          <Radio size={9} className={msg.isVTS ? 'text-sky-300' : 'text-sky-400'} />
+                          {msg.duration}
+                        </div>
+                        <span className="text-[9px] font-mono text-white/30">{msg.date} {msg.time}</span>
+                        {msg.isVTS && (
+                          <div className="w-4 h-4 bg-sky-500 rounded-full flex items-center justify-center">
+                            <User size={10} className="text-white" />
+                          </div>
+                        )}
+                      </div>
+                      
+                      {/* Bubble */}
+                      <div className={`flex items-center gap-1.5 ${msg.isVTS ? 'flex-row-reverse' : 'flex-row'}`}>
+                        <div className={`max-w-[90%] px-2 py-1 rounded-lg text-[11px] leading-tight relative ${
+                          msg.isVTS 
+                            ? 'bg-sky-500/10 text-sky-100 border border-sky-500/30 shadow-[0_0_10px_rgba(14,165,233,0.05)]' 
+                            : 'bg-white/5 text-white/90 border border-white/10'
+                        }`}>
+                          {msg.content}
+                        </div>
+                        <button className="p-0.5 text-sky-500/40 hover:text-sky-400 transition-colors">
+                          <Settings size={12} />
+                        </button>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="space-y-3">
+                    {/* Grouping logic for flow view by Session */}
+                    {(() => {
+                      const sessions: { id: string, intent: string, type: 'intent' | 'alert', turns: { sender: string, isVTS: boolean, messages: VHFMessage[] }[] }[] = [];
+                      MOCK_VHF_MESSAGES.forEach((msg) => {
+                        let session = sessions.find(s => s.id === msg.sessionId);
+                        if (!session) {
+                          session = { 
+                            id: msg.sessionId, 
+                            intent: msg.sessionIntent || '未知意图', 
+                            type: msg.sessionType || 'intent',
+                            turns: [] 
+                          };
+                          sessions.push(session);
+                        }
+                        
+                        const lastTurn = session.turns[session.turns.length - 1];
+                        if (lastTurn && lastTurn.sender === msg.sender) {
+                          lastTurn.messages.push(msg);
+                        } else {
+                          session.turns.push({ sender: msg.sender, isVTS: msg.isVTS, messages: [msg] });
+                        }
+                      });
+
+                      return sessions.map((session, sIdx) => (
+                        <motion.div 
+                          key={session.id}
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          className="bg-white/[0.02] border border-white/5 rounded-xl overflow-hidden shadow-lg"
+                        >
+                          {/* Session Header - Intent/Alert Based */}
+                          <div className="bg-white/[0.03] px-3 py-2 border-b border-white/5 flex items-start justify-between">
+                            <div className="flex items-start gap-3">
+                              <div className="mt-1">
+                                {session.type === 'alert' ? (
+                                  <AlertTriangle size={12} className="text-red-400" />
+                                ) : (
+                                  <Ship size={12} className="text-white/40" />
+                                )}
+                              </div>
+                              <div className="flex flex-col gap-1.5">
+                                {/* First Line: Intent/Alert Label & Time */}
+                                <div className="flex items-center gap-3">
+                                  <div className="flex items-center gap-1.5">
+                                    <div className={`w-1 h-1 rounded-full ${session.type === 'alert' ? 'bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.5)]' : 'bg-sky-500 shadow-[0_0_8px_rgba(14,165,233,0.5)]'}`} />
+                                    <span className={`text-[9px] font-black uppercase tracking-[0.1em] ${session.type === 'alert' ? 'text-red-400' : 'text-sky-400'}`}>
+                                      {session.type === 'alert' ? '预警' : '意图'}: {session.intent}
+                                    </span>
+                                  </div>
+                                  <div className="w-[1px] h-2 bg-white/10" />
+                                  <span className="text-[8px] font-mono text-white/30">{session.turns[0].messages[0].time}</span>
+                                </div>
+                                
+                                {/* Second Line: Ship Name & Vessel Details */}
+                                <div className="flex items-center gap-3">
+                                  <span className="text-[11px] font-bold text-white/90 tracking-tight">
+                                    {(() => {
+                                      const shipName = session.turns.find(t => !t.isVTS)?.sender || '未知船名';
+                                      return shipName;
+                                    })()}
+                                  </span>
+                                  <div className="w-[1px] h-2.5 bg-white/10" />
+                                  <div className="flex items-center gap-2">
+                                    {(() => {
+                                      const shipName = session.turns.find(t => !t.isVTS)?.sender || '未知船名';
+                                      const vesselInfo = INTENT_DATA.find(v => v.ship === shipName) || {
+                                        shipType: '货船',
+                                        length: '120m',
+                                        width: '22m',
+                                        speed: '10.5kn',
+                                        current: '吴淞口'
+                                      };
+                                      return (
+                                        <div className="flex items-center gap-1.5">
+                                          <span className="px-1 py-0.5 bg-white/5 rounded text-[7px] font-bold text-white/40 uppercase">
+                                            {vesselInfo.shipType}
+                                          </span>
+                                          <div className="flex items-center gap-1 text-[7px] font-mono text-white/30">
+                                            <span className="bg-white/[0.03] px-1 rounded">{vesselInfo.length}×{vesselInfo.width}</span>
+                                            <span className="bg-sky-500/10 text-sky-400/80 px-1 rounded">{vesselInfo.speed}</span>
+                                            <span className="bg-emerald-500/10 text-emerald-400/80 px-1 rounded">{vesselInfo.current}</span>
+                                          </div>
+                                        </div>
+                                      );
+                                    })()}
+                                  </div>
+
+                                  {/* Additional Alerts Badge if any */}
+                                  {(() => {
+                                    const shipName = session.turns.find(t => !t.isVTS)?.sender || '未知船名';
+                                    const vesselAlerts = MOCK_ALERTS.filter(a => a.ship === shipName);
+                                    if (vesselAlerts.length > 0 && session.type !== 'alert') {
+                                      return (
+                                        <div className="flex items-center gap-2">
+                                          <div className="w-[1px] h-2 bg-white/10" />
+                                          <div className="flex items-center gap-1 px-1.5 py-0.5 bg-red-500/10 border border-red-500/20 rounded text-[7px] font-bold text-red-400 uppercase tracking-wider animate-pulse">
+                                            <AlertTriangle size={8} className="shrink-0" />
+                                            <span>风险</span>
+                                          </div>
+                                        </div>
+                                      );
+                                    }
+                                    return null;
+                                  })()}
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="divide-y divide-white/[0.03] px-2 pt-1.5 pb-0 space-y-1">
+                            {session.turns.map((turn, tIdx) => (
+                              <div 
+                                key={tIdx} 
+                                className={`flex flex-col border-0 pt-1 ${turn.isVTS ? 'items-end' : 'items-start'}`}
+                              >
+                                <div className={`flex flex-col gap-1 max-w-[85%] ${turn.isVTS ? 'items-end' : 'items-start'}`}>
+                                  <div className="relative group">
+                                    <div className={`px-2 py-1 rounded-lg text-[10px] leading-relaxed ${
+                                      turn.isVTS 
+                                        ? 'bg-sky-500/10 text-sky-100 border border-sky-500/20 rounded-tr-none' 
+                                        : 'bg-white/5 text-white/80 border border-white/10 rounded-tl-none'
+                                    }`}>
+                                      {turn.messages.map(m => m.content).join('')}
+                                    </div>
+                                    <div className={`flex items-center gap-2 mt-0.5 opacity-0 group-hover:opacity-100 transition-opacity ${turn.isVTS ? 'justify-end' : 'justify-start'}`}>
+                                      <span className="text-[7px] font-bold text-white/20 uppercase tracking-widest">
+                                        累计时长: {turn.messages.reduce((acc, m) => acc + parseFloat(m.duration), 0).toFixed(2)}s
+                                      </span>
+                                      <Play size={8} className="text-sky-500/40" />
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </motion.div>
+                      ));
+                    })()}
+                  </div>
+                )}
+              </div>
             </div>
           )}
 
@@ -3097,46 +3432,28 @@ export default function App() {
             <div className="p-4 flex flex-col h-full space-y-3">
               {/* 顶部操作与统计 */}
               <div className="space-y-3">
-                <button 
-                  onClick={() => {
-                    setInitialAdminMenu('业务统计');
-                    setInitialAdminStatsTab('船舶风险统计');
-                    setIsAdminView(true);
-                  }}
-                  className="w-full py-1.5 bg-sky-500/10 hover:bg-sky-500/20 border border-sky-500/30 text-sky-400 text-[9px] font-black uppercase tracking-widest rounded-lg transition-all flex items-center justify-center gap-2 group"
-                >
-                  查看全部意图统计
-                  <ChevronRight size={10} className="group-hover:translate-x-0.5 transition-transform" />
-                </button>
-
                 <div className="space-y-1.5">
                   <div className="flex items-center justify-between px-1">
-                    <span className="text-[9px] font-black text-white/30 uppercase tracking-widest">实时意图统计</span>
+                    <span className="text-[9px] font-black text-white/30 uppercase tracking-widest">意图种类筛选</span>
                     <div className="flex items-center gap-1">
-                      <div className="w-1 h-1 rounded-full bg-emerald-500 animate-pulse" />
-                      <span className="text-[7px] font-bold text-emerald-500/60 uppercase">实时监控</span>
+                      <div className="w-1 h-1 rounded-full bg-sky-500 animate-pulse" />
+                      <span className="text-[7px] font-bold text-sky-500/60 uppercase">分类过滤</span>
                     </div>
                   </div>
-                  <div className="grid grid-cols-5 gap-1">
-                    <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-md p-1 text-center">
-                      <div className="text-sm font-bold text-emerald-500">12</div>
-                      <div className="text-[6px] font-bold uppercase text-emerald-500/70">批准</div>
-                    </div>
-                    <div className="bg-red-500/10 border border-red-500/20 rounded-md p-1 text-center">
-                      <div className="text-sm font-bold text-red-500">3</div>
-                      <div className="text-[6px] font-bold uppercase text-red-500/70">拒绝</div>
-                    </div>
-                    <div className="bg-orange-500/10 border border-orange-500/20 rounded-md p-1 text-center">
-                      <div className="text-sm font-bold text-orange-500">8</div>
-                      <div className="text-[6px] font-bold uppercase text-orange-500/70">回复等待</div>
-                    </div>
-                    <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-md p-1 text-center">
-                      <div className="text-sm font-bold text-yellow-500">5</div>
-                      <div className="text-[6px] font-bold uppercase text-yellow-500/70">主动询问</div>
-                    </div>
-                    <div className="bg-blue-500/10 border border-blue-500/20 rounded-md p-1 text-center">
-                      <div className="text-sm font-bold text-blue-500">15</div>
-                      <div className="text-[6px] font-bold uppercase text-blue-500/70">紧急干预</div>
+                  <div className="relative">
+                    <select
+                      value={intentFilter}
+                      onChange={(e) => setIntentFilter(e.target.value)}
+                      className="w-full bg-white/5 border border-white/10 rounded-md px-2 py-1.5 text-[10px] font-bold text-white/80 focus:outline-none focus:border-sky-500/50 transition-all appearance-none cursor-pointer hover:bg-white/10"
+                    >
+                      {['全部', '起锚', '划江', '靠泊', '离泊', '抛锚', '穿越', '避让'].map(filter => (
+                        <option key={filter} value={filter} className="bg-[#0a0a0a] text-white">
+                          {filter === '全部' ? '全部意图种类' : filter}
+                        </option>
+                      ))}
+                    </select>
+                    <div className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none text-white/20">
+                      <ChevronDown size={12} />
                     </div>
                   </div>
                 </div>
@@ -3146,7 +3463,13 @@ export default function App() {
 
               {/* 意图识别列表 */}
               <div className="flex-1 space-y-2 overflow-y-auto pr-1 custom-scrollbar">
-                {intents.map((item, i) => (
+                {intents
+                  .filter(item => {
+                    if (intentFilter === '全部') return true;
+                    const activeAction = item.path.find(p => p.status === 'active')?.action || '';
+                    return activeAction.includes(intentFilter);
+                  })
+                  .map((item, i) => (
                 <motion.div 
                   key={i} 
                   layout
@@ -3308,18 +3631,6 @@ export default function App() {
             <div className="p-4 flex flex-col h-full space-y-3">
               {/* 顶部操作与统计 */}
               <div className="space-y-3">
-                <button 
-                  onClick={() => {
-                    setInitialAdminMenu('业务统计');
-                    setInitialAdminStatsTab('船舶风险统计');
-                    setIsAdminView(true);
-                  }}
-                  className="w-full py-1.5 bg-sky-500/10 hover:bg-sky-500/20 border border-sky-500/30 text-sky-400 text-[9px] font-black uppercase tracking-widest rounded-lg transition-all flex items-center justify-center gap-2 group"
-                >
-                  查看全部预警统计
-                  <ChevronRight size={10} className="group-hover:translate-x-0.5 transition-transform" />
-                </button>
-
                 <div className="space-y-1.5">
                   <div className="flex items-center justify-between px-1">
                     <span className="text-[9px] font-black text-white/30 uppercase tracking-widest">实时预警统计</span>
@@ -3487,6 +3798,157 @@ export default function App() {
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   setSelectedAlert(null);
+                                }}
+                                className="flex items-center gap-1 text-[7px] font-black uppercase tracking-[0.2em] text-sky-500/60 hover:text-sky-400 transition-colors"
+                              >
+                                收起详情 <ChevronDown size={6} className="rotate-180" />
+                              </button>
+                            </div>
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </motion.div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'anchorage' && (
+            <div className="p-3 flex flex-col h-full space-y-2">
+              <div className="space-y-1">
+                <div className="flex items-center justify-between px-1">
+                  <span className="text-[9px] font-black text-white/30 uppercase tracking-widest">锚地资源监控</span>
+                  <div className="flex items-center gap-1">
+                    <div className="w-1 h-1 rounded-full bg-sky-500 animate-pulse" />
+                    <span className="text-[7px] font-bold text-sky-500/60 uppercase">实时状态</span>
+                  </div>
+                </div>
+                <div className="grid grid-cols-3 gap-1">
+                  <div className="bg-sky-500/10 border border-sky-500/20 rounded-md p-1 text-center">
+                    <div className="text-sm font-bold text-sky-500">{MOCK_ANCHORAGES.length}</div>
+                    <div className="text-[6px] font-bold uppercase text-sky-500/70">总锚地</div>
+                  </div>
+                  <div className="bg-red-500/10 border border-red-500/20 rounded-md p-1 text-center">
+                    <div className="text-sm font-bold text-red-500">
+                      {MOCK_ANCHORAGES.filter(a => a.status === '拥挤').length}
+                    </div>
+                    <div className="text-[6px] font-bold uppercase text-red-500/70">拥挤</div>
+                  </div>
+                  <div className="bg-orange-500/10 border border-orange-500/20 rounded-md p-1 text-center">
+                    <div className="text-sm font-bold text-orange-500">
+                      {MOCK_ANCHORAGES.reduce((acc, curr) => acc + curr.expiringCount, 0)}
+                    </div>
+                    <div className="text-[6px] font-bold uppercase text-orange-500/70">即将到期</div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="h-px bg-white/5" />
+
+              <div className="flex-1 space-y-1 overflow-y-auto pr-1 custom-scrollbar">
+                {MOCK_ANCHORAGES.map((item) => (
+                  <motion.div 
+                    key={item.id}
+                    layout
+                    onClick={() => setSelectedAnchorage(selectedAnchorage === item.id ? null : item.id)}
+                    className={`bg-[#121212] border border-white/5 rounded-xl overflow-hidden hover:border-white/10 transition-all cursor-pointer group ${
+                      selectedAnchorage === item.id ? 'ring-1 ring-sky-500/30' : ''
+                    }`}
+                  >
+                    <div className="p-2">
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-2">
+                          <div className={`w-7 h-7 rounded-lg flex items-center justify-center ${
+                            item.status === '拥挤' ? 'bg-red-500/20' : 
+                            item.status === '正常' ? 'bg-sky-500/20' : 'bg-emerald-500/20'
+                          }`}>
+                            <Anchor size={14} className={
+                              item.status === '拥挤' ? 'text-red-400' : 
+                              item.status === '正常' ? 'text-sky-400' : 'text-emerald-400'
+                            } />
+                          </div>
+                          <div>
+                            <div className="text-xs font-black text-white/90">{item.name}</div>
+                            <div className="text-[8px] font-bold text-white/30 uppercase tracking-tighter">
+                              容量: {item.capacity} | 已占: {item.occupied}
+                            </div>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <div className={`px-1.5 py-0.5 rounded text-[7px] font-black uppercase tracking-widest ${
+                            item.status === '拥挤' ? 'bg-red-500/20 text-red-400' : 
+                            item.status === '正常' ? 'bg-sky-500/20 text-sky-400' : 'bg-emerald-500/20 text-emerald-400'
+                          }`}>
+                            {item.status}
+                          </div>
+                          <ChevronRight size={10} className={`text-white/20 transition-transform duration-300 ${selectedAnchorage === item.id ? 'rotate-90' : ''}`} />
+                        </div>
+                      </div>
+
+                      <div className="space-y-1.5">
+                        <div className="flex justify-between items-end">
+                          <span className="text-[9px] font-bold text-white/30 uppercase tracking-widest">拥挤程度</span>
+                          <span className="text-[10px] font-mono font-bold text-white">
+                            {Math.round((item.occupied / item.capacity) * 100)}%
+                          </span>
+                        </div>
+                        <div className="h-1 bg-white/5 rounded-full overflow-hidden">
+                          <motion.div 
+                            initial={{ width: 0 }}
+                            animate={{ width: `${(item.occupied / item.capacity) * 100}%` }}
+                            className={`h-full ${
+                              item.status === '拥挤' ? 'bg-red-500' : 
+                              item.status === '正常' ? 'bg-sky-500' : 'bg-emerald-500'
+                            }`}
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    <AnimatePresence>
+                      {selectedAnchorage === item.id && (
+                        <motion.div
+                          initial={{ height: 0, opacity: 0 }}
+                          animate={{ height: 'auto', opacity: 1 }}
+                          exit={{ height: 0, opacity: 0 }}
+                          className="border-t border-white/5 bg-white/[0.02] overflow-hidden"
+                        >
+                          <div className="p-2 space-y-2">
+                            <div className="space-y-1.5">
+                              <div className="text-[7px] font-bold text-white/30 uppercase tracking-widest">船舶类型统计</div>
+                              <div className="grid grid-cols-1 gap-1">
+                                {item.shipTypes.map((ship, idx) => (
+                                  <div key={idx} className="flex items-center justify-between bg-white/5 rounded-lg p-1.5 border border-white/5">
+                                    <div className="flex items-center gap-1.5">
+                                      <Ship size={10} className="text-sky-400/60" />
+                                      <span className="text-[9px] text-white/80">{ship.type}</span>
+                                    </div>
+                                    <span className="text-[10px] font-mono font-bold text-sky-400">{ship.count} 艘</span>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+
+                            {item.expiringCount > 0 && (
+                              <div className="pt-2 border-t border-white/5 flex items-center justify-between">
+                                <div className="flex items-center gap-1.5">
+                                  <Clock size={10} className="text-orange-400" />
+                                  <span className="text-[9px] font-bold text-orange-400/80 uppercase tracking-widest">
+                                    {item.expiringCount} 艘船舶锚泊即将到期
+                                  </span>
+                                </div>
+                                <div className="text-[8px] font-bold text-white/20 uppercase tracking-widest">
+                                  限时 48H
+                                </div>
+                              </div>
+                            )}
+
+                            <div className="pt-1 flex justify-center">
+                              <button 
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setSelectedAnchorage(null);
                                 }}
                                 className="flex items-center gap-1 text-[7px] font-black uppercase tracking-[0.2em] text-sky-500/60 hover:text-sky-400 transition-colors"
                               >
