@@ -3086,6 +3086,27 @@ export default function App() {
   const [initialAdminStatsTab, setInitialAdminStatsTab] = useState<string | undefined>(undefined);
   const [playbackData, setPlaybackData] = useState<{ vessel: any, event: any } | null>(null);
   const [dynamicPlaybackSession, setDynamicPlaybackSession] = useState<{ vessel: any, event: any } | null>(null);
+  const [vhfMessages, setVhfMessages] = useState<VHFMessage[]>(MOCK_VHF_MESSAGES);
+
+  useEffect(() => {
+    const simulationMessages: VHFMessage[] = [
+      { id: 'sim-1', sessionId: 's6', sessionIntent: '靠泊申请', sessionType: 'intent', sender: '中远海运', content: '吴淞交管，中远海运申请靠泊外高桥码头。', time: '16:35:00', date: '2025-12-17', duration: '2.5s', isVTS: false },
+      { id: 'sim-2', sessionId: 's7', sessionIntent: '航速异常', sessionType: 'alert', sender: '长荣海运', content: '吴淞交管，我船主机故障，航速正在下降。', time: '16:38:12', date: '2025-12-17', duration: '3.1s', isVTS: false },
+      { id: 'sim-3', sessionId: 's8', sessionIntent: '避让确认', sessionType: 'intent', sender: '马士基', content: '吴淞交管，我船已确认避让方案，正在转向。', time: '16:41:05', date: '2025-12-17', duration: '2.8s', isVTS: false },
+    ];
+
+    let count = 0;
+    const timer = setInterval(() => {
+      if (count < 3) {
+        setVhfMessages(prev => [...prev, simulationMessages[count]]);
+        count++;
+      } else {
+        clearInterval(timer);
+      }
+    }, 3000);
+
+    return () => clearInterval(timer);
+  }, []);
 
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
@@ -3250,8 +3271,14 @@ export default function App() {
 
               <div className="flex-1 overflow-y-auto p-2 space-y-2 custom-scrollbar">
                 {vhfViewMode === 'list' ? (
-                  MOCK_VHF_MESSAGES.map((msg) => (
-                    <div key={msg.id} className={`flex flex-col ${msg.isVTS ? 'items-end' : 'items-start'}`}>
+                  [...vhfMessages].reverse().map((msg, idx) => msg && (
+                    <motion.div 
+                      key={msg.id} 
+                      initial={{ opacity: 0, x: msg.isVTS ? 20 : -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: idx * 0.05 }}
+                      className={`flex flex-col ${msg.isVTS ? 'items-end' : 'items-start'}`}
+                    >
                       {/* Header */}
                       <div className={`flex items-center gap-2 mb-0.5 ${msg.isVTS ? 'flex-row-reverse' : 'flex-row'}`}>
                         <span className="text-[10px] font-bold text-white/80">{msg.sender}</span>
@@ -3280,14 +3307,14 @@ export default function App() {
                           <Settings size={12} />
                         </button>
                       </div>
-                    </div>
+                    </motion.div>
                   ))
                 ) : (
                   <div className="space-y-3">
                     {/* Grouping logic for flow view by Session */}
                     {(() => {
                       const sessions: { id: string, intent: string, type: 'intent' | 'alert', turns: { sender: string, isVTS: boolean, messages: VHFMessage[] }[] }[] = [];
-                      MOCK_VHF_MESSAGES.forEach((msg) => {
+                      vhfMessages.filter(Boolean).forEach((msg) => {
                         let session = sessions.find(s => s.id === msg.sessionId);
                         if (!session) {
                           session = { 
@@ -3307,11 +3334,12 @@ export default function App() {
                         }
                       });
 
-                      return sessions.map((session, sIdx) => (
+                      return sessions.reverse().map((session, sIdx) => (
                         <motion.div 
                           key={session.id}
-                          initial={{ opacity: 0, y: 10 }}
+                          initial={{ opacity: 0, y: 20 }}
                           animate={{ opacity: 1, y: 0 }}
+                          transition={{ delay: sIdx * 0.1 }}
                           className="bg-white/[0.02] border border-white/5 rounded-xl overflow-hidden shadow-lg"
                         >
                           {/* Session Header - Intent/Alert Based */}
@@ -3341,14 +3369,14 @@ export default function App() {
                                 <div className="flex items-center gap-3">
                                   <span className="text-[11px] font-bold text-white/90 tracking-tight">
                                     {(() => {
-                                      const shipName = session.turns.find(t => !t.isVTS)?.sender || '未知船名';
+                                      const shipName = session.turns.find(t => t && !t.isVTS)?.sender || '未知船名';
                                       return shipName;
                                     })()}
                                   </span>
                                   <div className="w-[1px] h-2.5 bg-white/10" />
                                   <div className="flex items-center gap-2">
                                     {(() => {
-                                      const shipName = session.turns.find(t => !t.isVTS)?.sender || '未知船名';
+                                      const shipName = session.turns.find(t => t && !t.isVTS)?.sender || '未知船名';
                                       const vesselInfo = INTENT_DATA.find(v => v.ship === shipName) || {
                                         shipType: '货船',
                                         length: '120m',
@@ -3373,7 +3401,7 @@ export default function App() {
 
                                   {/* Additional Alerts Badge if any */}
                                   {(() => {
-                                    const shipName = session.turns.find(t => !t.isVTS)?.sender || '未知船名';
+                                    const shipName = session.turns.find(t => t && !t.isVTS)?.sender || '未知船名';
                                     const vesselAlerts = MOCK_ALERTS.filter(a => a.ship === shipName);
                                     if (vesselAlerts.length > 0 && session.type !== 'alert') {
                                       return (
@@ -3394,7 +3422,7 @@ export default function App() {
                           </div>
 
                           <div className="divide-y divide-white/[0.03] px-2 pt-1.5 pb-0 space-y-1">
-                            {session.turns.map((turn, tIdx) => (
+                            {session.turns.map((turn, tIdx) => turn && (
                               <div 
                                 key={tIdx} 
                                 className={`flex flex-col border-0 pt-1 ${turn.isVTS ? 'items-end' : 'items-start'}`}
@@ -3410,7 +3438,7 @@ export default function App() {
                                     </div>
                                     <div className={`flex items-center gap-2 mt-0.5 opacity-0 group-hover:opacity-100 transition-opacity ${turn.isVTS ? 'justify-end' : 'justify-start'}`}>
                                       <span className="text-[7px] font-bold text-white/20 uppercase tracking-widest">
-                                        累计时长: {turn.messages.reduce((acc, m) => acc + parseFloat(m.duration), 0).toFixed(2)}s
+                                        累计时长: {turn.messages.reduce((acc, m) => acc + parseFloat(m.duration || '0'), 0).toFixed(2)}s
                                       </span>
                                       <Play size={8} className="text-sky-500/40" />
                                     </div>
