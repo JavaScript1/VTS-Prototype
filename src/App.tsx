@@ -215,6 +215,11 @@ const MOCK_ANCHORAGES = [
       { type: '散货船', count: 8 },
       { type: '集装箱船', count: 6 },
       { type: '油船', count: 4 }
+    ],
+    expiringShips: [
+      { id: 'es1', name: '远洋 123', mmsi: '413000001', type: '货轮', expiryTime: '2026-03-27 10:00', details: { length: 190, width: 32, draft: 11.2, cargo: '铁矿石', destination: '上海', agent: '中远海运' } },
+      { id: 'es2', name: '海丰 77', mmsi: '413000002', type: '集装箱船', expiryTime: '2026-03-27 11:30', details: { length: 145, width: 24, draft: 8.5, cargo: '日用品', destination: '宁波', agent: '海丰国际' } },
+      { id: 'es3', name: '振华 15', mmsi: '413000003', type: '工程船', expiryTime: '2026-03-27 14:00', details: { length: 220, width: 45, draft: 9.8, cargo: '重型设备', destination: '舟山', agent: '振华重工' } }
     ]
   },
   { 
@@ -228,6 +233,10 @@ const MOCK_ANCHORAGES = [
       { type: '散货船', count: 5 },
       { type: '杂货船', count: 4 },
       { type: '工程船', count: 3 }
+    ],
+    expiringShips: [
+      { id: 'es4', name: '中海 99', mmsi: '413000004', type: '油轮', expiryTime: '2026-03-27 09:15', details: { length: 250, width: 48, draft: 14.5, cargo: '原油', destination: '大连', agent: '中海油' } },
+      { id: 'es5', name: '顺风 6', mmsi: '413000005', type: '散货船', expiryTime: '2026-03-27 15:45', details: { length: 110, width: 18, draft: 6.2, cargo: '煤炭', destination: '天津', agent: '顺风航运' } }
     ]
   },
   { 
@@ -241,6 +250,9 @@ const MOCK_ANCHORAGES = [
       { type: '集装箱船', count: 4 },
       { type: '油船', count: 3 },
       { type: '其他', count: 3 }
+    ],
+    expiringShips: [
+      { id: 'es6', name: '东方 55', mmsi: '413000055', type: '客船', expiryTime: '2026-03-27 18:00', details: { length: 120, width: 20, draft: 5.5, cargo: '乘客', destination: '青岛', agent: '东方海外' } }
     ]
   },
   { 
@@ -254,6 +266,9 @@ const MOCK_ANCHORAGES = [
       { type: '散货船', count: 12 },
       { type: '油船', count: 10 },
       { type: '集装箱船', count: 6 }
+    ],
+    expiringShips: [
+      { id: 'es7', name: '远洋 99', mmsi: '413000099', type: '散货船', expiryTime: '2026-03-27 20:30', details: { length: 185, width: 32, draft: 10.5, cargo: '煤炭', destination: '广州', agent: '中远海运' } }
     ]
   },
 ];
@@ -3069,6 +3084,7 @@ export default function App() {
   const [selectedIntent, setSelectedIntent] = useState<number | null>(null);
   const [selectedAlert, setSelectedAlert] = useState<string | null>(null);
   const [selectedAnchorage, setSelectedAnchorage] = useState<string | null>(null);
+  const [selectedExpiringShip, setSelectedExpiringShip] = useState<string | null>(null);
   const [intents, setIntents] = useState<IntentItem[]>(INTENT_DATA);
   const [intentFilter, setIntentFilter] = useState('全部');
   const [editingIntentIndex, setEditingIntentIndex] = useState<number | null>(null);
@@ -3971,15 +3987,98 @@ export default function App() {
                             </div>
 
                             {item.expiringCount > 0 && (
-                              <div className="pt-2 border-t border-white/5 flex items-center justify-between">
-                                <div className="flex items-center gap-1.5">
-                                  <Clock size={10} className="text-orange-400" />
-                                  <span className="text-[9px] font-bold text-orange-400/80 uppercase tracking-widest">
-                                    {item.expiringCount} 艘船舶锚泊即将到期
-                                  </span>
+                              <div className="pt-2 border-t border-white/5 space-y-2">
+                                <div className="flex items-center justify-between">
+                                  <div className="flex items-center gap-1.5">
+                                    <Clock size={10} className="text-orange-400" />
+                                    <span className="text-[9px] font-bold text-orange-400/80 uppercase tracking-widest">
+                                      {item.expiringCount} 艘船舶锚泊即将到期
+                                    </span>
+                                  </div>
+                                  <div className="text-[8px] font-bold text-white/20 uppercase tracking-widest">
+                                    限时 48H
+                                  </div>
                                 </div>
-                                <div className="text-[8px] font-bold text-white/20 uppercase tracking-widest">
-                                  限时 48H
+
+                                <div className="space-y-1">
+                                  {item.expiringShips?.map((ship) => (
+                                    <div key={ship.id} className="group/ship">
+                                      <div 
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          setSelectedExpiringShip(selectedExpiringShip === ship.id ? null : ship.id);
+                                        }}
+                                        className={`flex items-center justify-between p-2 rounded-lg transition-all ${
+                                          selectedExpiringShip === ship.id ? 'bg-orange-500/10 border border-orange-500/20' : 'bg-white/5 border border-white/5 hover:bg-white/10'
+                                        }`}
+                                      >
+                                        <div className="flex items-center gap-2">
+                                          <div className={`w-6 h-6 rounded flex items-center justify-center ${
+                                            selectedExpiringShip === ship.id ? 'bg-orange-500/20' : 'bg-white/5'
+                                          }`}>
+                                            <Ship size={12} className={selectedExpiringShip === ship.id ? 'text-orange-400' : 'text-white/40'} />
+                                          </div>
+                                          <div>
+                                            <div className="text-[10px] font-black text-white/90">{ship.name}</div>
+                                            <div className="text-[7px] font-mono text-white/30 uppercase tracking-tighter">到期: {ship.expiryTime}</div>
+                                          </div>
+                                        </div>
+                                        <ChevronRight size={10} className={`text-white/20 transition-transform ${selectedExpiringShip === ship.id ? 'rotate-90 text-orange-400' : ''}`} />
+                                      </div>
+
+                                      <AnimatePresence>
+                                        {selectedExpiringShip === ship.id && (
+                                          <motion.div
+                                            initial={{ height: 0, opacity: 0 }}
+                                            animate={{ height: 'auto', opacity: 1 }}
+                                            exit={{ height: 0, opacity: 0 }}
+                                            className="overflow-hidden"
+                                          >
+                                            <div className="mt-1 p-2 bg-black/40 rounded-lg border border-white/5 grid grid-cols-2 gap-2">
+                                              <div className="space-y-1">
+                                                <div className="flex items-center justify-between">
+                                                  <span className="text-[7px] text-white/30 uppercase">MMSI</span>
+                                                  <span className="text-[8px] font-mono text-white/70">{ship.mmsi}</span>
+                                                </div>
+                                                <div className="flex items-center justify-between">
+                                                  <span className="text-[7px] text-white/30 uppercase">船型</span>
+                                                  <span className="text-[8px] text-white/70">{ship.type}</span>
+                                                </div>
+                                                <div className="flex items-center justify-between">
+                                                  <span className="text-[7px] text-white/30 uppercase">长/宽</span>
+                                                  <span className="text-[8px] text-white/70">{ship.details.length}m / {ship.details.width}m</span>
+                                                </div>
+                                              </div>
+                                              <div className="space-y-1">
+                                                <div className="flex items-center justify-between">
+                                                  <span className="text-[7px] text-white/30 uppercase">吃水</span>
+                                                  <span className="text-[8px] text-white/70">{ship.details.draft}m</span>
+                                                </div>
+                                                <div className="flex items-center justify-between">
+                                                  <span className="text-[7px] text-white/30 uppercase">货物</span>
+                                                  <span className="text-[8px] text-white/70">{ship.details.cargo}</span>
+                                                </div>
+                                                <div className="flex items-center justify-between">
+                                                  <span className="text-[7px] text-white/30 uppercase">代理</span>
+                                                  <span className="text-[8px] text-white/70">{ship.details.agent}</span>
+                                                </div>
+                                              </div>
+                                              <div className="col-span-2 pt-1 border-t border-white/5 flex justify-between items-center">
+                                                <div className="flex items-center gap-1">
+                                                  <MapPin size={8} className="text-white/30" />
+                                                  <span className="text-[7px] text-white/30 uppercase">目的地:</span>
+                                                  <span className="text-[8px] text-sky-400 font-bold">{ship.details.destination}</span>
+                                                </div>
+                                                <button className="px-2 py-0.5 bg-orange-500/20 hover:bg-orange-500/30 text-orange-400 text-[6px] font-black uppercase tracking-widest rounded transition-colors">
+                                                  发送提醒
+                                                </button>
+                                              </div>
+                                            </div>
+                                          </motion.div>
+                                        )}
+                                      </AnimatePresence>
+                                    </div>
+                                  ))}
                                 </div>
                               </div>
                             )}
