@@ -439,8 +439,9 @@ const DynamicPlaybackView: React.FC<DynamicPlaybackViewProps> = ({
             </div>
           </div>
         </div>
+      </div>
 
-        {/* 右侧事件面板 */}
+      {/* 右侧事件面板 */}
         <div className="absolute top-24 right-8 w-72 z-[10] space-y-4">
           <div className="bg-black/60 backdrop-blur-xl border border-white/10 rounded-2xl p-4 shadow-2xl">
             <div className="flex items-center gap-2 mb-4">

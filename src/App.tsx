@@ -172,6 +172,10 @@ interface Alert {
   id: string;
   ship: string;
   shipType: string;
+  mmsi: string;
+  destination: string;
+  cargo: string;
+  riskScore: number;
   length: string;
   width: string;
   draft: string;
@@ -179,6 +183,7 @@ interface Alert {
   type: string;
   summary: string;
   time: string;
+  coords: [number, number];
   level: 'emergency' | 'alarm' | 'warning' | 'caution';
   timeline: {
     time: string;
@@ -278,6 +283,11 @@ const MOCK_ALERTS: Alert[] = [
     id: 'a1', 
     ship: '江海通8',
     shipType: '散货船',
+    mmsi: '413000008',
+    callsign: 'BHT8',
+    destination: '上海',
+    cargo: '铁矿石',
+    riskScore: 85,
     length: '156m',
     width: '28m',
     draft: '8.5m',
@@ -285,6 +295,7 @@ const MOCK_ALERTS: Alert[] = [
     type: '进入禁航区', 
     summary: '该船偏离预定航线，进入禁航区【测试禁航区1】', 
     time: '11:42', 
+    coords: [31.35, 121.55],
     level: 'emergency',
     timeline: [
       { time: '11:25:10', event: '进入吴淞口警戒区', type: 'info' },
@@ -297,6 +308,11 @@ const MOCK_ALERTS: Alert[] = [
     id: 'a2', 
     ship: '新海安',
     shipType: '集装箱船',
+    mmsi: '413000010',
+    callsign: 'XHA10',
+    destination: '宁波',
+    cargo: '日用品',
+    riskScore: 72,
     length: '230m',
     width: '36m',
     draft: '12.0m',
@@ -304,6 +320,7 @@ const MOCK_ALERTS: Alert[] = [
     type: '进入禁锚区', 
     summary: '该船在禁锚区【测试禁锚区2】内减速，疑似准备抛锚', 
     time: '11:38', 
+    coords: [31.38, 121.58],
     level: 'alarm',
     timeline: [
       { time: '11:15:00', event: '通过圆圆沙报告线', type: 'info' },
@@ -316,6 +333,11 @@ const MOCK_ALERTS: Alert[] = [
     id: 'a3', 
     ship: '星海',
     shipType: '油船',
+    mmsi: '413000012',
+    callsign: 'XH12',
+    destination: '舟山',
+    cargo: '原油',
+    riskScore: 65,
     length: '190m',
     width: '32m',
     draft: '11.5m',
@@ -323,6 +345,7 @@ const MOCK_ALERTS: Alert[] = [
     type: '超速警报', 
     summary: '该船在航道内航速超过 12 节限制', 
     time: '11:25', 
+    coords: [31.42, 121.62],
     level: 'warning',
     timeline: [
       { time: '11:05:00', event: '进入吴淞主航道', type: 'info' },
@@ -335,6 +358,10 @@ const MOCK_ALERTS: Alert[] = [
     id: 'a4', 
     ship: '蓝波',
     shipType: '拖船',
+    mmsi: '413000015',
+    destination: '南通',
+    cargo: '无',
+    riskScore: 45,
     length: '45m',
     width: '12m',
     draft: '4.5m',
@@ -342,6 +369,7 @@ const MOCK_ALERTS: Alert[] = [
     type: '走锚风险', 
     summary: '检测到该船在锚地内位置发生异常偏移，可能存在走锚风险', 
     time: '11:12', 
+    coords: [31.45, 121.65],
     level: 'caution',
     timeline: [
       { time: '10:45:00', event: '进入南槽锚地', type: 'info' },
@@ -380,6 +408,7 @@ const MOCK_RISK_STATS = [
     id: '1', 
     name: '远洋 123', 
     mmsi: '413000001', 
+    callsign: 'YY123',
     type: '货轮', 
     length: 190, 
     width: 32, 
@@ -393,6 +422,8 @@ const MOCK_RISK_STATS = [
     visibility: '8km', 
     time: '2026-03-17 09:15:22', 
     coords: [31.35, 121.55] as [number, number],
+    destination: '上海',
+    riskScore: 88,
     timeline: [
       { time: '09:00:15', event: '进入吴淞口警戒区', type: 'info' },
       { time: '09:05:42', event: '航速持续上升 (12.5kn -> 14.2kn)', type: 'warning' },
@@ -404,6 +435,7 @@ const MOCK_RISK_STATS = [
     id: '2', 
     name: '海丰 77', 
     mmsi: '413000002', 
+    callsign: 'HF77',
     type: '集装箱船', 
     length: 145, 
     width: 24, 
@@ -417,6 +449,8 @@ const MOCK_RISK_STATS = [
     visibility: '5km', 
     time: '2026-03-17 10:02:45', 
     coords: [31.38, 121.58] as [number, number],
+    destination: '宁波',
+    riskScore: 75,
     timeline: [
       { time: '09:45:00', event: '通过圆圆沙报告线', type: 'info' },
       { time: '09:55:30', event: '航向发生异常偏转', type: 'warning' },
@@ -899,6 +933,7 @@ const SidebarPanel = ({
     { id: 'vhf' as const, icon: Radio, label: 'VHF' },
     { id: 'intent' as const, icon: LocateFixed, label: '意图' },
     { id: 'warning' as const, icon: AlertTriangle, label: '预警' },
+    { id: 'risk' as const, icon: Shield, label: '风险' },
     { id: 'anchorage' as const, icon: Anchor, label: '锚地' },
   ];
 
@@ -1065,7 +1100,28 @@ const IntentConflictPanel = () => (
       <div className="grid grid-cols-3 gap-2 pt-2">
         <button className="bg-sky-500/20 hover:bg-sky-500/30 border border-sky-500/30 text-sky-400 text-[10px] font-black uppercase tracking-widest py-2 rounded transition-all">发送 VHF 警告</button>
         <button className="bg-orange-500/20 hover:bg-orange-500/30 border border-orange-500/30 text-orange-400 text-[10px] font-black uppercase tracking-widest py-2 rounded transition-all">标记为误报</button>
-        <button className="bg-white/5 hover:bg-white/10 border border-white/10 text-white/60 text-[10px] font-black uppercase tracking-widest py-2 rounded transition-all">查看监控回放</button>
+        <button 
+          onClick={() => {
+            const item = MOCK_RISK_STATS[0];
+            (window as any).setDynamicPlaybackSession({
+              vessel: { name: item.name, mmsi: item.mmsi, type: item.type },
+              event: {
+                time: item.time,
+                coords: item.coords,
+                type: 'risk',
+                label: '意图冲突',
+                desc: '系统识别到该船存在非法锚泊意图，与当前航道规则冲突。',
+                timeline: item.timeline,
+                dialogue: [
+                  { sender: '系统', content: '识别到意图冲突：非法锚泊。', time: item.time }
+                ]
+              }
+            });
+          }}
+          className="bg-white/5 hover:bg-white/10 border border-white/10 text-white/60 text-[10px] font-black uppercase tracking-widest py-2 rounded transition-all"
+        >
+          查看监控回放
+        </button>
       </div>
     </div>
   </motion.div>
@@ -2027,45 +2083,154 @@ const AdminPanel = ({
                         </thead>
                         <tbody>
                           {MOCK_RISK_STATS.map((item) => (
-                            <tr key={item.id} className="border-b border-white/5 hover:bg-white/[0.02] transition-colors">
-                              <td className="px-6 py-4">
-                                <div className="flex flex-col">
-                                  <span className="text-xs font-bold text-white/90">{item.name}</span>
-                                  <span className="text-[10px] text-white/30 font-mono">{item.mmsi}</span>
-                                  <span className="text-[10px] text-sky-400/60">{item.type}</span>
-                                </div>
-                              </td>
-                              <td className="px-6 py-4 text-xs text-white/60">{item.cargo}</td>
-                              <td className="px-6 py-4">
-                                <span className="px-2 py-0.5 bg-red-500/10 border border-red-500/20 rounded text-[10px] font-bold text-red-400">
-                                  {item.risk}
-                                </span>
-                              </td>
-                              <td className="px-6 py-4 text-[10px] text-white/40 font-mono">{item.time}</td>
-                              <td className="px-6 py-4">
-                                <button 
-                                  onClick={() => setPlaybackData({
-                                    vessel: { name: item.name, mmsi: item.mmsi, type: item.type },
-                                    event: {
-                                      time: item.time,
-                                      coords: item.coords,
-                                      type: 'risk',
-                                      label: item.risk,
-                                      desc: `检测到该船存在[${item.risk}]风险行为，触发预警。当时航速为${item.speed}kn，航向${item.heading}°。`,
-                                      timeline: (item as any).timeline,
-                                      dialogue: [
-                                        { sender: '系统', content: `检测到${item.name}触发${item.risk}预警。`, time: item.time },
-                                        { sender: '吴淞交管', content: `收到，正在核实该船状态。`, time: item.time }
-                                      ]
-                                    }
-                                  })}
-                                  className="flex items-center gap-2 px-3 py-1.5 bg-sky-500/10 hover:bg-sky-500/20 border border-sky-500/30 rounded-lg text-sky-400 text-[10px] font-bold transition-all group"
-                                >
-                                  <History size={12} className="group-hover:rotate-[-45deg] transition-transform" />
-                                  历史回放
-                                </button>
-                              </td>
-                            </tr>
+                            <React.Fragment key={item.id}>
+                              <tr 
+                                className={`border-b border-white/5 hover:bg-white/[0.02] transition-colors cursor-pointer ${expandedRowId === item.id ? 'bg-white/[0.03]' : ''}`}
+                                onClick={() => setExpandedRowId(expandedRowId === item.id ? null : item.id)}
+                              >
+                                <td className="px-6 py-4">
+                                  <div className="flex flex-col">
+                                    <span className="text-xs font-bold text-white/90">{item.name}</span>
+                                    <span className="text-[10px] text-white/30 font-mono">{item.mmsi}</span>
+                                    <span className="text-[10px] text-sky-400/60">{item.type}</span>
+                                  </div>
+                                </td>
+                                <td className="px-6 py-4 text-xs text-white/60">{item.cargo}</td>
+                                <td className="px-6 py-4">
+                                  <span className="px-2 py-0.5 bg-red-500/10 border border-red-500/20 rounded text-[10px] font-bold text-red-400">
+                                    {item.risk}
+                                  </span>
+                                </td>
+                                <td className="px-6 py-4 text-[10px] text-white/40 font-mono">{item.time}</td>
+                                <td className="px-6 py-4">
+                                  <div className="flex items-center gap-2">
+                                    <button 
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setDynamicPlaybackSession({
+                                          vessel: { name: item.name, mmsi: item.mmsi, type: item.type },
+                                          event: {
+                                            time: item.time,
+                                            coords: item.coords,
+                                            type: 'risk',
+                                            label: item.risk,
+                                            desc: `检测到该船存在[${item.risk}]风险行为，触发预警。当时航速为${item.speed}kn，航向${item.heading}°。`,
+                                            timeline: (item as any).timeline,
+                                            dialogue: [
+                                              { sender: '系统', content: `检测到${item.name}触发${item.risk}预警。`, time: item.time },
+                                              { sender: '吴淞交管', content: `收到，正在核实该船状态。`, time: item.time }
+                                            ]
+                                          }
+                                        });
+                                        onClose(); // 直接跳转到回放页面 (通过关闭管理面板)
+                                      }}
+                                      className="flex items-center gap-2 px-3 py-1.5 bg-sky-500/10 hover:bg-sky-500/20 border border-sky-500/30 rounded-lg text-sky-400 text-[10px] font-bold transition-all group"
+                                    >
+                                      <History size={12} className="group-hover:rotate-[-45deg] transition-transform" />
+                                      历史回放
+                                    </button>
+                                    <ChevronDown 
+                                      size={14} 
+                                      className={`text-white/20 transition-transform duration-300 ${expandedRowId === item.id ? 'rotate-180' : ''}`} 
+                                    />
+                                  </div>
+                                </td>
+                              </tr>
+                              <AnimatePresence>
+                                {expandedRowId === item.id && (
+                                  <tr>
+                                    <td colSpan={5} className="px-6 py-0 border-b border-white/5 bg-white/[0.01]">
+                                      <motion.div
+                                        initial={{ height: 0, opacity: 0 }}
+                                        animate={{ height: 'auto', opacity: 1 }}
+                                        exit={{ height: 0, opacity: 0 }}
+                                        className="overflow-hidden"
+                                      >
+                                        <div className="py-4 grid grid-cols-4 gap-6">
+                                          <div className="space-y-4 col-span-2">
+                                            <div className="space-y-1">
+                                              <span className="text-[10px] font-bold text-white/20 uppercase tracking-widest">风险详情</span>
+                                              <div className="bg-white/5 border border-white/5 rounded-xl p-3 grid grid-cols-2 gap-4">
+                                                <div className="space-y-2">
+                                                  <div className="flex justify-between items-center">
+                                                    <span className="text-[10px] text-white/40">呼号 / MMSI</span>
+                                                    <span className="text-[10px] font-mono text-sky-400">{item.callsign} / {item.mmsi}</span>
+                                                  </div>
+                                                  <div className="flex justify-between items-center">
+                                                    <span className="text-[10px] text-white/40">风险评分</span>
+                                                    <span className="text-xs font-bold text-red-400">{item.riskScore}</span>
+                                                  </div>
+                                                  <div className="flex justify-between items-center">
+                                                    <span className="text-[10px] text-white/40">目的港</span>
+                                                    <span className="text-[10px] text-white/80">{item.destination}</span>
+                                                  </div>
+                                                </div>
+                                                <div className="space-y-2">
+                                                  <div className="flex justify-between items-center">
+                                                    <span className="text-[10px] text-white/40">船长 / 船宽</span>
+                                                    <span className="text-[10px] text-white/80">{item.length}m / {item.width}m</span>
+                                                  </div>
+                                                  <div className="flex justify-between items-center">
+                                                    <span className="text-[10px] text-white/40">吃水 / 船型</span>
+                                                    <span className="text-[10px] text-white/80">{item.draft}m / {item.type}</span>
+                                                  </div>
+                                                  <div className="flex justify-between items-center">
+                                                    <span className="text-[10px] text-white/40">货物类型</span>
+                                                    <span className="text-[10px] text-white/80">{item.cargo}</span>
+                                                  </div>
+                                                </div>
+                                              </div>
+                                            </div>
+                                            <div className="grid grid-cols-3 gap-3">
+                                              <div className="bg-white/5 border border-white/5 rounded-xl p-3">
+                                                <div className="text-[8px] text-white/20 font-bold uppercase mb-1">实时航速</div>
+                                                <div className="text-xs font-bold text-sky-400">{item.speed} kn</div>
+                                              </div>
+                                              <div className="bg-white/5 border border-white/5 rounded-xl p-3">
+                                                <div className="text-[8px] text-white/20 font-bold uppercase mb-1">当前航向</div>
+                                                <div className="text-xs font-bold text-white/80">{item.heading}°</div>
+                                              </div>
+                                              <div className="bg-white/5 border border-white/5 rounded-xl p-3">
+                                                <div className="text-[8px] text-white/20 font-bold uppercase mb-1">能见度</div>
+                                                <div className="text-xs font-bold text-emerald-400">{item.visibility}</div>
+                                              </div>
+                                            </div>
+                                          </div>
+
+                                          <div className="space-y-1 col-span-3">
+                                            <span className="text-[10px] font-bold text-white/20 uppercase tracking-widest">风险演化时间轴</span>
+                                            <div className="bg-white/5 border border-white/5 rounded-xl p-4">
+                                              <div className="flex items-center justify-between gap-4">
+                                                {item.timeline.map((t, idx) => (
+                                                  <div key={idx} className="flex-1 relative">
+                                                    {idx !== item.timeline.length - 1 && (
+                                                      <div className="absolute top-[11px] left-[50%] w-full h-[1px] bg-white/10" />
+                                                    )}
+                                                    <div className="flex flex-col items-center gap-2 relative z-10">
+                                                      <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold ${
+                                                        t.type === 'risk' ? 'bg-red-500/20 text-red-400 border border-red-500/30' :
+                                                        t.type === 'warning' ? 'bg-orange-500/20 text-orange-400 border border-orange-500/30' :
+                                                        'bg-white/10 text-white/40 border border-white/10'
+                                                      }`}>
+                                                        {idx + 1}
+                                                      </div>
+                                                      <div className="text-center">
+                                                        <div className="text-[10px] font-bold text-white/80 whitespace-nowrap">{t.event}</div>
+                                                        <div className="text-[8px] font-mono text-white/30">{t.time}</div>
+                                                      </div>
+                                                    </div>
+                                                  </div>
+                                                ))}
+                                              </div>
+                                            </div>
+                                          </div>
+                                        </div>
+                                      </motion.div>
+                                    </td>
+                                  </tr>
+                                )}
+                              </AnimatePresence>
+                            </React.Fragment>
                           ))}
                         </tbody>
                       </table>
@@ -3105,26 +3270,6 @@ export default function App() {
   const [vhfMessages, setVhfMessages] = useState<VHFMessage[]>(MOCK_VHF_MESSAGES);
 
   useEffect(() => {
-    const simulationMessages: VHFMessage[] = [
-      { id: 'sim-1', sessionId: 's6', sessionIntent: '靠泊申请', sessionType: 'intent', sender: '中远海运', content: '吴淞交管，中远海运申请靠泊外高桥码头。', time: '16:35:00', date: '2025-12-17', duration: '2.5s', isVTS: false },
-      { id: 'sim-2', sessionId: 's7', sessionIntent: '航速异常', sessionType: 'alert', sender: '长荣海运', content: '吴淞交管，我船主机故障，航速正在下降。', time: '16:38:12', date: '2025-12-17', duration: '3.1s', isVTS: false },
-      { id: 'sim-3', sessionId: 's8', sessionIntent: '避让确认', sessionType: 'intent', sender: '马士基', content: '吴淞交管，我船已确认避让方案，正在转向。', time: '16:41:05', date: '2025-12-17', duration: '2.8s', isVTS: false },
-    ];
-
-    let count = 0;
-    const timer = setInterval(() => {
-      if (count < 3) {
-        setVhfMessages(prev => [...prev, simulationMessages[count]]);
-        count++;
-      } else {
-        clearInterval(timer);
-      }
-    }, 3000);
-
-    return () => clearInterval(timer);
-  }, []);
-
-  useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
     return () => clearInterval(timer);
   }, []);
@@ -3798,6 +3943,30 @@ export default function App() {
                         <button className="flex-1 py-1 bg-white/5 hover:bg-white/10 border border-white/5 rounded-lg text-[9px] font-bold text-white/60 transition-colors">
                           定位船舶
                         </button>
+                        <button 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setDynamicPlaybackSession({
+                              vessel: { name: alert.ship, mmsi: alert.mmsi, type: alert.shipType },
+                              event: {
+                                time: alert.time,
+                                coords: alert.coords,
+                                type: 'risk',
+                                label: alert.type,
+                                desc: alert.summary,
+                                timeline: alert.timeline,
+                                dialogue: [
+                                  { sender: '系统', content: `检测到${alert.ship}触发${alert.type}预警。`, time: alert.time },
+                                  { sender: '吴淞交管', content: `收到，正在核实该船状态。`, time: alert.time }
+                                ]
+                              }
+                            });
+                            setSidebarOpen(false); // 直接跳转到回放页面
+                          }}
+                          className="flex-1 py-1 bg-sky-500/10 hover:bg-sky-500/20 border border-sky-500/30 rounded-lg text-[9px] font-bold text-sky-400 transition-colors flex items-center justify-center gap-1"
+                        >
+                          <History size={10} /> 历史回放
+                        </button>
                         <button className="flex-1 py-1 bg-white/5 hover:bg-white/10 border border-white/5 rounded-lg text-[9px] font-bold text-white/60 transition-colors">
                           忽略预警
                         </button>
@@ -3813,8 +3982,40 @@ export default function App() {
                           exit={{ height: 0, opacity: 0 }}
                           className="overflow-hidden border-t border-white/5"
                         >
-                          <div className="p-1.5 space-y-1.5">
-                            {alert.timeline.map((event, idx) => (
+                          <div className="p-3 space-y-4">
+                            {/* 风险详情数据 */}
+                            <div className="grid grid-cols-2 gap-2">
+                              <div className="bg-white/5 p-2 rounded-lg border border-white/5">
+                                <div className="text-[8px] text-white/30 font-bold uppercase tracking-widest mb-1">呼号 / MMSI</div>
+                                <div className="text-[10px] font-mono text-sky-400">{alert.callsign} / {alert.mmsi}</div>
+                              </div>
+                              <div className="bg-white/5 p-2 rounded-lg border border-white/5">
+                                <div className="text-[8px] text-white/30 font-bold uppercase tracking-widest mb-1">风险评分</div>
+                                <div className="text-[10px] font-bold text-red-400">{alert.riskScore}</div>
+                              </div>
+                              <div className="bg-white/5 p-2 rounded-lg border border-white/5">
+                                <div className="text-[8px] text-white/30 font-bold uppercase tracking-widest mb-1">船长 / 船宽</div>
+                                <div className="text-[10px] text-white/80">{alert.length} / {alert.width}</div>
+                              </div>
+                              <div className="bg-white/5 p-2 rounded-lg border border-white/5">
+                                <div className="text-[8px] text-white/30 font-bold uppercase tracking-widest mb-1">吃水 / 船型</div>
+                                <div className="text-[10px] text-white/80">{alert.draft} / {alert.shipType}</div>
+                              </div>
+                              <div className="bg-white/5 p-2 rounded-lg border border-white/5">
+                                <div className="text-[8px] text-white/30 font-bold uppercase tracking-widest mb-1">目的港</div>
+                                <div className="text-[10px] text-white/80">{alert.destination}</div>
+                              </div>
+                              <div className="bg-white/5 p-2 rounded-lg border border-white/5">
+                                <div className="text-[8px] text-white/30 font-bold uppercase tracking-widest mb-1">货物类型</div>
+                                <div className="text-[10px] text-white/80">{alert.cargo}</div>
+                              </div>
+                            </div>
+
+                            <div className="h-px bg-white/5" />
+
+                            <div className="space-y-1.5">
+                              <div className="text-[9px] font-bold text-white/40 uppercase tracking-widest mb-2">预警时间轴</div>
+                              {alert.timeline.map((event, idx) => (
                               <div key={idx} className="relative pl-3.5 group/item">
                                 {/* Timeline Line */}
                                 {idx !== alert.timeline.length - 1 && (
@@ -3847,6 +4048,7 @@ export default function App() {
                                 </div>
                               </div>
                             ))}
+                            </div>
 
                             <div className="pt-2 border-t border-white/5 flex justify-center">
                               <button 
@@ -3866,6 +4068,157 @@ export default function App() {
                   </motion.div>
                 ))}
                 </AnimatePresence>
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'risk' && (
+            <div className="p-4 flex flex-col h-full space-y-4">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-black text-white/30 uppercase tracking-widest">船舶风险统计</span>
+                <div className="flex items-center gap-1.5">
+                  <div className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
+                  <span className="text-[8px] font-bold text-red-500 uppercase">实时监控</span>
+                </div>
+              </div>
+
+              <div className="space-y-3 overflow-y-auto pr-1 custom-scrollbar flex-1">
+                {MOCK_RISK_STATS.map((item, i) => (
+                  <motion.div
+                    key={item.id}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: i * 0.05 }}
+                    onClick={() => setExpandedRowId(expandedRowId === item.id ? null : item.id)}
+                    className={`bg-[#121212] border border-white/5 rounded-xl overflow-hidden hover:border-white/10 transition-all cursor-pointer group ${
+                      expandedRowId === item.id ? 'ring-1 ring-red-500/30' : ''
+                    }`}
+                  >
+                    <div className="p-3 space-y-3">
+                      <div className="flex items-start justify-between">
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-lg bg-red-500/10 border border-red-500/20 flex items-center justify-center text-red-400">
+                            <Shield size={16} />
+                          </div>
+                          <div>
+                            <div className="text-xs font-black text-white/90">{item.name}</div>
+                            <div className="text-[9px] font-mono text-white/30">{item.mmsi}</div>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <div className="text-[10px] font-black text-red-400 uppercase tracking-wider">{item.risk}</div>
+                          <div className="text-[8px] font-mono text-white/20">{item.time}</div>
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-3 gap-2">
+                        <div className="bg-white/[0.02] p-1.5 rounded-lg border border-white/5">
+                          <div className="text-[7px] text-white/20 font-bold uppercase mb-0.5">航速</div>
+                          <div className="text-[10px] font-bold text-sky-400">{item.speed}kn</div>
+                        </div>
+                        <div className="bg-white/[0.02] p-1.5 rounded-lg border border-white/5">
+                          <div className="text-[7px] text-white/20 font-bold uppercase mb-0.5">航向</div>
+                          <div className="text-[10px] font-bold text-white/60">{item.heading}°</div>
+                        </div>
+                        <div className="bg-white/[0.02] p-1.5 rounded-lg border border-white/5">
+                          <div className="text-[7px] text-white/20 font-bold uppercase mb-0.5">能见度</div>
+                          <div className="text-[10px] font-bold text-emerald-400">{item.visibility}</div>
+                        </div>
+                      </div>
+
+                      <div className="flex gap-2">
+                        <button 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setDynamicPlaybackSession({
+                              vessel: { name: item.name, mmsi: item.mmsi, type: item.type },
+                              event: {
+                                time: item.time,
+                                coords: item.coords,
+                                type: 'risk',
+                                label: item.risk,
+                                desc: `检测到该船存在[${item.risk}]风险行为，触发预警。`,
+                                timeline: item.timeline,
+                                dialogue: [
+                                  { sender: '系统', content: `检测到${item.name}触发${item.risk}预警。`, time: item.time }
+                                ]
+                              }
+                            });
+                            setSidebarOpen(false); // 直接跳转到回放页面
+                          }}
+                          className="flex-1 py-1.5 bg-sky-500/10 hover:bg-sky-500/20 border border-sky-500/30 rounded-lg text-[9px] font-bold text-sky-400 transition-all flex items-center justify-center gap-1.5"
+                        >
+                          <History size={10} /> 历史回放
+                        </button>
+                        <button className="px-3 py-1.5 bg-white/5 hover:bg-white/10 border border-white/5 rounded-lg text-[9px] font-bold text-white/40 transition-all">
+                          详情
+                        </button>
+                      </div>
+                    </div>
+
+                    <AnimatePresence>
+                      {expandedRowId === item.id && (
+                        <motion.div
+                          initial={{ height: 0, opacity: 0 }}
+                          animate={{ height: 'auto', opacity: 1 }}
+                          exit={{ height: 0, opacity: 0 }}
+                          className="border-t border-white/5 bg-white/[0.01] overflow-hidden"
+                        >
+                          <div className="p-3 space-y-3">
+                            {/* 风险详情数据 */}
+                            <div className="grid grid-cols-2 gap-2">
+                              <div className="bg-white/5 p-2 rounded-lg border border-white/5">
+                                <div className="text-[8px] text-white/30 font-bold uppercase tracking-widest mb-1">呼号 / MMSI</div>
+                                <div className="text-[10px] font-mono text-sky-400">{item.callsign} / {item.mmsi}</div>
+                              </div>
+                              <div className="bg-white/5 p-2 rounded-lg border border-white/5">
+                                <div className="text-[8px] text-white/30 font-bold uppercase tracking-widest mb-1">风险评分</div>
+                                <div className="text-[10px] font-bold text-red-400">{item.riskScore}</div>
+                              </div>
+                              <div className="bg-white/5 p-2 rounded-lg border border-white/5">
+                                <div className="text-[8px] text-white/30 font-bold uppercase tracking-widest mb-1">船长 / 船宽</div>
+                                <div className="text-[10px] text-white/80">{item.length}m / {item.width}m</div>
+                              </div>
+                              <div className="bg-white/5 p-2 rounded-lg border border-white/5">
+                                <div className="text-[8px] text-white/30 font-bold uppercase tracking-widest mb-1">吃水 / 船型</div>
+                                <div className="text-[10px] text-white/80">{item.draft}m / {item.type}</div>
+                              </div>
+                              <div className="bg-white/5 p-2 rounded-lg border border-white/5">
+                                <div className="text-[8px] text-white/30 font-bold uppercase tracking-widest mb-1">目的港</div>
+                                <div className="text-[10px] text-white/80">{item.destination}</div>
+                              </div>
+                              <div className="bg-white/5 p-2 rounded-lg border border-white/5">
+                                <div className="text-[8px] text-white/30 font-bold uppercase tracking-widest mb-1">货物类型</div>
+                                <div className="text-[10px] text-white/80">{item.cargo}</div>
+                              </div>
+                            </div>
+                            
+                            <div className="space-y-2">
+                              <div className="text-[8px] font-bold text-white/20 uppercase tracking-widest">风险演化</div>
+                              <div className="space-y-2">
+                                {item.timeline.map((t, idx) => (
+                                  <div key={idx} className="flex items-start gap-2 relative pl-3">
+                                    {idx !== item.timeline.length - 1 && (
+                                      <div className="absolute left-[3.5px] top-[10px] bottom-[-10px] w-[1px] bg-white/5" />
+                                    )}
+                                    <div className={`w-1.5 h-1.5 rounded-full mt-1 shrink-0 ${
+                                      t.type === 'risk' ? 'bg-red-500 shadow-[0_0_5px_rgba(239,68,68,0.5)]' :
+                                      t.type === 'warning' ? 'bg-orange-500' : 'bg-white/20'
+                                    }`} />
+                                    <div>
+                                      <div className="text-[9px] font-bold text-white/70 leading-none">{t.event}</div>
+                                      <div className="text-[7px] font-mono text-white/20 mt-0.5">{t.time}</div>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </motion.div>
+                ))}
               </div>
             </div>
           )}

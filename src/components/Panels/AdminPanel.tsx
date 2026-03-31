@@ -22,7 +22,11 @@ import {
   Play,
   Search,
   Filter,
-  Check
+  Check,
+  Settings,
+  Radio,
+  AlertTriangle,
+  Pause
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 

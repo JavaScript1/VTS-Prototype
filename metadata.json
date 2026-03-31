@@ -1,5 +1,5 @@
 {
-  "name": "VTS Monitoring System",
-  "description": "A professional Vessel Traffic Service monitoring dashboard with VHF communications, real-time risk alerts, dynamic trajectory playback, and interactive map controls.",
+  "name": "船舶风险统计系统",
+  "description": "专业船舶交通服务监控仪表板，包含实时风险预警、历史轨迹回放及交互式地图控制。",
   "requestFramePermissions": ["geolocation"]
 }
