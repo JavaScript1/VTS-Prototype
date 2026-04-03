@@ -380,25 +380,6 @@ const MOCK_ALERTS: Alert[] = [
   },
 ];
 
-const VESSEL_DISTRIBUTION = [
-  { type: '货船', count: 625, color: '#0ea5e9' },
-  { type: '未知', count: 179, color: '#64748b' },
-  { type: '油船', count: 88, color: '#f59e0b' },
-  { type: '拖船', count: 81, color: '#3b82f6' },
-  { type: '疏浚/水下作业', count: 47, color: '#8b5cf6' },
-  { type: '其他', count: 44, color: '#ec4899' },
-  { type: '执法船', count: 25, color: '#ef4444' },
-  { type: '污染控制船', count: 17, color: '#06b6d4' },
-  { type: '航标', count: 13, color: '#eab308' },
-];
-
-const ANCHORAGE_DATA = [
-  { name: '南槽锚地', occupancy: 85, total: 14, current: 12, status: 'busy' },
-  { name: '绿华山锚地', occupancy: 40, total: 10, current: 4, status: 'normal' },
-  { name: '圆圆沙锚地', occupancy: 92, total: 20, current: 18, status: 'full' },
-  { name: '宝山锚地', occupancy: 65, total: 12, current: 8, status: 'normal' },
-];
-
 // --- 区域设置模拟数据 ---
 
 const AREA_CATEGORIES = ['值班区域', '作业与停泊设施', '航道航行设施', '水域管控'];
@@ -933,7 +914,6 @@ const SidebarPanel = ({
     { id: 'vhf' as const, icon: Radio, label: 'VHF' },
     { id: 'intent' as const, icon: LocateFixed, label: '意图' },
     { id: 'warning' as const, icon: AlertTriangle, label: '预警' },
-    { id: 'risk' as const, icon: Shield, label: '风险' },
     { id: 'anchorage' as const, icon: Anchor, label: '锚地' },
   ];
 
@@ -2104,31 +2084,6 @@ const AdminPanel = ({
                                 <td className="px-6 py-4 text-[10px] text-white/40 font-mono">{item.time}</td>
                                 <td className="px-6 py-4">
                                   <div className="flex items-center gap-2">
-                                    <button 
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        setDynamicPlaybackSession({
-                                          vessel: { name: item.name, mmsi: item.mmsi, type: item.type },
-                                          event: {
-                                            time: item.time,
-                                            coords: item.coords,
-                                            type: 'risk',
-                                            label: item.risk,
-                                            desc: `检测到该船存在[${item.risk}]风险行为，触发预警。当时航速为${item.speed}kn，航向${item.heading}°。`,
-                                            timeline: (item as any).timeline,
-                                            dialogue: [
-                                              { sender: '系统', content: `检测到${item.name}触发${item.risk}预警。`, time: item.time },
-                                              { sender: '吴淞交管', content: `收到，正在核实该船状态。`, time: item.time }
-                                            ]
-                                          }
-                                        });
-                                        onClose(); // 直接跳转到回放页面 (通过关闭管理面板)
-                                      }}
-                                      className="flex items-center gap-2 px-3 py-1.5 bg-sky-500/10 hover:bg-sky-500/20 border border-sky-500/30 rounded-lg text-sky-400 text-[10px] font-bold transition-all group"
-                                    >
-                                      <History size={12} className="group-hover:rotate-[-45deg] transition-transform" />
-                                      历史回放
-                                    </button>
                                     <ChevronDown 
                                       size={14} 
                                       className={`text-white/20 transition-transform duration-300 ${expandedRowId === item.id ? 'rotate-180' : ''}`} 
@@ -3256,10 +3211,6 @@ export default function App() {
   const [editForm, setEditForm] = useState<{ action: string; details: string }>({ action: '', details: '' });
   const [currentTime, setCurrentTime] = useState(new Date());
   const [isControlPanelExpanded, setIsControlPanelExpanded] = useState(false);
-  const [showEncounterLines, setShowEncounterLines] = useState(true);
-  const [showIntentTracking, setShowIntentTracking] = useState(true);
-  const [showVesselDistribution, setShowVesselDistribution] = useState(false);
-  const [showAnchorageSituation, setShowAnchorageSituation] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [mouseCoords, setMouseCoords] = useState<{ lat: number; lng: number } | null>(null);
   const [isAdminView, setIsAdminView] = useState(false);
@@ -3943,30 +3894,6 @@ export default function App() {
                         <button className="flex-1 py-1 bg-white/5 hover:bg-white/10 border border-white/5 rounded-lg text-[9px] font-bold text-white/60 transition-colors">
                           定位船舶
                         </button>
-                        <button 
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setDynamicPlaybackSession({
-                              vessel: { name: alert.ship, mmsi: alert.mmsi, type: alert.shipType },
-                              event: {
-                                time: alert.time,
-                                coords: alert.coords,
-                                type: 'risk',
-                                label: alert.type,
-                                desc: alert.summary,
-                                timeline: alert.timeline,
-                                dialogue: [
-                                  { sender: '系统', content: `检测到${alert.ship}触发${alert.type}预警。`, time: alert.time },
-                                  { sender: '吴淞交管', content: `收到，正在核实该船状态。`, time: alert.time }
-                                ]
-                              }
-                            });
-                            setSidebarOpen(false); // 直接跳转到回放页面
-                          }}
-                          className="flex-1 py-1 bg-sky-500/10 hover:bg-sky-500/20 border border-sky-500/30 rounded-lg text-[9px] font-bold text-sky-400 transition-colors flex items-center justify-center gap-1"
-                        >
-                          <History size={10} /> 历史回放
-                        </button>
                         <button className="flex-1 py-1 bg-white/5 hover:bg-white/10 border border-white/5 rounded-lg text-[9px] font-bold text-white/60 transition-colors">
                           忽略预警
                         </button>
@@ -4068,157 +3995,6 @@ export default function App() {
                   </motion.div>
                 ))}
                 </AnimatePresence>
-              </div>
-            </div>
-          )}
-
-          {activeTab === 'risk' && (
-            <div className="p-4 flex flex-col h-full space-y-4">
-              <div className="flex items-center justify-between">
-                <span className="text-[10px] font-black text-white/30 uppercase tracking-widest">船舶风险统计</span>
-                <div className="flex items-center gap-1.5">
-                  <div className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
-                  <span className="text-[8px] font-bold text-red-500 uppercase">实时监控</span>
-                </div>
-              </div>
-
-              <div className="space-y-3 overflow-y-auto pr-1 custom-scrollbar flex-1">
-                {MOCK_RISK_STATS.map((item, i) => (
-                  <motion.div
-                    key={item.id}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: i * 0.05 }}
-                    onClick={() => setExpandedRowId(expandedRowId === item.id ? null : item.id)}
-                    className={`bg-[#121212] border border-white/5 rounded-xl overflow-hidden hover:border-white/10 transition-all cursor-pointer group ${
-                      expandedRowId === item.id ? 'ring-1 ring-red-500/30' : ''
-                    }`}
-                  >
-                    <div className="p-3 space-y-3">
-                      <div className="flex items-start justify-between">
-                        <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-lg bg-red-500/10 border border-red-500/20 flex items-center justify-center text-red-400">
-                            <Shield size={16} />
-                          </div>
-                          <div>
-                            <div className="text-xs font-black text-white/90">{item.name}</div>
-                            <div className="text-[9px] font-mono text-white/30">{item.mmsi}</div>
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <div className="text-[10px] font-black text-red-400 uppercase tracking-wider">{item.risk}</div>
-                          <div className="text-[8px] font-mono text-white/20">{item.time}</div>
-                        </div>
-                      </div>
-
-                      <div className="grid grid-cols-3 gap-2">
-                        <div className="bg-white/[0.02] p-1.5 rounded-lg border border-white/5">
-                          <div className="text-[7px] text-white/20 font-bold uppercase mb-0.5">航速</div>
-                          <div className="text-[10px] font-bold text-sky-400">{item.speed}kn</div>
-                        </div>
-                        <div className="bg-white/[0.02] p-1.5 rounded-lg border border-white/5">
-                          <div className="text-[7px] text-white/20 font-bold uppercase mb-0.5">航向</div>
-                          <div className="text-[10px] font-bold text-white/60">{item.heading}°</div>
-                        </div>
-                        <div className="bg-white/[0.02] p-1.5 rounded-lg border border-white/5">
-                          <div className="text-[7px] text-white/20 font-bold uppercase mb-0.5">能见度</div>
-                          <div className="text-[10px] font-bold text-emerald-400">{item.visibility}</div>
-                        </div>
-                      </div>
-
-                      <div className="flex gap-2">
-                        <button 
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setDynamicPlaybackSession({
-                              vessel: { name: item.name, mmsi: item.mmsi, type: item.type },
-                              event: {
-                                time: item.time,
-                                coords: item.coords,
-                                type: 'risk',
-                                label: item.risk,
-                                desc: `检测到该船存在[${item.risk}]风险行为，触发预警。`,
-                                timeline: item.timeline,
-                                dialogue: [
-                                  { sender: '系统', content: `检测到${item.name}触发${item.risk}预警。`, time: item.time }
-                                ]
-                              }
-                            });
-                            setSidebarOpen(false); // 直接跳转到回放页面
-                          }}
-                          className="flex-1 py-1.5 bg-sky-500/10 hover:bg-sky-500/20 border border-sky-500/30 rounded-lg text-[9px] font-bold text-sky-400 transition-all flex items-center justify-center gap-1.5"
-                        >
-                          <History size={10} /> 历史回放
-                        </button>
-                        <button className="px-3 py-1.5 bg-white/5 hover:bg-white/10 border border-white/5 rounded-lg text-[9px] font-bold text-white/40 transition-all">
-                          详情
-                        </button>
-                      </div>
-                    </div>
-
-                    <AnimatePresence>
-                      {expandedRowId === item.id && (
-                        <motion.div
-                          initial={{ height: 0, opacity: 0 }}
-                          animate={{ height: 'auto', opacity: 1 }}
-                          exit={{ height: 0, opacity: 0 }}
-                          className="border-t border-white/5 bg-white/[0.01] overflow-hidden"
-                        >
-                          <div className="p-3 space-y-3">
-                            {/* 风险详情数据 */}
-                            <div className="grid grid-cols-2 gap-2">
-                              <div className="bg-white/5 p-2 rounded-lg border border-white/5">
-                                <div className="text-[8px] text-white/30 font-bold uppercase tracking-widest mb-1">呼号 / MMSI</div>
-                                <div className="text-[10px] font-mono text-sky-400">{item.callsign} / {item.mmsi}</div>
-                              </div>
-                              <div className="bg-white/5 p-2 rounded-lg border border-white/5">
-                                <div className="text-[8px] text-white/30 font-bold uppercase tracking-widest mb-1">风险评分</div>
-                                <div className="text-[10px] font-bold text-red-400">{item.riskScore}</div>
-                              </div>
-                              <div className="bg-white/5 p-2 rounded-lg border border-white/5">
-                                <div className="text-[8px] text-white/30 font-bold uppercase tracking-widest mb-1">船长 / 船宽</div>
-                                <div className="text-[10px] text-white/80">{item.length}m / {item.width}m</div>
-                              </div>
-                              <div className="bg-white/5 p-2 rounded-lg border border-white/5">
-                                <div className="text-[8px] text-white/30 font-bold uppercase tracking-widest mb-1">吃水 / 船型</div>
-                                <div className="text-[10px] text-white/80">{item.draft}m / {item.type}</div>
-                              </div>
-                              <div className="bg-white/5 p-2 rounded-lg border border-white/5">
-                                <div className="text-[8px] text-white/30 font-bold uppercase tracking-widest mb-1">目的港</div>
-                                <div className="text-[10px] text-white/80">{item.destination}</div>
-                              </div>
-                              <div className="bg-white/5 p-2 rounded-lg border border-white/5">
-                                <div className="text-[8px] text-white/30 font-bold uppercase tracking-widest mb-1">货物类型</div>
-                                <div className="text-[10px] text-white/80">{item.cargo}</div>
-                              </div>
-                            </div>
-                            
-                            <div className="space-y-2">
-                              <div className="text-[8px] font-bold text-white/20 uppercase tracking-widest">风险演化</div>
-                              <div className="space-y-2">
-                                {item.timeline.map((t, idx) => (
-                                  <div key={idx} className="flex items-start gap-2 relative pl-3">
-                                    {idx !== item.timeline.length - 1 && (
-                                      <div className="absolute left-[3.5px] top-[10px] bottom-[-10px] w-[1px] bg-white/5" />
-                                    )}
-                                    <div className={`w-1.5 h-1.5 rounded-full mt-1 shrink-0 ${
-                                      t.type === 'risk' ? 'bg-red-500 shadow-[0_0_5px_rgba(239,68,68,0.5)]' :
-                                      t.type === 'warning' ? 'bg-orange-500' : 'bg-white/20'
-                                    }`} />
-                                    <div>
-                                      <div className="text-[9px] font-bold text-white/70 leading-none">{t.event}</div>
-                                      <div className="text-[7px] font-mono text-white/20 mt-0.5">{t.time}</div>
-                                    </div>
-                                  </div>
-                                ))}
-                              </div>
-                            </div>
-                          </div>
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
-                  </motion.div>
-                ))}
               </div>
             </div>
           )}
@@ -4579,24 +4355,7 @@ export default function App() {
             exit={{ height: 0, opacity: 0 }}
             className="border-t border-white/10 bg-[#0a0a0a] flex items-center justify-between px-4 z-[3000] shrink-0"
           >
-            <div className="flex items-center gap-6 flex-1 max-w-[400px]">
-              <div className="flex items-center gap-4">
-                <button 
-                  onClick={() => setShowVesselDistribution(!showVesselDistribution)}
-                  className={`flex items-center gap-1.5 px-2 py-1 rounded transition-all ${showVesselDistribution ? 'bg-sky-500/20 text-sky-400' : 'text-white/30 hover:text-white/50'}`}
-                >
-                  <div className={`w-1 h-1 rounded-full ${showVesselDistribution ? 'bg-sky-400 animate-pulse' : 'bg-white/20'}`} />
-                  <span className="text-[10px] font-bold uppercase tracking-widest">船舶分布</span>
-                </button>
-                <button 
-                  onClick={() => setShowAnchorageSituation(!showAnchorageSituation)}
-                  className={`flex items-center gap-1.5 px-2 py-1 rounded transition-all ${showAnchorageSituation ? 'bg-blue-500/20 text-blue-400' : 'text-white/30 hover:text-white/50'}`}
-                >
-                  <div className={`w-1 h-1 rounded-full ${showAnchorageSituation ? 'bg-blue-400 animate-pulse' : 'bg-white/20'}`} />
-                  <span className="text-[10px] font-bold uppercase tracking-widest">锚地态势</span>
-                </button>
-              </div>
-            </div>
+            <div className="flex-1" />
 
             <div className="flex items-center gap-8 relative">
               <div className="flex items-center gap-3">
@@ -4637,33 +4396,6 @@ export default function App() {
                     className="absolute bottom-full right-0 mb-2 w-64 bg-[#0a0a0a]/95 backdrop-blur-xl border border-white/10 rounded-xl p-4 shadow-2xl z-[5000]"
                   >
                     <div className="space-y-4">
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs font-medium text-white/70">船舶遇到线开关</span>
-                        <button 
-                          onClick={() => setShowEncounterLines(!showEncounterLines)}
-                          className={`w-8 h-4 rounded-full transition-colors relative ${showEncounterLines ? 'bg-sky-500' : 'bg-white/10'}`}
-                        >
-                          <motion.div 
-                            animate={{ x: showEncounterLines ? 16 : 2 }}
-                            className="absolute top-0.5 w-3 h-3 bg-white rounded-full shadow-sm"
-                          />
-                        </button>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs font-medium text-white/70">意图跟踪开关</span>
-                        <button 
-                          onClick={() => setShowIntentTracking(!showIntentTracking)}
-                          className={`w-8 h-4 rounded-full transition-colors relative ${showIntentTracking ? 'bg-sky-500' : 'bg-white/10'}`}
-                        >
-                          <motion.div 
-                            animate={{ x: showIntentTracking ? 16 : 2 }}
-                            className="absolute top-0.5 w-3 h-3 bg-white rounded-full shadow-sm"
-                          />
-                        </button>
-                      </div>
-
-                      <div className="h-px bg-white/5" />
-
                       <div className="flex items-center justify-between">
                         <span className="text-xs font-medium text-white/70">面板位置 (左/右)</span>
                         <button 
@@ -4710,158 +4442,10 @@ export default function App() {
 
       {/* 辖区船舶分布 - 浮动面板 */}
       <AnimatePresence>
-        {showVesselDistribution && (
-          <motion.div 
-            initial={{ opacity: 0, y: 30, scale: 0.9 }}
-            animate={{ 
-              opacity: 1, 
-              y: 0,
-              scale: 1,
-              left: sidebarPosition === 'left' 
-                ? (sidebarOpen ? 392 : 72) 
-                : 24
-            }}
-            exit={{ opacity: 0, y: 30, scale: 0.9 }}
-            transition={{ type: 'spring', damping: 20, stiffness: 150 }}
-            className="fixed bottom-16 w-72 bg-[#0a0a0a]/90 backdrop-blur-3xl border border-white/20 rounded-2xl p-5 shadow-[0_20px_50px_rgba(0,0,0,0.8),0_0_20px_rgba(14,165,233,0.1)] z-[4000]"
-          >
-            <div className="flex items-center justify-between mb-5 border-b border-white/10 pb-3">
-              <div className="flex items-center gap-3">
-                <div className="relative">
-                  <div className="w-2 h-4 bg-sky-500 rounded-full shadow-[0_0_15px_rgba(14,165,233,0.6)]" />
-                  <div className="absolute inset-0 bg-sky-400 blur-sm opacity-50 animate-pulse" />
-                </div>
-                <span className="text-sm font-black uppercase tracking-[0.2em] text-white/90">辖区船舶分布</span>
-              </div>
-              <button 
-                onClick={() => setShowVesselDistribution(false)} 
-                className="w-6 h-6 flex items-center justify-center rounded-full bg-white/5 text-white/40 hover:text-white hover:bg-white/10 transition-all"
-              >
-                <ChevronRight size={14} className="rotate-90" />
-              </button>
-            </div>
-            
-            <div className="space-y-4 max-h-[300px] overflow-y-auto custom-scrollbar pr-2">
-              {VESSEL_DISTRIBUTION.map((item, idx) => (
-                <div key={idx} className="group">
-                  <div className="flex justify-between text-[11px] font-bold mb-1.5">
-                    <span className="text-white/40 group-hover:text-white/70 transition-colors uppercase tracking-wider">{item.type}</span>
-                    <span className="text-white font-mono tabular-nums">{item.count}</span>
-                  </div>
-                  <div className="h-2 w-full bg-white/5 rounded-full overflow-hidden p-[1px] border border-white/5">
-                    <motion.div 
-                      initial={{ width: 0 }}
-                      animate={{ width: `${(item.count / 625) * 100}%` }}
-                      transition={{ duration: 1.2, ease: "circOut", delay: idx * 0.08 }}
-                      className="h-full rounded-full relative"
-                      style={{ backgroundColor: item.color }}
-                    >
-                      <div className="absolute inset-0 bg-gradient-to-r from-white/20 to-transparent" />
-                    </motion.div>
-                  </div>
-                </div>
-              ))}
-            </div>
-            
-            <div className="mt-5 pt-4 border-t border-white/10 flex justify-between items-end">
-              <div className="space-y-0.5">
-                <span className="text-[9px] text-white/20 uppercase font-black tracking-[0.3em]">Total Fleet</span>
-                <div className="text-2xl font-mono text-sky-400 font-black leading-none tracking-tighter">1,157</div>
-              </div>
-              <div className="flex flex-col items-end">
-                <span className="text-[9px] text-emerald-500/70 font-bold uppercase tracking-widest mb-1">Live Status</span>
-                <div className="flex gap-1">
-                  {[1, 2, 3].map(i => (
-                    <div key={i} className="w-1 h-3 bg-emerald-500/30 rounded-full overflow-hidden">
-                      <motion.div 
-                        animate={{ height: ['20%', '80%', '40%', '100%', '20%'] }}
-                        transition={{ duration: 1.5, repeat: Infinity, delay: i * 0.2 }}
-                        className="w-full bg-emerald-400"
-                      />
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </motion.div>
-        )}
       </AnimatePresence>
 
       {/* 锚地态势 - 浮动面板 */}
       <AnimatePresence>
-        {showAnchorageSituation && (
-          <motion.div 
-            initial={{ opacity: 0, y: 30, scale: 0.9 }}
-            animate={{ 
-              opacity: 1, 
-              y: 0,
-              scale: 1,
-              left: sidebarPosition === 'left' 
-                ? (sidebarOpen ? 704 : 384) 
-                : 320
-            }}
-            exit={{ opacity: 0, y: 30, scale: 0.9 }}
-            transition={{ type: 'spring', damping: 20, stiffness: 150 }}
-            className="fixed bottom-16 w-72 bg-[#0a0a0a]/90 backdrop-blur-3xl border border-white/20 rounded-2xl p-5 shadow-[0_20px_50px_rgba(0,0,0,0.8),0_0_20px_rgba(59,130,246,0.1)] z-[4000]"
-          >
-            <div className="flex items-center justify-between mb-5 border-b border-white/10 pb-3">
-              <div className="flex items-center gap-3">
-                <div className="relative">
-                  <div className="w-2 h-4 bg-blue-500 rounded-full shadow-[0_0_15px_rgba(59,130,246,0.6)]" />
-                  <div className="absolute inset-0 bg-blue-400 blur-sm opacity-50 animate-pulse" />
-                </div>
-                <span className="text-sm font-black uppercase tracking-[0.2em] text-white/90">锚地态势概览</span>
-              </div>
-              <button 
-                onClick={() => setShowAnchorageSituation(false)} 
-                className="w-6 h-6 flex items-center justify-center rounded-full bg-white/5 text-white/40 hover:text-white hover:bg-white/10 transition-all"
-              >
-                <ChevronRight size={14} className="rotate-90" />
-              </button>
-            </div>
-            
-            <div className="space-y-4 max-h-[380px] overflow-y-auto custom-scrollbar pr-2">
-              {ANCHORAGE_DATA.map((item, idx) => (
-                <div key={idx} className="bg-white/[0.03] rounded-2xl p-4 border border-white/5 hover:bg-white/[0.06] hover:border-white/10 transition-all group">
-                  <div className="flex justify-between items-center mb-3">
-                    <span className="text-xs font-black text-white/90 uppercase tracking-tight group-hover:text-sky-400 transition-colors">{item.name}</span>
-                    <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[9px] font-black tracking-widest shadow-sm ${
-                      item.status === 'full' ? 'bg-red-500 text-white' : 
-                      item.status === 'busy' ? 'bg-orange-500 text-white' : 'bg-sky-500 text-white'
-                    }`}>
-                      <div className="w-1 h-1 bg-white rounded-full animate-pulse" />
-                      {item.status === 'full' ? '饱和' : item.status === 'busy' ? '繁忙' : '空闲'}
-                    </div>
-                  </div>
-                  
-                  <div className="grid grid-cols-2 gap-4 mb-3">
-                    <div className="space-y-1">
-                      <div className="text-[9px] text-white/30 font-black uppercase tracking-widest">Occupancy</div>
-                      <div className="text-sm font-mono text-white/90 font-bold">{item.occupancy}%</div>
-                    </div>
-                    <div className="space-y-1 text-right">
-                      <div className="text-[9px] text-white/30 font-black uppercase tracking-widest">Vessels</div>
-                      <div className="text-sm font-mono text-white/90 font-bold">{item.current}<span className="text-white/30 mx-0.5">/</span>{item.total}</div>
-                    </div>
-                  </div>
-                  
-                  <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden p-[1px]">
-                    <motion.div 
-                      initial={{ width: 0 }}
-                      animate={{ width: `${item.occupancy}%` }}
-                      transition={{ duration: 1.5, ease: "circOut" }}
-                      className={`h-full rounded-full relative ${
-                        item.occupancy > 90 ? 'bg-red-500' : item.occupancy > 70 ? 'bg-orange-500' : 'bg-sky-500'
-                      }`}
-                    >
-                      <div className="absolute inset-0 bg-gradient-to-b from-white/30 to-transparent opacity-50" />
-                    </motion.div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </motion.div>
-        )}
       </AnimatePresence>
     </div>
   );
