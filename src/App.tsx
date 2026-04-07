@@ -60,6 +60,14 @@ import {
 } from 'recharts';
 import { MapContainer, TileLayer, Marker, CircleMarker, useMapEvents, Polygon, Polyline, useMap, Popup } from 'react-leaflet';
 import L from 'leaflet';
+import {
+  AREA_CATEGORIES,
+  AREA_TYPE_MAPPING,
+  MOCK_AREAS,
+  MOCK_INTENT_STATS,
+  MOCK_RISK_STATS,
+  MOCK_VESSEL_DYNAMICS,
+} from './mockData';
 
 // 地图状态持久化组件
 const MapStatePersister = () => {
@@ -142,14 +150,33 @@ const PlaybackMapController = ({ playbackData }: { playbackData: any }) => {
 };
 
 // 模拟船舶位置数据 (以吴淞口5号锚地为中心分布)
-const SHIP_POSITIONS = [...Array(40)].map((_, i) => ({
-  id: i,
-  lat: 31.40 + Math.random() * 0.1,
-  lng: 121.52 + Math.random() * 0.15,
-  name: `船舶 ${1000 + i}`,
-  type: Math.random() > 0.5 ? '货轮' : '油轮',
-  status: Math.random() > 0.8 ? 'warning' : 'normal'
-}));
+const SHIP_POSITIONS: ShipPosition[] = [
+  {id: 'ship-001', lat: 31.4382, lng: 121.5618, heading: 32, name: '远洋 123', mmsi: '413000001', type: '货轮', speed: 12.4, destination: '外高桥码头', status: 'normal'},
+  {id: 'ship-002', lat: 31.4315, lng: 121.5742, heading: 218, name: '海丰 77', mmsi: '413000002', type: '集装箱船', speed: 9.8, destination: '圆圆沙锚地', status: 'warning'},
+  {id: 'ship-003', lat: 31.4236, lng: 121.5484, heading: 84, name: '振华 15', mmsi: '413000003', type: '工程船', speed: 4.1, destination: '作业区 B5', status: 'caution'},
+  {id: 'ship-004', lat: 31.4461, lng: 121.5865, heading: 305, name: '中海 99', mmsi: '413000004', type: '油轮', speed: 11.7, destination: '长江口航道', status: 'warning'},
+  {id: 'ship-005', lat: 31.4178, lng: 121.5341, heading: 146, name: '顺风 6', mmsi: '413000005', type: '散货船', speed: 6.3, destination: '吴淞口锚地', status: 'normal'},
+  {id: 'ship-006', lat: 31.4544, lng: 121.5522, heading: 12, name: '东方 55', mmsi: '413000055', type: '客船', speed: 14.2, destination: '黄浦江', status: 'normal'},
+  {id: 'ship-007', lat: 31.4096, lng: 121.5828, heading: 262, name: '江海通 8', mmsi: '413000008', type: '散货船', speed: 7.1, destination: '宝山作业区', status: 'caution'},
+  {id: 'ship-008', lat: 31.4408, lng: 121.5294, heading: 118, name: '新海安', mmsi: '413000010', type: '集装箱船', speed: 10.5, destination: '南槽航道', status: 'normal'},
+  {id: 'ship-009', lat: 31.4289, lng: 121.5948, heading: 191, name: '星海', mmsi: '413000012', type: '油轮', speed: 5.9, destination: '1号禁锚区外侧', status: 'warning'},
+  {id: 'ship-010', lat: 31.4612, lng: 121.5686, heading: 56, name: '蓝波', mmsi: '413000015', type: '拖船', speed: 8.4, destination: '吴淞口警戒区', status: 'normal'},
+  {id: 'ship-011', lat: 31.4145, lng: 121.5634, heading: 332, name: '运兴 96', mmsi: '413000096', type: '货船', speed: 9.2, destination: '黄浦江', status: 'normal'},
+  {id: 'ship-012', lat: 31.4347, lng: 121.5449, heading: 274, name: '远洋 99', mmsi: '413000099', type: '散货船', speed: 13.1, destination: '6号锚地', status: 'caution'},
+];
+
+const createShipIcon = (ship: ShipPosition) =>
+  L.divIcon({
+    className: 'ship-marker-icon',
+    html: `
+      <div class="ship-marker ship-marker--${ship.status}" style="--ship-rotation:${ship.heading}deg">
+        <div class="ship-marker__pulse"></div>
+        <div class="ship-marker__triangle"></div>
+      </div>
+    `,
+    iconSize: [28, 28],
+    iconAnchor: [14, 14],
+  });
 
 // --- 类型定义 ---
 
@@ -191,6 +218,19 @@ interface Alert {
     event: string;
     type: 'info' | 'warning' | 'risk';
   }[];
+}
+
+interface ShipPosition {
+  id: string;
+  lat: number;
+  lng: number;
+  heading: number;
+  name: string;
+  mmsi: string;
+  type: string;
+  speed: number;
+  destination: string;
+  status: 'normal' | 'warning' | 'caution';
 }
 
 // --- 模拟数据 ---
@@ -381,270 +421,6 @@ const MOCK_ALERTS: Alert[] = [
   },
 ];
 
-// --- 区域设置模拟数据 ---
-
-const AREA_CATEGORIES = ['值班区域', '作业与停泊设施', '航道航行设施', '水域管控'];
-
-const MOCK_RISK_STATS = [
-  { 
-    id: '1', 
-    name: '远洋 123', 
-    mmsi: '413000001', 
-    callsign: 'YY123',
-    type: '货轮', 
-    length: 190, 
-    width: 32, 
-    cargo: '铁矿石', 
-    draft: 11.2, 
-    risk: '超速航行', 
-    speed: 15.4, 
-    heading: 125, 
-    wind: '4级', 
-    wave: '0.8m', 
-    visibility: '8km', 
-    time: '2026-03-17 09:15:22', 
-    coords: [31.35, 121.55] as [number, number],
-    destination: '上海',
-    riskScore: 88,
-    snapshot: {
-      image: 'https://picsum.photos/seed/vessel1/400/225',
-      location: '吴淞口警戒区 A12 浮标附近',
-      actualSpeed: 14.2,
-      speedLimit: 12.0
-    },
-    timeline: [
-      { time: '09:00:15', event: '进入吴淞口警戒区', type: 'info' },
-      { time: '09:05:42', event: '航速持续上升 (12.5kn -> 14.2kn)', type: 'warning' },
-      { time: '09:12:10', event: '接近航道限速区域', type: 'info' },
-      { time: '09:15:22', event: '触发[超速航行]风险预警', type: 'risk' }
-    ]
-  },
-  { 
-    id: '2', 
-    name: '海丰 77', 
-    mmsi: '413000002', 
-    callsign: 'HF77',
-    type: '集装箱船', 
-    length: 145, 
-    width: 24, 
-    cargo: '日用品', 
-    draft: 8.5, 
-    risk: '偏离航道', 
-    speed: 12.1, 
-    heading: 210, 
-    wind: '5级', 
-    wave: '1.2m', 
-    visibility: '5km', 
-    time: '2026-03-17 10:02:45', 
-    coords: [31.38, 121.58] as [number, number],
-    destination: '宁波',
-    riskScore: 75,
-    snapshot: {
-      image: 'https://picsum.photos/seed/vessel2/400/225',
-      location: '圆圆沙 12 号浮标南侧',
-      actualSpeed: 12.1,
-      speedLimit: 12.0
-    },
-    timeline: [
-      { time: '09:45:00', event: '通过圆圆沙报告线', type: 'info' },
-      { time: '09:55:30', event: '航向发生异常偏转', type: 'warning' },
-      { time: '10:02:45', event: '偏离主航道中心线 > 50m', type: 'risk' }
-    ]
-  },
-  { 
-    id: '3', 
-    name: '振华 15', 
-    mmsi: '413000003', 
-    type: '工程船', 
-    length: 220, 
-    width: 45, 
-    cargo: '重型设备', 
-    draft: 9.8, 
-    risk: '非法锚泊', 
-    speed: 0.1, 
-    heading: 45, 
-    wind: '3级', 
-    wave: '0.5m', 
-    visibility: '10km', 
-    time: '2026-03-17 11:30:10', 
-    coords: [31.42, 121.62] as [number, number],
-    snapshot: {
-      image: 'https://picsum.photos/seed/vessel3/400/225',
-      location: '非锚泊作业区 B5 区域',
-      actualSpeed: 0.1,
-      speedLimit: 0.5
-    },
-    timeline: [
-      { time: '11:10:00', event: '进入非锚泊作业区', type: 'info' },
-      { time: '11:20:15', event: '航速降至 0.5kn 以下', type: 'warning' },
-      { time: '11:30:10', event: '检测到锚泊行为', type: 'risk' }
-    ]
-  },
-  { 
-    id: '4', 
-    name: '中海 99', 
-    mmsi: '413000004', 
-    type: '油轮', 
-    length: 250, 
-    width: 48, 
-    cargo: '原油', 
-    draft: 14.5, 
-    risk: '碰撞风险', 
-    speed: 10.5, 
-    heading: 180, 
-    wind: '6级', 
-    wave: '2.0m', 
-    visibility: '3km', 
-    time: '2026-03-17 12:45:33', 
-    coords: [31.45, 121.65] as [number, number],
-    snapshot: {
-      image: 'https://picsum.photos/seed/vessel4/400/225',
-      location: '长江口深水航道 D3 浮标',
-      actualSpeed: 10.5,
-      speedLimit: 12.0
-    },
-    timeline: [
-      { time: '12:30:00', event: '能见度降至 3km 以下', type: 'warning' },
-      { time: '12:40:15', event: '与前方船舶 DCPA < 0.2nm', type: 'warning' },
-      { time: '12:45:33', event: '触发碰撞高风险预警', type: 'risk' }
-    ]
-  },
-  { 
-    id: '5', 
-    name: '顺风 6', 
-    mmsi: '413000005', 
-    type: '散货船', 
-    length: 110, 
-    width: 18, 
-    cargo: '煤炭', draft: 6.2, risk: '异常停泊', speed: 0.0, heading: 90, wind: '4级', wave: '0.7m', visibility: '7km', time: '2026-03-17 13:20:15', coords: [31.48, 121.68] as [number, number],
-    snapshot: {
-      image: 'https://picsum.photos/seed/vessel5/400/225',
-      location: '航道边缘水域 E1 浮标附近',
-      actualSpeed: 0.0,
-      speedLimit: 12.0
-    },
-    timeline: [
-      { time: '13:05:00', event: '进入航道边缘水域', type: 'info' },
-      { time: '13:15:30', event: '主机疑似发生故障停航', type: 'warning' },
-      { time: '13:20:15', event: '航道内异常停泊', type: 'risk' }
-    ]
-  },
-];
-
-const MOCK_INTENT_STATS = [
-  {
-    id: '1',
-    name: '远洋 99',
-    mmsi: '413000099',
-    type: '散货船',
-    intent: '起锚',
-    confidence: 92,
-    time: '2026-03-19 11:20',
-    status: '批准',
-    cargo: '煤炭'
-  },
-  {
-    id: '2',
-    name: '海丰 77',
-    mmsi: '413000002',
-    type: '集装箱船',
-    intent: '划江',
-    confidence: 88,
-    time: '2026-03-19 10:45',
-    status: '回复等待',
-    cargo: '日用品'
-  },
-  {
-    id: '3',
-    name: '中海 12',
-    mmsi: '413000012',
-    type: '油轮',
-    intent: '靠泊',
-    confidence: 95,
-    time: '2026-03-19 09:30',
-    status: '主动询问',
-    cargo: '原油'
-  },
-  {
-    id: '4',
-    name: '东方 55',
-    mmsi: '413000055',
-    type: '客船',
-    intent: '离泊',
-    confidence: 85,
-    time: '2026-03-19 08:15',
-    status: '拒绝',
-    cargo: '乘客'
-  },
-  {
-    id: '5',
-    name: '远洋 123',
-    mmsi: '413000001',
-    type: '货轮',
-    intent: '进报告线',
-    confidence: 90,
-    time: '2026-03-19 07:50',
-    status: '紧急干预',
-    cargo: '铁矿石'
-  }
-];
-
-const AREA_TYPE_MAPPING: Record<string, Record<string, string[]>> = {
-  '值班区域': {
-    '值班台': []
-  },
-  '作业与停泊设施': {
-    '码头': ['靠泊等级', '靠泊尺度', '船舶类型限制', '船舶尺度限制', '船舶吨位限制', '最大水深', '最小水深'],
-    '泊位': ['靠泊等级', '靠泊尺度', '船舶类型限制', '船舶尺度限制', '船舶吨位限制', '最大水深', '最小水深'],
-    '锚地': ['靠泊等级', '靠泊尺度', '船舶类型限制', '船舶尺度限制', '船舶吨位限制', '最大水深', '最小水深']
-  },
-  '航道航行设施': {
-    '主航道': ['船舶尺度限制', '船舶吨位限制', '最大水深', '最小水深', '最高限速', '最低限速', '航道方向'],
-    '辅助航道': ['船舶尺度限制', '船舶吨位限制', '最大水深', '最小水深', '最高限速', '最低限速', '航道方向'],
-    '小型船舶航道': ['船舶尺度限制', '船舶吨位限制', '最大水深', '最小水深', '最高限速', '最低限速', '航道方向'],
-    '航道分割线': [],
-    '报告线': [],
-    '导堤': ['船舶类型限制', '船舶尺度限制', '最大水深', '最小水深'],
-    '物标': []
-  },
-  '水域管控': {
-    '警戒区': ['船舶类型限制', '船舶尺度限制', '最高限速', '最低限速'],
-    '禁锚区': ['船舶类型限制', '船舶尺度限制', '最大水深', '最小水深', '最高限速', '最低限速'],
-    '禁航区': ['船舶类型限制', '船舶尺度限制', '最大水深', '最小水深', '最高限速', '最低限速'],
-    '临时管控区': ['船舶类型限制', '船舶尺度限制', '船舶吨位限制', '最大水深', '最小水深', '最高限速', '最低限速', '有效期'],
-    '边坡100米水域': ['船舶类型限制', '船舶尺度限制', '船舶吨位限制', '最大水深', '最小水深', '最高限速', '最低限速'],
-    '浅水区': ['船舶类型限制', '船舶尺度限制', '船舶吨位限制', '最大水深', '最小水深', '最高限速', '最低限速'],
-    '引航作业区': ['船舶类型限制', '船舶尺度限制', '船舶吨位限制', '最大水深', '最小水深', '最高限速', '最低限速'],
-    '调头区': ['船舶类型限制', '船舶尺度限制', '船舶吨位限制', '最大水深', '最小水深', '最高限速', '最低限速']
-  }
-};
-
-const MOCK_AREAS: Record<string, any[]> = {
-  '值班区域': [
-    { id: '1', name: '外高桥值班台', time: '2026-03-05 09:42:59', type: '值班台', status: '正常', fields: {} },
-    { id: '2', name: '黄浦江值班台', time: '2026-03-05 09:42:59', type: '值班台', status: '正常', fields: {} },
-    { id: '3', name: '宝山值班台', time: '2026-03-05 09:42:59', type: '值班台', status: '正常', fields: {} },
-    { id: '4', name: '长江口值班台', time: '2026-03-05 09:42:59', type: '值班台', status: '正常', fields: {} },
-    { id: '5', name: '北槽值班台', time: '2026-03-05 09:42:59', type: '值班台', status: '正常', fields: {} },
-    { id: '6', name: '南槽值班台', time: '2026-03-05 09:42:59', type: '值班台', status: '正常', fields: {} },
-  ],
-  '作业与停泊设施': [
-    { id: '7', name: '外高桥码头', time: '2026-03-05 10:50:00', type: '码头', status: '正常', fields: { '靠泊等级': '5万吨级', '最大水深': '15m', '最小水深': '12m' } },
-    { id: '8', name: '罗泾泊位', time: '2026-03-05 11:20:00', type: '泊位', status: '正常', fields: { '靠泊尺度': '300m', '船舶类型限制': '散货船' } },
-    { id: '9', name: '吴淞口锚地', time: '2026-03-05 12:00:00', type: '锚地', status: '正常', fields: { '船舶吨位限制': '10万吨', '最大水深': '20m' } },
-  ],
-  '航道航行设施': [
-    { id: '10', name: '吴淞主航道', time: '2026-03-05 13:00:00', type: '主航道', status: '正常', fields: { '最高限速': '12节', '最低限速': '5节', '航道方向': '090/270' } },
-    { id: '11', name: '圆圆沙辅助航道', time: '2026-03-05 13:30:00', type: '辅助航道', status: '正常', fields: { '最高限速': '10节', '最大水深': '10m' } },
-    { id: '12', name: '吴淞口报告线', time: '2026-03-05 14:00:00', type: '报告线', status: '正常', fields: {} },
-  ],
-  '水域管控': [
-    { id: '13', name: '吴淞口警戒区', time: '2026-03-05 15:00:00', type: '警戒区', status: '正常', fields: { '最高限速': '8节', '船舶类型限制': '危险品船除外' } },
-    { id: '14', name: '1号禁锚区', time: '2026-03-05 15:30:00', type: '禁锚区', status: '正常', fields: { '最大水深': '25m' } },
-    { id: '15', name: '圆圆沙禁航区', time: '2026-03-05 16:00:00', type: '禁航区', status: '正常', fields: { '最高限速': '0节' } },
-  ],
-};
-
 interface IntentStep {
   label: string;
   status: 'completed' | 'active' | 'pending';
@@ -656,6 +432,30 @@ interface IntentTimelineEvent {
   tag: string;
   content: string;
   status: 'active' | 'completed' | 'initial';
+}
+
+interface IntentRisk {
+  level: '高' | '中' | '低';
+  text: string;
+  action: string;
+  counterparty?: string;
+  location?: string;
+  timeToEncounter?: string;
+}
+
+interface IntentSituation {
+  sog: string;
+  hdg: string;
+  cpa: string;
+  tcpa: string;
+  xtd: string;
+  rot: string;
+  trend: string;
+}
+
+interface IntentRecommendation {
+  action: string;
+  priority: '立即' | '优先' | '关注';
 }
 
 interface IntentItem {
@@ -673,6 +473,12 @@ interface IntentItem {
   time: string;
   occurrenceTime: string;
   details: string;
+  intentSummary: string;
+  intentConfidence: number;
+  intentEta: string;
+  risks: IntentRisk[];
+  situation: IntentSituation;
+  recommendation: IntentRecommendation;
   path: IntentStep[];
   timeline: IntentTimelineEvent[];
 }
@@ -693,6 +499,34 @@ const INTENT_DATA: IntentItem[] = [
     time: '11:20',
     occurrenceTime: '2026-03-19 11:20',
     details: '该船已完成起锚，目前在主航道由北向南行驶至吴淞口附近，正准备划江进入黄浦江。',
+    intentSummary: '前往黄浦江，正在减速进入吴淞口主航道。',
+    intentConfidence: 92,
+    intentEta: '预计 8 分钟后进入报告线',
+    risks: [
+      {
+        level: '高',
+        text: 'CPA 0.18nm：与“海丰77”会遇',
+        action: '保持右侧通过',
+        counterparty: '海丰77',
+        location: '吴淞口主航道交汇点',
+        timeToEncounter: '约 6 分钟后',
+      },
+      { level: '中', text: '航道偏移 +86m：已偏离推荐航迹', action: '回归中心线' },
+      { level: '中', text: '前方交通密集：2 分钟内进入交汇水域', action: '避免加速' },
+    ],
+    situation: {
+      sog: '9.8kn',
+      hdg: '214°',
+      cpa: '0.18nm',
+      tcpa: '06:20',
+      xtd: '+86m',
+      rot: '1.8°/min',
+      trend: 'DCPA ↓',
+    },
+    recommendation: {
+      action: '减速至 8kn 以下，回归推荐航迹，重点关注左前方会遇船。',
+      priority: '立即',
+    },
     path: [
       { label: '6号锚地', status: 'completed', action: '申请起锚' },
       { label: '吴淞口', status: 'active', action: '由北向南划江' },
@@ -719,6 +553,34 @@ const INTENT_DATA: IntentItem[] = [
     time: '11:35',
     occurrenceTime: '2026-03-19 11:35',
     details: '该船已从圆圆沙锚地起锚，目前正进入南槽航道由北向南航行，预计前往外高桥码头靠泊。',
+    intentSummary: '前往外高桥码头，正在南槽航道保持进港队形。',
+    intentConfidence: 85,
+    intentEta: '预计 12 分钟后进入靠泊引导区',
+    risks: [
+      {
+        level: '高',
+        text: 'CPA 0.22nm：与“远洋99”存在交叉会遇',
+        action: '保持右舷避让',
+        counterparty: '远洋99',
+        location: '南槽入口交叉口',
+        timeToEncounter: '约 5 分钟后',
+      },
+      { level: '中', text: '航速 15.8kn：高于当前建议进港航速', action: '减速至 12kn' },
+      { level: '中', text: '前方密度升高：南槽入口船流叠加', action: '保持纵向间距' },
+    ],
+    situation: {
+      sog: '15.8kn',
+      hdg: '196°',
+      cpa: '0.22nm',
+      tcpa: '04:50',
+      xtd: '+34m',
+      rot: '0.7°/min',
+      trend: 'TCPA ↓',
+    },
+    recommendation: {
+      action: '减速进入队列，保持南槽中心线，提前关注交叉来船。',
+      priority: '立即',
+    },
     path: [
       { label: '圆圆沙', status: 'completed', action: '已起锚' },
       { label: '南槽航道', status: 'active', action: '由北向南航行' },
@@ -745,6 +607,34 @@ const INTENT_DATA: IntentItem[] = [
     time: '11:45',
     occurrenceTime: '2026-03-19 11:45',
     details: '该船正在外高桥码头进行离泊作业，预计离泊后经南槽航道前往洋山港。',
+    intentSummary: '前往洋山港，当前处于外高桥码头离泊阶段。',
+    intentConfidence: 95,
+    intentEta: '预计 6 分钟后完成解缆离泊',
+    risks: [
+      {
+        level: '中',
+        text: '港池机动空间有限：拖轮作业窗口较短',
+        action: '保持低速离泊',
+        counterparty: '沪港拖08',
+        location: '外高桥港池出口',
+        timeToEncounter: '约 9 分钟后',
+      },
+      { level: '中', text: '艏向调整中：旋回余度不足', action: '优先校正船首方向' },
+      { level: '低', text: '后方交通可控：无紧迫追越船', action: '按计划离泊' },
+    ],
+    situation: {
+      sog: '4.2kn',
+      hdg: '128°',
+      cpa: '0.46nm',
+      tcpa: '09:10',
+      xtd: '+12m',
+      rot: '2.2°/min',
+      trend: 'ROT ↑',
+    },
+    recommendation: {
+      action: '保持低速解缆，先完成艏向修正，再进入离港航道。',
+      priority: '优先',
+    },
     path: [
       { label: '外高桥', status: 'active', action: '离泊中' },
       { label: '南槽航道', status: 'pending', action: '航行' },
@@ -770,6 +660,34 @@ const INTENT_DATA: IntentItem[] = [
     time: '11:52',
     occurrenceTime: '2026-03-19 11:52',
     details: '该船已抵达10号锚地，目前正在减速准备抛锚，等待后续进港指令。',
+    intentSummary: '进入10号锚地，正在减速准备抛锚等待指令。',
+    intentConfidence: 88,
+    intentEta: '预计 5 分钟后完成抛锚动作',
+    risks: [
+      {
+        level: '中',
+        text: '锚地内相邻船距收缩：左舷船间距不足',
+        action: '限制横移',
+        counterparty: '海巡21',
+        location: '10号锚地西侧入锚点',
+        timeToEncounter: '约 11 分钟后',
+      },
+      { level: '中', text: '航速 2.5kn：抛锚前减速不足', action: '继续降至 1kn 以下' },
+      { level: '低', text: '风流可控：当前不影响锚泊', action: '维持艏向稳定' },
+    ],
+    situation: {
+      sog: '2.5kn',
+      hdg: '071°',
+      cpa: '0.62nm',
+      tcpa: '11:40',
+      xtd: '+18m',
+      rot: '0.5°/min',
+      trend: 'SOG ↓',
+    },
+    recommendation: {
+      action: '继续减速并限制横移，确认锚位后再执行抛锚。',
+      priority: '优先',
+    },
     path: [
       { label: '长江口', status: 'completed', action: '进港航行' },
       { label: '10号锚地', status: 'active', action: '准备抛锚' },
@@ -795,6 +713,34 @@ const INTENT_DATA: IntentItem[] = [
     time: '12:05',
     occurrenceTime: '2026-03-19 12:05',
     details: '该船正在穿越主航道，从北槽前往南槽执行拖带任务，需注意避让主航道直航船舶。',
+    intentSummary: '由北槽前往南槽，正在申请穿越主航道执行拖带任务。',
+    intentConfidence: 90,
+    intentEta: '预计 4 分钟后进入主航道中心带',
+    risks: [
+      {
+        level: '高',
+        text: '主航道直航船接近：TCPA 03:10',
+        action: '延后穿越窗口',
+        counterparty: '新海安',
+        location: '3号浮北侧会遇点',
+        timeToEncounter: '约 3 分钟后',
+      },
+      { level: '中', text: '横穿角度偏大：穿越时间被拉长', action: '调整为快速直穿' },
+      { level: '中', text: '周边交通密集：拖带作业机动受限', action: '提前通报周边船舶' },
+    ],
+    situation: {
+      sog: '8.5kn',
+      hdg: '156°',
+      cpa: '0.24nm',
+      tcpa: '03:10',
+      xtd: '+55m',
+      rot: '1.1°/min',
+      trend: 'CPA ↓',
+    },
+    recommendation: {
+      action: '延后穿越，待主航道直航船通过后再快速直穿。',
+      priority: '立即',
+    },
     path: [
       { label: '北槽', status: 'completed', action: '航行' },
       { label: '主航道', status: 'active', action: '穿越主航道' },
@@ -820,6 +766,34 @@ const INTENT_DATA: IntentItem[] = [
     time: '16:32',
     occurrenceTime: '2025-12-17 16:32',
     details: '该船正在吴淞口水域航行，准备划江进入黄浦江。',
+    intentSummary: '前往黄浦江，当前在吴淞口水域准备划江进入内港。',
+    intentConfidence: 90,
+    intentEta: '预计 7 分钟后进入黄浦江口门',
+    risks: [
+      {
+        level: '中',
+        text: '交通流汇聚：吴淞口入口双向船流叠加',
+        action: '保持现航向待机',
+        counterparty: '蓝波',
+        location: '吴淞口警戒线南侧',
+        timeToEncounter: '约 8 分钟后',
+      },
+      { level: '中', text: '航道偏移 +42m：接近航道右侧边界', action: '回归推荐航迹' },
+      { level: '低', text: 'CPA 0.41nm：当前会遇风险可控', action: '持续观察' },
+    ],
+    situation: {
+      sog: '9.2kn',
+      hdg: '172°',
+      cpa: '0.41nm',
+      tcpa: '08:35',
+      xtd: '+42m',
+      rot: '0.6°/min',
+      trend: 'XTD ↑',
+    },
+    recommendation: {
+      action: '保持当前航速，先回归中心线，再按窗口进入黄浦江。',
+      priority: '优先',
+    },
     path: [
       { label: '长江口', status: 'completed', action: '进港' },
       { label: '吴淞口', status: 'active', action: '划江' },
@@ -831,94 +805,29 @@ const INTENT_DATA: IntentItem[] = [
   }
 ];
 
-const MOCK_VESSEL_DYNAMICS = [
-  {
-    id: 'vd1',
-    name: '远洋99',
-    mmsi: '413123456',
-    type: '货轮',
-    origin: '宁波',
-    status: '正在作业',
-    startTime: '2026-03-15 08:30',
-    endTime: '',
-    destination: '黄浦江',
-    events: [
-      { time: '08:30', type: 'action', label: '进入辖区', desc: '船舶进入吴淞口警戒区', status: 'completed', coords: [121.5, 31.4] },
-      { 
-        time: '08:45', 
-        type: 'comm', 
-        label: '申请划江', 
-        desc: '向值班员申请由北向南划江', 
-        status: 'completed',
-        coords: [121.52, 31.38],
-        dialogue: [
-          { sender: '远洋99', content: '吴淞VTS，远洋99申请由北向南划江。', time: '08:45:10' },
-          { sender: '吴淞VTS', content: '远洋99，吴淞VTS，同意划江，请注意避让主航道进港船舶。', time: '08:45:30' },
-        ]
-      },
-      { time: '08:50', type: 'action', label: '开始划江', desc: '开始穿越主航道', status: 'completed', coords: [121.53, 31.37] },
-      { time: '09:10', type: 'risk', label: '违规行为', desc: '未按规定航路行驶，偏离航道0.2海里', status: 'warning', coords: [121.55, 31.35] },
-      { time: '09:25', type: 'action', label: '抵达锚地', desc: '进入6号锚地等待潮汐', status: 'current', coords: [121.58, 31.32] },
-      { time: '10:30', type: 'pending', label: '预计靠泊', desc: '预计前往粮油码头靠泊', status: 'pending' },
-    ]
-  },
-  {
-    id: 'vd2',
-    name: '海丰国际',
-    mmsi: '413789012',
-    type: '集装箱船',
-    origin: '釜山',
-    status: '正在航行',
-    startTime: '2026-03-15 09:00',
-    endTime: '2026-03-15 11:30',
-    destination: '外高桥码头',
-    events: [
-      { time: '09:00', type: 'action', label: '起锚', desc: '从圆圆沙锚地起锚', status: 'completed', coords: [121.65, 31.3] },
-      { time: '09:15', type: 'comm', label: '报告动态', desc: '报告进入南槽航道', status: 'completed', coords: [121.68, 31.28] },
-      { time: '09:40', type: 'action', label: '通过报告线', desc: '通过吴淞口报告线', status: 'completed', coords: [121.72, 31.25] },
-      { time: '10:15', type: 'action', label: '接近码头', desc: '正在接近外高桥码头', status: 'current', coords: [121.75, 31.22] },
-    ]
-  },
-  {
-    id: 'vd3',
-    name: '中远海运',
-    mmsi: '413456789',
-    type: '油轮',
-    origin: '新加坡',
-    status: '等待中',
-    startTime: '2026-03-15 07:30',
-    endTime: '',
-    destination: '罗泾泊位',
-    events: [
-      { time: '07:30', type: 'action', label: '进入辖区', desc: '进入长江口区域', status: 'completed', coords: [121.4, 31.5] },
-      { 
-        time: '08:00', 
-        type: 'comm', 
-        label: '申请靠泊', 
-        desc: '申请罗泾泊位靠泊', 
-        status: 'completed',
-        coords: [121.42, 31.48],
-        dialogue: [
-          { sender: '中远海运', content: '吴淞中心，中远海运申请罗泾泊位靠泊。', time: '08:00:05' },
-          { sender: '吴淞中心', content: '中远海运，收到，请在锚地等待进一步指令。', time: '08:00:25' },
-        ]
-      },
-      { 
-        time: '08:10', 
-        type: 'comm', 
-        label: '指令接收', 
-        desc: '值班员指令：泊位占用，前往泊位外等待', 
-        status: 'completed',
-        coords: [121.45, 31.45],
-        dialogue: [
-          { sender: '吴淞中心', content: '中远海运，罗泾泊位目前有船作业，请前往指定水域锚泊等待。', time: '08:10:15' },
-          { sender: '中远海运', content: '收到，前往指定水域锚泊。', time: '08:10:40' },
-        ]
-      },
-      { time: '08:30', type: 'action', label: '锚泊等待', desc: '在指定水域抛锚等待', status: 'current', coords: [121.48, 31.42] },
-    ]
-  }
-];
+const getPrimaryIntentAction = (item: IntentItem) =>
+  item.path.find((step) => step.status === 'active')?.action || '正常航行';
+
+const getCompactIntentLine = (item: IntentItem) =>
+  `${getPrimaryIntentAction(item)} → ${item.destination}（${item.intentConfidence}%）`;
+
+const getCompactRiskLines = (item: IntentItem) => {
+  const collisionRisk = item.risks[0];
+  const tone = collisionRisk.level === '高' ? 'high' : 'medium';
+
+  return [
+    {
+      tone,
+      label: '风险：',
+      text: `与${collisionRisk.counterparty || '目标船'}会遇｜CPA ${item.situation.cpa}`,
+    },
+    {
+      tone,
+      label: '会遇：',
+      text: `${collisionRisk.location || item.current}｜${collisionRisk.timeToEncounter || `${item.situation.tcpa} 后`}`,
+    },
+  ];
+};
 
 // --- 组件 ---
 
@@ -3795,7 +3704,7 @@ export default function App() {
                     </div>
                   </div>
 
-                  {/* Timeline Section */}
+                  {/* Decision Panel */}
                   <AnimatePresence>
                     {selectedIntent === i && (
                       <motion.div
@@ -3804,39 +3713,42 @@ export default function App() {
                         exit={{ height: 0, opacity: 0 }}
                         className="overflow-hidden border-t border-white/5"
                       >
-                        <div className="p-1.5 space-y-1.5">
-                          {item.timeline.map((event, idx) => (
-                            <div key={idx} className="relative pl-3.5 group/item">
-                              {/* Timeline Line */}
-                              {idx !== item.timeline.length - 1 && (
-                                <div className="absolute left-[1.5px] top-2.5 bottom-[-12px] w-[1px] bg-white/5" />
-                              )}
-                              
-                              {/* Timeline Dot */}
-                              <div className={`absolute left-0 top-1 w-1 h-1 rounded-full border transition-all duration-500 ${
-                                event.status === 'active' ? 'bg-sky-500 border-sky-400 shadow-[0_0_4px_rgba(14,165,233,0.5)]' :
-                                event.status === 'completed' ? 'bg-white/10 border-white/20' :
-                                'bg-white/5 border-white/10'
-                              }`} />
-
-                              <div className="space-y-0.5">
-                                <div className="flex items-center gap-1">
-                                  <span className="text-[7px] font-mono text-white/30">{event.time}</span>
-                                  <div className={`px-1 py-0.5 rounded text-[6px] font-black uppercase tracking-widest ${
-                                    event.status === 'active' ? 'bg-sky-500/10 text-sky-400 border border-sky-500/20' :
-                                    'bg-white/5 text-white/40 border border-white/5'
-                                  }`}>
-                                    {event.tag}
-                                  </div>
-                                </div>
-                                <p className={`text-[8px] leading-relaxed transition-colors ${
-                                  event.status === 'active' ? 'text-white/80' : 'text-white/40'
-                                }`}>
-                                  {event.content}
-                                </p>
-                              </div>
+                        <div className="p-2 space-y-1.5 bg-[#0d1117]">
+                          <div className="rounded-lg border border-sky-500/15 bg-sky-500/[0.06] px-2 py-1.5">
+                            <div className="flex items-center gap-1.5 text-[9px] font-bold text-white">
+                              <LocateFixed size={10} className="shrink-0 text-sky-400" />
+                              <span className="shrink-0 text-sky-300/90">意图：</span>
+                              <span className="truncate">{getCompactIntentLine(item)}</span>
                             </div>
-                          ))}
+                          </div>
+
+                          <div className="rounded-lg border border-red-500/15 bg-red-500/[0.04] px-2 py-1.5">
+                            <div className="space-y-1 text-[9px] font-bold text-white">
+                              {getCompactRiskLines(item).map((risk, idx) => (
+                                <div key={idx} className="flex items-center gap-1.5">
+                                  {idx === 0 ? (
+                                    <AlertTriangle size={10} className="shrink-0 text-red-400" />
+                                  ) : (
+                                    <div className="w-[10px] shrink-0" />
+                                  )}
+                                  <span className={risk.tone === 'high' ? 'shrink-0 text-red-300/90' : 'shrink-0 text-amber-300/90'}>
+                                    {risk.label}
+                                  </span>
+                                  <span className="truncate">{risk.text}</span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+
+                          <div className="rounded-lg border border-emerald-500/15 bg-emerald-500/[0.05] px-2 py-1.5">
+                            <div className="flex items-start gap-1.5 text-[9px] font-bold text-white/92">
+                              <Shield size={10} className="mt-[1px] shrink-0 text-emerald-400" />
+                              <span className="shrink-0 text-emerald-300/90">建议：</span>
+                              <span className="min-w-0 whitespace-normal break-words leading-relaxed">
+                                {item.recommendation.action}
+                              </span>
+                            </div>
+                          </div>
 
                           <div className="pt-2 border-t border-white/5 flex justify-center">
                             <button 

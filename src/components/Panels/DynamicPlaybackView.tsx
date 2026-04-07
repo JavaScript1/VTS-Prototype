@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence } from 'motion/react';
 import { 
   ArrowLeft, 
   Pause, 
@@ -13,11 +13,23 @@ import {
 } from 'lucide-react';
 import { MapContainer, TileLayer, Polygon, Popup, Marker, Polyline, CircleMarker } from 'react-leaflet';
 import L from 'leaflet';
-import { MOCK_AREAS } from '../../mockData';
+import {
+  MOCK_AREAS,
+  type MockArea,
+  type PlaybackSessionLike,
+} from '../../mockData';
 
 interface DynamicPlaybackViewProps {
-  session: any;
+  session: PlaybackSessionLike;
   onClose: () => void;
+}
+
+interface AreaMapElement {
+  id: string;
+  name: string;
+  type: string;
+  center: [number, number];
+  bounds: [number, number][];
 }
 
 const DynamicPlaybackView: React.FC<DynamicPlaybackViewProps> = ({ 
@@ -78,7 +90,7 @@ const DynamicPlaybackView: React.FC<DynamicPlaybackViewProps> = ({
     setExpandedCategories(newExpanded);
   };
 
-  const toggleAllInCategory = (category: string, areas: any[]) => {
+  const toggleAllInCategory = (_category: string, areas: MockArea[]) => {
     const newSelected = new Set(selectedAreas);
     const allSelected = areas.every(a => selectedAreas.has(a.id));
     
@@ -94,7 +106,7 @@ const DynamicPlaybackView: React.FC<DynamicPlaybackViewProps> = ({
 
   // 为选中的区域生成模拟地图元素
   const areaMapElements = useMemo(() => {
-    const elements: any[] = [];
+    const elements: AreaMapElement[] = [];
     Object.values(MOCK_AREAS).flat().forEach(area => {
       if (selectedAreas.has(area.id)) {
         // 随机生成一个中心点附近的区域

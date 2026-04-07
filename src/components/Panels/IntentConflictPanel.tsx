@@ -1,5 +1,5 @@
 import React from 'react';
-import { motion } from 'framer-motion';
+import { motion } from 'motion/react';
 import { AlertTriangle } from 'lucide-react';
 
 const IntentConflictPanel: React.FC = () => (
