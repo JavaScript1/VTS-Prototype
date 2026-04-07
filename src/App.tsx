@@ -173,6 +173,7 @@ interface Alert {
   ship: string;
   shipType: string;
   mmsi: string;
+  callsign?: string;
   destination: string;
   cargo: string;
   riskScore: number;
@@ -405,6 +406,12 @@ const MOCK_RISK_STATS = [
     coords: [31.35, 121.55] as [number, number],
     destination: '上海',
     riskScore: 88,
+    snapshot: {
+      image: 'https://picsum.photos/seed/vessel1/400/225',
+      location: '吴淞口警戒区 A12 浮标附近',
+      actualSpeed: 14.2,
+      speedLimit: 12.0
+    },
     timeline: [
       { time: '09:00:15', event: '进入吴淞口警戒区', type: 'info' },
       { time: '09:05:42', event: '航速持续上升 (12.5kn -> 14.2kn)', type: 'warning' },
@@ -432,6 +439,12 @@ const MOCK_RISK_STATS = [
     coords: [31.38, 121.58] as [number, number],
     destination: '宁波',
     riskScore: 75,
+    snapshot: {
+      image: 'https://picsum.photos/seed/vessel2/400/225',
+      location: '圆圆沙 12 号浮标南侧',
+      actualSpeed: 12.1,
+      speedLimit: 12.0
+    },
     timeline: [
       { time: '09:45:00', event: '通过圆圆沙报告线', type: 'info' },
       { time: '09:55:30', event: '航向发生异常偏转', type: 'warning' },
@@ -455,6 +468,12 @@ const MOCK_RISK_STATS = [
     visibility: '10km', 
     time: '2026-03-17 11:30:10', 
     coords: [31.42, 121.62] as [number, number],
+    snapshot: {
+      image: 'https://picsum.photos/seed/vessel3/400/225',
+      location: '非锚泊作业区 B5 区域',
+      actualSpeed: 0.1,
+      speedLimit: 0.5
+    },
     timeline: [
       { time: '11:10:00', event: '进入非锚泊作业区', type: 'info' },
       { time: '11:20:15', event: '航速降至 0.5kn 以下', type: 'warning' },
@@ -478,6 +497,12 @@ const MOCK_RISK_STATS = [
     visibility: '3km', 
     time: '2026-03-17 12:45:33', 
     coords: [31.45, 121.65] as [number, number],
+    snapshot: {
+      image: 'https://picsum.photos/seed/vessel4/400/225',
+      location: '长江口深水航道 D3 浮标',
+      actualSpeed: 10.5,
+      speedLimit: 12.0
+    },
     timeline: [
       { time: '12:30:00', event: '能见度降至 3km 以下', type: 'warning' },
       { time: '12:40:15', event: '与前方船舶 DCPA < 0.2nm', type: 'warning' },
@@ -492,6 +517,12 @@ const MOCK_RISK_STATS = [
     length: 110, 
     width: 18, 
     cargo: '煤炭', draft: 6.2, risk: '异常停泊', speed: 0.0, heading: 90, wind: '4级', wave: '0.7m', visibility: '7km', time: '2026-03-17 13:20:15', coords: [31.48, 121.68] as [number, number],
+    snapshot: {
+      image: 'https://picsum.photos/seed/vessel5/400/225',
+      location: '航道边缘水域 E1 浮标附近',
+      actualSpeed: 0.0,
+      speedLimit: 12.0
+    },
     timeline: [
       { time: '13:05:00', event: '进入航道边缘水域', type: 'info' },
       { time: '13:15:30', event: '主机疑似发生故障停航', type: 'warning' },
@@ -2101,81 +2132,137 @@ const AdminPanel = ({
                                         exit={{ height: 0, opacity: 0 }}
                                         className="overflow-hidden"
                                       >
-                                        <div className="py-4 grid grid-cols-4 gap-6">
-                                          <div className="space-y-4 col-span-2">
-                                            <div className="space-y-1">
-                                              <span className="text-[10px] font-bold text-white/20 uppercase tracking-widest">风险详情</span>
-                                              <div className="bg-white/5 border border-white/5 rounded-xl p-3 grid grid-cols-2 gap-4">
-                                                <div className="space-y-2">
+                                        <div className="py-4 grid grid-cols-12 gap-6">
+                                          {/* 左侧：详情 + 时间轴 */}
+                                          <div className="col-span-8 space-y-6">
+                                            <div className="grid grid-cols-2 gap-6">
+                                              {/* 风险详情 */}
+                                              <div className="space-y-1">
+                                                <span className="text-[10px] font-bold text-white/20 uppercase tracking-widest">风险详情</span>
+                                                <div className="bg-white/5 border border-white/5 rounded-xl p-4 space-y-3 h-[130px] flex flex-col justify-center">
                                                   <div className="flex justify-between items-center">
-                                                    <span className="text-[10px] text-white/40">呼号 / MMSI</span>
-                                                    <span className="text-[10px] font-mono text-sky-400">{item.callsign} / {item.mmsi}</span>
+                                                    <span className="text-[10px] text-white/40">风险指数</span>
+                                                    <span className="text-sm font-black text-red-400">{item.riskScore}</span>
                                                   </div>
                                                   <div className="flex justify-between items-center">
-                                                    <span className="text-[10px] text-white/40">风险评分</span>
-                                                    <span className="text-xs font-bold text-red-400">{item.riskScore}</span>
+                                                    <span className="text-[10px] text-white/40">风险行为</span>
+                                                    <span className="px-1.5 py-0.5 bg-red-500/10 border border-red-500/20 rounded text-[10px] font-bold text-red-400">{item.risk}</span>
                                                   </div>
                                                   <div className="flex justify-between items-center">
-                                                    <span className="text-[10px] text-white/40">目的港</span>
-                                                    <span className="text-[10px] text-white/80">{item.destination}</span>
+                                                    <span className="text-[10px] text-white/40">触发时间</span>
+                                                    <span className="text-[10px] font-mono text-white/60">{item.time.split(' ')[1]}</span>
                                                   </div>
                                                 </div>
-                                                <div className="space-y-2">
-                                                  <div className="flex justify-between items-center">
-                                                    <span className="text-[10px] text-white/40">船长 / 船宽</span>
-                                                    <span className="text-[10px] text-white/80">{item.length}m / {item.width}m</span>
-                                                  </div>
-                                                  <div className="flex justify-between items-center">
-                                                    <span className="text-[10px] text-white/40">吃水 / 船型</span>
-                                                    <span className="text-[10px] text-white/80">{item.draft}m / {item.type}</span>
-                                                  </div>
-                                                  <div className="flex justify-between items-center">
-                                                    <span className="text-[10px] text-white/40">货物类型</span>
-                                                    <span className="text-[10px] text-white/80">{item.cargo}</span>
+                                              </div>
+
+                                              {/* 船舶详情 */}
+                                              <div className="space-y-1">
+                                                <span className="text-[10px] font-bold text-white/20 uppercase tracking-widest">船舶详情</span>
+                                                <div className="bg-white/5 border border-white/5 rounded-xl p-4 h-[130px] flex flex-col justify-center">
+                                                  <div className="grid grid-cols-2 gap-x-8 gap-y-2.5">
+                                                    <div className="flex justify-between items-center">
+                                                      <span className="text-[10px] text-white/40">呼号</span>
+                                                      <span className="text-[10px] font-mono text-sky-400">{item.callsign}</span>
+                                                    </div>
+                                                    <div className="flex justify-between items-center">
+                                                      <span className="text-[10px] text-white/40">MMSI</span>
+                                                      <span className="text-[10px] font-mono text-sky-400">{item.mmsi}</span>
+                                                    </div>
+                                                    <div className="flex justify-between items-center">
+                                                      <span className="text-[10px] text-white/40">船长</span>
+                                                      <span className="text-[10px] text-white/80">{item.length}m</span>
+                                                    </div>
+                                                    <div className="flex justify-between items-center">
+                                                      <span className="text-[10px] text-white/40">船宽</span>
+                                                      <span className="text-[10px] text-white/80">{item.width}m</span>
+                                                    </div>
+                                                    <div className="flex justify-between items-center">
+                                                      <span className="text-[10px] text-white/40">吃水</span>
+                                                      <span className="text-[10px] text-white/80">{item.draft}m</span>
+                                                    </div>
+                                                    <div className="flex justify-between items-center">
+                                                      <span className="text-[10px] text-white/80">船型</span>
+                                                      <span className="text-[10px] text-white/40">{item.type}</span>
+                                                    </div>
+                                                    <div className="flex justify-between items-center">
+                                                      <span className="text-[10px] text-white/40">货物</span>
+                                                      <span className="text-[10px] text-white/80 truncate ml-2">{item.cargo}</span>
+                                                    </div>
+                                                    <div className="flex justify-between items-center">
+                                                      <span className="text-[10px] text-white/40">目的港</span>
+                                                      <span className="text-[10px] text-white/80 truncate ml-2">{item.destination}</span>
+                                                    </div>
                                                   </div>
                                                 </div>
                                               </div>
                                             </div>
-                                            <div className="grid grid-cols-3 gap-3">
-                                              <div className="bg-white/5 border border-white/5 rounded-xl p-3">
-                                                <div className="text-[8px] text-white/20 font-bold uppercase mb-1">实时航速</div>
-                                                <div className="text-xs font-bold text-sky-400">{item.speed} kn</div>
-                                              </div>
-                                              <div className="bg-white/5 border border-white/5 rounded-xl p-3">
-                                                <div className="text-[8px] text-white/20 font-bold uppercase mb-1">当前航向</div>
-                                                <div className="text-xs font-bold text-white/80">{item.heading}°</div>
-                                              </div>
-                                              <div className="bg-white/5 border border-white/5 rounded-xl p-3">
-                                                <div className="text-[8px] text-white/20 font-bold uppercase mb-1">能见度</div>
-                                                <div className="text-xs font-bold text-emerald-400">{item.visibility}</div>
+
+                                            {/* 风险演化时间轴 */}
+                                            <div className="space-y-1">
+                                              <span className="text-[10px] font-bold text-white/20 uppercase tracking-widest">风险演化时间轴</span>
+                                              <div className="bg-white/5 border border-white/5 rounded-xl p-4 h-[112px] flex items-center">
+                                                <div className="flex items-center justify-between gap-2 w-full">
+                                                  {item.timeline.map((t, idx) => (
+                                                    <div key={idx} className="flex-1 relative">
+                                                      {idx !== item.timeline.length - 1 && (
+                                                        <div className="absolute top-[11px] left-[50%] w-full h-[1px] bg-white/10" />
+                                                      )}
+                                                      <div className="flex flex-col items-center gap-1.5 relative z-10">
+                                                        <div className={`w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-bold ${
+                                                          t.type === 'risk' ? 'bg-red-500/20 text-red-400 border border-red-500/30' :
+                                                          t.type === 'warning' ? 'bg-orange-500/20 text-orange-400 border border-orange-500/30' :
+                                                          'bg-white/10 text-white/40 border border-white/10'
+                                                        }`}>
+                                                          {idx + 1}
+                                                        </div>
+                                                        <div className="text-center">
+                                                          <div className="text-[9px] font-bold text-white/70 whitespace-nowrap overflow-hidden text-ellipsis max-w-[80px]">{t.event}</div>
+                                                          <div className="text-[7px] font-mono text-white/20">{t.time}</div>
+                                                        </div>
+                                                      </div>
+                                                    </div>
+                                                  ))}
+                                                </div>
                                               </div>
                                             </div>
                                           </div>
 
-                                          <div className="space-y-1 col-span-3">
-                                            <span className="text-[10px] font-bold text-white/20 uppercase tracking-widest">风险演化时间轴</span>
-                                            <div className="bg-white/5 border border-white/5 rounded-xl p-4">
-                                              <div className="flex items-center justify-between gap-4">
-                                                {item.timeline.map((t, idx) => (
-                                                  <div key={idx} className="flex-1 relative">
-                                                    {idx !== item.timeline.length - 1 && (
-                                                      <div className="absolute top-[11px] left-[50%] w-full h-[1px] bg-white/10" />
-                                                    )}
-                                                    <div className="flex flex-col items-center gap-2 relative z-10">
-                                                      <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold ${
-                                                        t.type === 'risk' ? 'bg-red-500/20 text-red-400 border border-red-500/30' :
-                                                        t.type === 'warning' ? 'bg-orange-500/20 text-orange-400 border border-orange-500/30' :
-                                                        'bg-white/10 text-white/40 border border-white/10'
-                                                      }`}>
-                                                        {idx + 1}
-                                                      </div>
-                                                      <div className="text-center">
-                                                        <div className="text-[10px] font-bold text-white/80 whitespace-nowrap">{t.event}</div>
-                                                        <div className="text-[8px] font-mono text-white/30">{t.time}</div>
-                                                      </div>
+                                          {/* 右侧：预警快照 */}
+                                          <div className="col-span-4 space-y-1">
+                                            <span className="text-[10px] font-bold text-white/20 uppercase tracking-widest">预警快照</span>
+                                            <div className="bg-white/5 border border-white/5 rounded-xl overflow-hidden group relative">
+                                              <div className="relative aspect-video">
+                                                <img 
+                                                  src={item.snapshot?.image} 
+                                                  alt="Snapshot" 
+                                                  className="w-full h-full object-cover opacity-60 group-hover:opacity-80 transition-opacity" 
+                                                  referrerPolicy="no-referrer" 
+                                                />
+                                                <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent flex flex-col justify-end p-3">
+                                                  <div className="flex items-center gap-2 mb-2">
+                                                    <MapPin size={12} className="text-sky-400" />
+                                                    <span className="text-[10px] text-white/90 font-bold truncate">{item.snapshot?.location}</span>
+                                                  </div>
+                                                  <div className="grid grid-cols-3 gap-2">
+                                                    <div className="flex flex-col">
+                                                      <span className="text-[8px] text-white/40 uppercase tracking-tighter">实际航速</span>
+                                                      <span className="text-[11px] font-bold text-red-400">{item.snapshot?.actualSpeed} kn</span>
+                                                    </div>
+                                                    <div className="flex flex-col">
+                                                      <span className="text-[8px] text-white/40 uppercase tracking-tighter">规定限速</span>
+                                                      <span className="text-[11px] font-bold text-emerald-400">{item.snapshot?.speedLimit} kn</span>
+                                                    </div>
+                                                    <div className="flex flex-col">
+                                                      <span className="text-[8px] text-white/40 uppercase tracking-tighter">超速幅度</span>
+                                                      <span className="text-[11px] font-bold text-amber-400">
+                                                        {item.snapshot ? (((item.snapshot.actualSpeed - item.snapshot.speedLimit) / item.snapshot.speedLimit) * 100).toFixed(1) : 0}%
+                                                      </span>
                                                     </div>
                                                   </div>
-                                                ))}
+                                                </div>
+                                                <div className="absolute top-2 right-2 px-1.5 py-0.5 bg-red-500 text-white text-[8px] font-black rounded uppercase tracking-widest shadow-lg">
+                                                  Warning Snapshot
+                                                </div>
                                               </div>
                                             </div>
                                           </div>
@@ -3917,7 +4004,7 @@ export default function App() {
                                 <div className="text-[10px] font-mono text-sky-400">{alert.callsign} / {alert.mmsi}</div>
                               </div>
                               <div className="bg-white/5 p-2 rounded-lg border border-white/5">
-                                <div className="text-[8px] text-white/30 font-bold uppercase tracking-widest mb-1">风险评分</div>
+                                <div className="text-[8px] text-white/30 font-bold uppercase tracking-widest mb-1">风险指数</div>
                                 <div className="text-[10px] font-bold text-red-400">{alert.riskScore}</div>
                               </div>
                               <div className="bg-white/5 p-2 rounded-lg border border-white/5">
