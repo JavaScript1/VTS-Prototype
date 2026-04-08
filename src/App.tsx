@@ -68,6 +68,11 @@ import {
   MOCK_RISK_STATS,
   MOCK_VESSEL_DYNAMICS,
 } from './mockData';
+import {
+  groupVhfMessages,
+  type ConversationCard,
+  type VhfMessage as AggregatedVhfMessage,
+} from './utils/vhfConversation';
 
 // 地图状态持久化组件
 const MapStatePersister = () => {
@@ -420,6 +425,75 @@ const MOCK_ALERTS: Alert[] = [
     ]
   },
 ];
+
+const parseLegacyVhfTimestamp = (message: VHFMessage) => {
+  const parsed = Date.parse(`${message.date}T${message.time}`);
+  return Number.isNaN(parsed) ? 0 : parsed;
+};
+
+const getLegacyVhfRiskLevel = (message: VHFMessage): AggregatedVhfMessage['riskLevel'] =>
+  message.sessionType === 'alert' ? 'high' : null;
+
+const normalizeLegacyVhfMessage = (message: VHFMessage): AggregatedVhfMessage => ({
+  id: message.id,
+  speaker: message.sender,
+  role: message.isVTS ? 'control' : 'ship',
+  text: message.content,
+  timestamp: parseLegacyVhfTimestamp(message),
+  time: `${message.date} ${message.time}`,
+  intent: message.sessionIntent,
+  riskLevel: getLegacyVhfRiskLevel(message),
+});
+
+const getConversationCardTimeLabel = (card: ConversationCard) => {
+  const start = card.messages[0]?.time?.split(' ').pop() || card.time || '';
+  const end = card.messages[card.messages.length - 1]?.time?.split(' ').pop() || start;
+
+  return start && end && start !== end ? `${start} - ${end}` : start || end;
+};
+
+interface VhfShipInfo {
+  name: string;
+  shipType?: string;
+  mmsi?: string;
+  destination?: string;
+  speed?: string;
+  length?: string;
+  width?: string;
+  draft?: string;
+  cargoType?: string;
+}
+
+interface VhfSessionSummary {
+  sessionId: string;
+  shipName: string;
+  operatorName: string;
+  intent: string;
+  sessionType: 'intent' | 'alert';
+  messages: VHFMessage[];
+  cards: ConversationCard[];
+  shipInfo?: VhfShipInfo;
+  startedAt: number;
+  latestAt: number;
+  latestTime: string;
+}
+
+const normalizeVhfShipName = (value: string) => value.replace(/[\s_-]+/g, '').toLowerCase();
+
+const mergeVhfShipInfo = (
+  current: VhfShipInfo | undefined,
+  next: Partial<VhfShipInfo> & { name: string },
+): VhfShipInfo => ({
+  name: current?.name ?? next.name,
+  shipType: next.shipType ?? current?.shipType,
+  mmsi: next.mmsi ?? current?.mmsi,
+  destination: next.destination ?? current?.destination,
+  speed: next.speed ?? current?.speed,
+  length: next.length ?? current?.length,
+  width: next.width ?? current?.width,
+  draft: next.draft ?? current?.draft,
+  cargoType: next.cargoType ?? current?.cargoType,
+});
 
 interface IntentStep {
   label: string;
@@ -3215,11 +3289,112 @@ export default function App() {
   const [playbackData, setPlaybackData] = useState<{ vessel: any, event: any } | null>(null);
   const [dynamicPlaybackSession, setDynamicPlaybackSession] = useState<{ vessel: any, event: any } | null>(null);
   const [vhfMessages, setVhfMessages] = useState<VHFMessage[]>(MOCK_VHF_MESSAGES);
+  const [selectedVhfSessionId, setSelectedVhfSessionId] = useState<string | null>(null);
+  const vhfShipInfoLookup = useMemo(() => {
+    const lookup = new Map<string, VhfShipInfo>();
+    const upsert = (name: string, next: Partial<VhfShipInfo>) => {
+      if (!name) return;
+      const key = normalizeVhfShipName(name);
+      lookup.set(key, mergeVhfShipInfo(lookup.get(key), { name, ...next }));
+    };
+
+    SHIP_POSITIONS.forEach((ship) => {
+      upsert(ship.name, {
+        shipType: ship.type,
+        mmsi: ship.mmsi,
+        destination: ship.destination,
+        speed: `${ship.speed.toFixed(1)}kn`,
+      });
+    });
+
+    INTENT_DATA.forEach((item) => {
+      upsert(item.ship, {
+        shipType: item.shipType,
+        cargoType: item.cargoType,
+        length: item.length,
+        width: item.width,
+        draft: item.draft,
+        speed: item.speed,
+        destination: item.destination,
+      });
+    });
+
+    MOCK_RISK_STATS.forEach((item) => {
+      upsert(item.name, {
+        shipType: item.type,
+        mmsi: item.mmsi,
+        cargoType: item.cargo,
+        length: `${item.length}m`,
+        width: `${item.width}m`,
+        draft: `${item.draft}m`,
+        speed: `${item.speed.toFixed(1)}kn`,
+        destination: item.destination,
+      });
+    });
+
+    return lookup;
+  }, []);
+  const vhfSessions = useMemo<VhfSessionSummary[]>(() => {
+    const groupedSessions = new Map<string, VHFMessage[]>();
+
+    vhfMessages.forEach((message) => {
+      if (!groupedSessions.has(message.sessionId)) {
+        groupedSessions.set(message.sessionId, []);
+      }
+      groupedSessions.get(message.sessionId)?.push(message);
+    });
+
+    return [...groupedSessions.entries()]
+      .map(([sessionId, sessionMessages]) => {
+        const messages = [...sessionMessages].sort((a, b) => parseLegacyVhfTimestamp(a) - parseLegacyVhfTimestamp(b));
+        const cards = groupVhfMessages(messages.map(normalizeLegacyVhfMessage));
+        const shipMessage = messages.find((message) => !message.isVTS);
+        const latestMessage = messages[messages.length - 1];
+        const firstMessage = messages[0];
+        const shipName = shipMessage?.sender || latestMessage?.sender || '未知船舶';
+
+        return {
+          sessionId,
+          shipName,
+          operatorName: messages.find((message) => message.isVTS)?.sender || '值班员',
+          intent: latestMessage?.sessionIntent || shipMessage?.sessionIntent || '待识别',
+          sessionType: latestMessage?.sessionType || shipMessage?.sessionType || 'intent',
+          messages,
+          cards,
+          shipInfo: vhfShipInfoLookup.get(normalizeVhfShipName(shipName)),
+          startedAt: firstMessage ? parseLegacyVhfTimestamp(firstMessage) : 0,
+          latestAt: latestMessage ? parseLegacyVhfTimestamp(latestMessage) : 0,
+          latestTime: latestMessage ? `${latestMessage.date} ${latestMessage.time}` : '',
+        };
+      })
+      .sort((a, b) => b.latestAt - a.latestAt);
+  }, [vhfMessages, vhfShipInfoLookup]);
+  const activeVhfSession = useMemo(
+    () => vhfSessions.find((session) => session.sessionId === selectedVhfSessionId) ?? vhfSessions[0] ?? null,
+    [selectedVhfSessionId, vhfSessions],
+  );
+  const waitingVhfSessions = useMemo(
+    () => vhfSessions.filter((session) => session.sessionId !== activeVhfSession?.sessionId),
+    [activeVhfSession?.sessionId, vhfSessions],
+  );
 
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
     return () => clearInterval(timer);
   }, []);
+
+  useEffect(() => {
+    if (vhfSessions.length === 0) {
+      if (selectedVhfSessionId !== null) {
+        setSelectedVhfSessionId(null);
+      }
+      return;
+    }
+
+    if (!selectedVhfSessionId || !vhfSessions.some((session) => session.sessionId === selectedVhfSessionId)) {
+      setSelectedVhfSessionId(vhfSessions[0].sessionId);
+    }
+  }, [selectedVhfSessionId, vhfSessions]);
 
   return (
     <div className="h-screen w-screen bg-[#0a0a0a] text-white font-sans overflow-hidden flex flex-col">
@@ -3377,7 +3552,7 @@ export default function App() {
                 </div>
               </div>
 
-              <div className="flex-1 overflow-y-auto p-2 space-y-2 custom-scrollbar">
+              <div className={vhfViewMode === 'list' ? 'flex-1 overflow-y-auto p-2 space-y-2 custom-scrollbar' : 'flex-1 min-h-0 overflow-hidden p-2'}>
                 {vhfViewMode === 'list' ? (
                   [...vhfMessages].reverse().map((msg, idx) => msg && (
                     <motion.div 
@@ -3418,146 +3593,139 @@ export default function App() {
                     </motion.div>
                   ))
                 ) : (
-                  <div className="space-y-3">
-                    {/* Grouping logic for flow view by Session */}
-                    {(() => {
-                      const sessions: { id: string, intent: string, type: 'intent' | 'alert', turns: { sender: string, isVTS: boolean, messages: VHFMessage[] }[] }[] = [];
-                      vhfMessages.filter(Boolean).forEach((msg) => {
-                        let session = sessions.find(s => s.id === msg.sessionId);
-                        if (!session) {
-                          session = { 
-                            id: msg.sessionId, 
-                            intent: msg.sessionIntent || '未知意图', 
-                            type: msg.sessionType || 'intent',
-                            turns: [] 
-                          };
-                          sessions.push(session);
-                        }
-                        
-                        const lastTurn = session.turns[session.turns.length - 1];
-                        if (lastTurn && lastTurn.sender === msg.sender) {
-                          lastTurn.messages.push(msg);
-                        } else {
-                          session.turns.push({ sender: msg.sender, isVTS: msg.isVTS, messages: [msg] });
-                        }
-                      });
+                  <div className="h-full min-h-0 flex flex-col">
+                    <section className="min-h-0 flex-[1.18] bg-[#080808] overflow-hidden">
+                      <div className="px-3 py-1.5 border-b border-white/6 bg-[#081218] flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <span className="text-[10px] font-black text-sky-400 tracking-[0.08em]">当前正在对话</span>
+                        </div>
+                        <div className="flex items-center gap-2 text-[8px] font-bold text-white/45">
+                          <div className="w-2 h-2 rounded-full bg-sky-500" />
+                          <span>实时连接中</span>
+                        </div>
+                      </div>
 
-                      return sessions.reverse().map((session, sIdx) => (
-                        <motion.div 
-                          key={session.id}
-                          initial={{ opacity: 0, y: 20 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          transition={{ delay: sIdx * 0.1 }}
-                          className="bg-white/[0.02] border border-white/5 rounded-xl overflow-hidden shadow-lg"
-                        >
-                          {/* Session Header - Intent/Alert Based */}
-                          <div className="bg-white/[0.03] px-3 py-2 border-b border-white/5 flex items-start justify-between">
-                            <div className="flex items-start gap-3">
-                              <div className="mt-1">
-                                {session.type === 'alert' ? (
-                                  <AlertTriangle size={12} className="text-red-400" />
-                                ) : (
-                                  <Ship size={12} className="text-white/40" />
-                                )}
-                              </div>
-                              <div className="flex flex-col gap-1.5">
-                                {/* First Line: Intent/Alert Label & Time */}
-                                <div className="flex items-center gap-3">
-                                  <div className="flex items-center gap-1.5">
-                                    <div className={`w-1 h-1 rounded-full ${session.type === 'alert' ? 'bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.5)]' : 'bg-sky-500 shadow-[0_0_8px_rgba(14,165,233,0.5)]'}`} />
-                                    <span className={`text-[9px] font-black uppercase tracking-[0.1em] ${session.type === 'alert' ? 'text-red-400' : 'text-sky-400'}`}>
-                                      {session.type === 'alert' ? '预警' : '意图'}: {session.intent}
-                                    </span>
-                                  </div>
-                                  <div className="w-[1px] h-2 bg-white/10" />
-                                  <span className="text-[8px] font-mono text-white/30">{session.turns[0].messages[0].time}</span>
-                                </div>
-                                
-                                {/* Second Line: Ship Name & Vessel Details */}
-                                <div className="flex items-center gap-3">
-                                  <span className="text-[11px] font-bold text-white/90 tracking-tight">
-                                    {(() => {
-                                      const shipName = session.turns.find(t => t && !t.isVTS)?.sender || '未知船名';
-                                      return shipName;
-                                    })()}
+                      {activeVhfSession ? (
+                        <>
+                          <div className="px-3 py-3 border-b border-white/6">
+                            <div className="flex items-center justify-between gap-3">
+                              <div className="min-w-0">
+                                <div className="flex items-center gap-2 flex-wrap">
+                                  <div className="w-3 h-3 rounded-full bg-sky-500 shrink-0" />
+                                  <h3 className="text-[15px] leading-none font-black text-white tracking-tight truncate">{activeVhfSession.shipName}</h3>
+                                  <span className="px-1.5 py-0.5 rounded-md bg-white/10 text-[8px] font-black text-white/55 shrink-0">
+                                    {activeVhfSession.shipInfo?.shipType || '类型待识别'}
                                   </span>
-                                  <div className="w-[1px] h-2.5 bg-white/10" />
-                                  <div className="flex items-center gap-2">
-                                    {(() => {
-                                      const shipName = session.turns.find(t => t && !t.isVTS)?.sender || '未知船名';
-                                      const vesselInfo = INTENT_DATA.find(v => v.ship === shipName) || {
-                                        shipType: '货船',
-                                        length: '120m',
-                                        width: '22m',
-                                        speed: '10.5kn',
-                                        current: '吴淞口'
-                                      };
-                                      return (
-                                        <div className="flex items-center gap-1.5">
-                                          <span className="px-1 py-0.5 bg-white/5 rounded text-[7px] font-bold text-white/40 uppercase">
-                                            {vesselInfo.shipType}
-                                          </span>
-                                          <div className="flex items-center gap-1 text-[7px] font-mono text-white/30">
-                                            <span className="bg-white/[0.03] px-1 rounded">{vesselInfo.length}×{vesselInfo.width}</span>
-                                            <span className="bg-sky-500/10 text-sky-400/80 px-1 rounded">{vesselInfo.speed}</span>
-                                            <span className="bg-emerald-500/10 text-emerald-400/80 px-1 rounded">{vesselInfo.current}</span>
-                                          </div>
-                                        </div>
-                                      );
-                                    })()}
-                                  </div>
-
-                                  {/* Additional Alerts Badge if any */}
-                                  {(() => {
-                                    const shipName = session.turns.find(t => t && !t.isVTS)?.sender || '未知船名';
-                                    const vesselAlerts = MOCK_ALERTS.filter(a => a.ship === shipName);
-                                    if (vesselAlerts.length > 0 && session.type !== 'alert') {
-                                      return (
-                                        <div className="flex items-center gap-2">
-                                          <div className="w-[1px] h-2 bg-white/10" />
-                                          <div className="flex items-center gap-1 px-1.5 py-0.5 bg-red-500/10 border border-red-500/20 rounded text-[7px] font-bold text-red-400 uppercase tracking-wider animate-pulse">
-                                            <AlertTriangle size={8} className="shrink-0" />
-                                            <span>风险</span>
-                                          </div>
-                                        </div>
-                                      );
-                                    }
-                                    return null;
-                                  })()}
                                 </div>
+                                <div className="mt-2.5 flex items-center gap-3 flex-wrap text-white/38">
+                                  <div className="flex items-center gap-1.5 text-[9px]">
+                                    <Maximize2 size={10} />
+                                    <span>{activeVhfSession.shipInfo?.length && activeVhfSession.shipInfo?.width
+                                      ? `${activeVhfSession.shipInfo.length}×${activeVhfSession.shipInfo.width}`
+                                      : activeVhfSession.shipInfo?.length || '--'}</span>
+                                  </div>
+                                  <div className="flex items-center gap-1.5 text-[9px]">
+                                    <Activity size={10} />
+                                    <span>{activeVhfSession.shipInfo?.speed || '待更新'}</span>
+                                  </div>
+                                  <div className="flex items-center gap-1.5 text-[9px]">
+                                    <MapPin size={10} />
+                                    <span>{activeVhfSession.shipInfo?.destination || '位置待更新'}</span>
+                                  </div>
+                                </div>
+                              </div>
+                              <div className={`px-2.5 py-1.5 rounded-[18px] border text-[9px] font-black shrink-0 ${
+                                activeVhfSession.sessionType === 'alert'
+                                  ? 'bg-sky-500/10 border-sky-500/40 text-sky-300'
+                                  : 'bg-sky-500/10 border-sky-500/35 text-sky-300'
+                              }`}>
+                                {activeVhfSession.intent}
                               </div>
                             </div>
                           </div>
 
-                          <div className="divide-y divide-white/[0.03] px-2 pt-1.5 pb-0 space-y-1">
-                            {session.turns.map((turn, tIdx) => turn && (
-                              <div 
-                                key={tIdx} 
-                                className={`flex flex-col border-0 pt-1 ${turn.isVTS ? 'items-end' : 'items-start'}`}
+                          <div className="flex-1 min-h-0 overflow-y-auto px-3 py-3 space-y-3 custom-scrollbar">
+                            {activeVhfSession.messages.map((msg, idx) => (
+                              <motion.div
+                                key={msg.id}
+                                initial={{ opacity: 0, x: msg.isVTS ? 16 : -16 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                transition={{ delay: idx * 0.04 }}
+                                className="flex flex-col"
                               >
-                                <div className={`flex flex-col gap-1 max-w-[85%] ${turn.isVTS ? 'items-end' : 'items-start'}`}>
-                                  <div className="relative group">
-                                    <div className={`px-2 py-1 rounded-lg text-[10px] leading-relaxed ${
-                                      turn.isVTS 
-                                        ? 'bg-sky-500/10 text-sky-100 border border-sky-500/20 rounded-tr-none' 
-                                        : 'bg-white/5 text-white/80 border border-white/10 rounded-tl-none'
-                                    }`}>
-                                      {turn.messages.map(m => m.content).join('')}
-                                    </div>
-                                    <div className={`flex items-center gap-2 mt-0.5 opacity-0 group-hover:opacity-100 transition-opacity ${turn.isVTS ? 'justify-end' : 'justify-start'}`}>
-                                      <span className="text-[7px] font-bold text-white/20 uppercase tracking-widest">
-                                        累计时长: {turn.messages.reduce((acc, m) => acc + parseFloat(m.duration || '0'), 0).toFixed(2)}s
-                                      </span>
-                                      <Play size={8} className="text-sky-500/40" />
-                                    </div>
+                                <div className={`mb-1 flex items-center gap-2 ${msg.isVTS ? 'justify-end' : 'justify-start'}`}>
+                                  {msg.isVTS ? (
+                                    <>
+                                      <span className="text-[8px] font-mono text-white/22">{msg.time}</span>
+                                      <span className={`text-[10px] font-black text-sky-300/80`}>{msg.sender}</span>
+                                    </>
+                                  ) : (
+                                    <>
+                                      <span className="text-[8px] font-mono text-white/22">{msg.time}</span>
+                                      <span className={`text-[10px] font-black text-white/58`}>{msg.sender}</span>
+                                    </>
+                                  )}
+                                </div>
+                                <div className={`${msg.isVTS ? 'pr-5 border-r-2 border-sky-500/35 text-sky-100 ml-auto text-right' : 'pl-4 border-l-2 border-white/10 text-white/88'} max-w-[94%]`}>
+                                  <p className="text-[12px] leading-relaxed">{msg.content}</p>
+                                  <div className={`mt-1 text-[8px] font-bold ${msg.isVTS ? 'text-sky-200/35' : 'text-white/22'}`}>
+                                    {msg.duration}
                                   </div>
                                 </div>
-                              </div>
+                              </motion.div>
                             ))}
                           </div>
-                        </motion.div>
-                      ));
-                    })()}
+                        </>
+                      ) : (
+                        <div className="flex-1 flex items-center justify-center text-[11px] text-white/35">
+                          当前没有正在进行的 VHF 会话。
+                        </div>
+                      )}
+                    </section>
+
+                    <section className="min-h-0 flex-[0.76] bg-[#080808] overflow-hidden border-t border-white/6">
+                      <div className="px-3 py-1.5 border-b border-white/6 bg-[#0a0a0a] flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <span className="text-[10px] font-black text-white/38 tracking-[0.06em]">等待对话船舶</span>
+                        </div>
+                        <span className="text-[9px] font-black text-white/28">共 {waitingVhfSessions.length} 条</span>
+                      </div>
+
+                      <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar">
+                        {waitingVhfSessions.length > 0 ? waitingVhfSessions.map((session, index) => (
+                          <motion.button
+                            key={session.sessionId}
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: index * 0.05 }}
+                            onClick={() => setSelectedVhfSessionId(session.sessionId)}
+                            className="w-full border-b border-white/6 px-3 py-2.5 text-left hover:bg-[#09131a] transition-all"
+                          >
+                            <div className="flex items-start justify-between gap-3">
+                              <div className="min-w-0">
+                                <div className="flex items-center gap-2">
+                                  <span className="text-[10px] font-black text-white/90">{session.shipName}</span>
+                                  <div className="w-1.5 h-1.5 rounded-full bg-sky-500 shrink-0" />
+                                </div>
+                                <div className="mt-0.5 text-[10px] italic text-white/36 truncate">
+                                  “{session.messages.find((message) => !message.isVTS)?.content || session.messages[session.messages.length - 1]?.content || '暂无摘要'}”
+                                </div>
+                              </div>
+                              <div className="flex flex-col items-end gap-1 shrink-0">
+                                <div className="text-[9px] font-black text-white/24">{session.latestTime.split(' ').pop()}</div>
+                                <div className="px-2 py-0.5 rounded-full bg-sky-500/10 text-[9px] font-black text-sky-400">
+                                  {session.intent}
+                                </div>
+                              </div>
+                            </div>
+                          </motion.button>
+                        )) : (
+                          <div className="flex h-full items-center justify-center px-4 text-[11px] text-white/35">
+                            当前没有等待中的 VHF 会话。
+                          </div>
+                        )}
+                      </div>
+                    </section>
                   </div>
                 )}
               </div>
