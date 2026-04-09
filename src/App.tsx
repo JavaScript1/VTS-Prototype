@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { startTransition, useDeferredValue, useEffect, useMemo, useState } from 'react';
 import { 
   Search, 
   Bell, 
@@ -43,6 +43,9 @@ import {
   Play,
   Pause,
   MapPin,
+  Wind,
+  CloudSun,
+  Compass,
   Presentation,
   X
 } from 'lucide-react';
@@ -58,7 +61,7 @@ import {
   AreaChart,
   Area
 } from 'recharts';
-import { MapContainer, TileLayer, Marker, CircleMarker, useMapEvents, Polygon, Polyline, useMap, Popup } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, CircleMarker, useMapEvents, Polygon, Polyline, Rectangle, useMap, Popup } from 'react-leaflet';
 import L from 'leaflet';
 import {
   AREA_CATEGORIES,
@@ -67,6 +70,7 @@ import {
   MOCK_INTENT_STATS,
   MOCK_RISK_STATS,
   MOCK_VESSEL_DYNAMICS,
+  type MockAreaMap,
 } from './mockData';
 import {
   groupVhfMessages,
@@ -98,6 +102,201 @@ const MousePositionTracker = ({ onMouseMove }: { onMouseMove: (coords: { lat: nu
     },
   });
   return null;
+};
+
+type WarningAreaFeature = {
+  id: string;
+  name: string;
+  type: string;
+  category: string;
+  center: [number, number];
+  polygon?: [number, number][];
+  polyline?: [number, number][];
+  color: string;
+};
+
+const WARNING_AREA_CATEGORY_META: Record<string, { center: [number, number]; zoom: number }> = {
+  值班区域: { center: [31.305, 121.52], zoom: 10 },
+  作业与停泊设施: { center: [31.285, 121.71], zoom: 11 },
+  航道航行设施: { center: [31.325, 121.62], zoom: 11 },
+  水域管控: { center: [31.345, 121.58], zoom: 11 },
+};
+
+const WARNING_LINE_TYPES = new Set(['主航道', '辅助航道', '小型船舶航道', '航道分割线', '报告线', '导堤']);
+
+const WARNING_AREA_TYPE_COLORS: Record<string, string> = {
+  值班台: '#38bdf8',
+  码头: '#14b8a6',
+  泊位: '#22c55e',
+  锚地: '#f59e0b',
+  主航道: '#06b6d4',
+  辅助航道: '#0ea5e9',
+  小型船舶航道: '#22d3ee',
+  航道分割线: '#94a3b8',
+  报告线: '#eab308',
+  导堤: '#f97316',
+  物标: '#818cf8',
+  警戒区: '#f43f5e',
+  禁锚区: '#fb7185',
+  禁航区: '#ef4444',
+  临时管控区: '#a855f7',
+  '边坡100米水域': '#8b5cf6',
+  浅水区: '#facc15',
+  引航作业区: '#10b981',
+  调头区: '#60a5fa',
+};
+
+const hashWarningAreaSeed = (value: string) =>
+  Array.from(value).reduce((seed, char) => (seed * 33 + char.charCodeAt(0)) >>> 0, 5381);
+
+const createRectPolygon = (center: [number, number], latRadius: number, lngRadius: number): [number, number][] => [
+  [center[0] - latRadius, center[1] - lngRadius],
+  [center[0] - latRadius, center[1] + lngRadius],
+  [center[0] + latRadius, center[1] + lngRadius],
+  [center[0] + latRadius, center[1] - lngRadius],
+];
+
+const createDiamondPolygon = (center: [number, number], latRadius: number, lngRadius: number): [number, number][] => [
+  [center[0] - latRadius, center[1]],
+  [center[0], center[1] + lngRadius],
+  [center[0] + latRadius, center[1]],
+  [center[0], center[1] - lngRadius],
+];
+
+const createWarningAreaFeature = (
+  area: { id: string; name: string; type: string },
+  category: string,
+  index: number,
+  total: number,
+): WarningAreaFeature => {
+  const seed = hashWarningAreaSeed(`${category}-${area.id}-${area.type}`);
+  const color = WARNING_AREA_TYPE_COLORS[area.type] || '#38bdf8';
+  const meta = WARNING_AREA_CATEGORY_META[category] || WARNING_AREA_CATEGORY_META.值班区域;
+
+  if (category === '航道航行设施') {
+    const progress = total <= 1 ? 0.5 : index / Math.max(total - 1, 1);
+    const lat = meta.center[0] - 0.14 + progress * 0.24 + ((seed % 17) - 8) * 0.0007;
+    const lng =
+      meta.center[1] -
+      0.11 +
+      progress * 0.2 +
+      Math.sin(progress * Math.PI * 3) * 0.028 +
+      (((seed >> 5) % 11) - 5) * 0.0008;
+    const center: [number, number] = [lat, lng];
+
+    if (WARNING_LINE_TYPES.has(area.type)) {
+      const segment: [number, number][] = [
+        [lat - 0.012, lng - 0.018],
+        [lat - 0.004, lng - 0.008],
+        [lat + 0.006, lng + 0.01],
+        [lat + 0.014, lng + 0.022],
+      ];
+
+      return {
+        id: area.id,
+        name: area.name,
+        type: area.type,
+        category,
+        center,
+        polyline: segment,
+        color,
+      };
+    }
+
+    return {
+      id: area.id,
+      name: area.name,
+      type: area.type,
+      category,
+      center,
+      polygon: createDiamondPolygon(center, 0.0036, 0.0036),
+      color,
+    };
+  }
+
+  const ringSize = category === '作业与停泊设施' ? 28 : category === '水域管控' ? 8 : 6;
+  const ring = Math.floor(index / ringSize);
+  const slot = index % ringSize;
+  const angle = (slot / ringSize) * Math.PI * 2 + ((seed % 29) - 14) * 0.01;
+  const radius =
+    (category === '作业与停泊设施' ? 0.018 : 0.032) +
+    ring * (category === '作业与停泊设施' ? 0.007 : 0.014) +
+    (((seed >> 4) % 9) - 4) * 0.0009;
+  const center: [number, number] = [
+    meta.center[0] + Math.sin(angle) * radius,
+    meta.center[1] + Math.cos(angle) * (radius * 1.28),
+  ];
+
+  const polygon =
+    area.type === '锚地'
+      ? createDiamondPolygon(center, 0.0075, 0.011)
+      : category === '水域管控'
+        ? createRectPolygon(center, 0.007, 0.012)
+        : createRectPolygon(center, 0.0036, 0.0065);
+
+  return {
+    id: area.id,
+    name: area.name,
+    type: area.type,
+    category,
+    center,
+    polygon,
+    color,
+  };
+};
+
+const WarningAreaBoxSelector = ({
+  enabled,
+  onSelect,
+}: {
+  enabled: boolean;
+  onSelect: (bounds: L.LatLngBounds) => void;
+}) => {
+  const [start, setStart] = useState<L.LatLng | null>(null);
+  const [current, setCurrent] = useState<L.LatLng | null>(null);
+  const map = useMapEvents({
+    mousedown(e) {
+      const shouldStart = enabled || Boolean((e.originalEvent as MouseEvent | undefined)?.shiftKey);
+      if (!shouldStart) return;
+      map.dragging.disable();
+      setStart(e.latlng);
+      setCurrent(e.latlng);
+    },
+    mousemove(e) {
+      if (!start) return;
+      setCurrent(e.latlng);
+    },
+    mouseup(e) {
+      if (!start) return;
+      const nextPoint = current || e.latlng;
+      const bounds = L.latLngBounds(start, nextPoint);
+      onSelect(bounds);
+      setStart(null);
+      setCurrent(null);
+      map.dragging.enable();
+    },
+  });
+
+  useEffect(() => {
+    if (!enabled && !start) {
+      map.dragging.enable();
+    }
+  }, [enabled, map, start]);
+
+  if (!start || !current) return null;
+
+  return (
+    <Rectangle
+      bounds={L.latLngBounds(start, current)}
+      pathOptions={{
+        color: '#38bdf8',
+        weight: 1,
+        dashArray: '6 6',
+        fillColor: '#0ea5e9',
+        fillOpacity: 0.14,
+      }}
+    />
+  );
 };
 
 // 历史回放地图控制组件
@@ -423,6 +622,217 @@ const MOCK_ALERTS: Alert[] = [
       { time: '11:08:30', event: '偏离锚位半径 > 50m', type: 'warning' },
       { time: '11:12:10', event: '触发[走锚风险]预警', type: 'risk' }
     ]
+  },
+];
+
+const getRiskPlaybackSession = (item: typeof MOCK_RISK_STATS[number]) => {
+  const weatherCondition =
+    item.visibility.includes('3') || item.visibility.includes('5')
+      ? '低能见度'
+      : item.wind.includes('6')
+        ? '大风影响'
+        : '天气平稳';
+  const dialogue = [
+    {
+      sender: item.name,
+      content: `${item.name} 报告，当前位置 ${item.snapshot.location}，当前风险为「${item.risk}」。`,
+      time: item.time.split(' ')[1] ?? item.time,
+    },
+    {
+      sender: '吴淞交管',
+      content: `收到，请重点关注「${item.risk}」并按指令修正动态。`,
+      time: item.time.split(' ')[1] ?? item.time,
+    },
+  ];
+
+  return {
+    vessel: {
+      name: item.name,
+      mmsi: item.mmsi,
+      type: item.type,
+      callsign: item.callsign,
+      destination: item.destination,
+      speed: item.speed,
+      draft: item.draft,
+      length: item.length,
+      width: item.width,
+      cargo: item.cargo,
+    },
+    event: {
+      coords: item.coords,
+      time: item.time,
+      label: item.risk,
+      type: 'risk',
+      desc: `${item.name} 于 ${item.time} 触发「${item.risk}」风险预警，当前位置 ${item.snapshot.location}。`,
+      timeline: item.timeline.map((entry) => ({
+        ...entry,
+        desc: entry.event,
+      })),
+      dialogue,
+      environment: [
+        { label: '风险区域', value: item.snapshot.location },
+        { label: '船首向', value: `${item.heading}°` },
+        { label: '实际航速', value: `${item.speed.toFixed(1)} kn` },
+        { label: '可视距离', value: item.visibility },
+        { label: '交通密度', value: item.riskScore && item.riskScore >= 80 ? '高密度' : item.riskScore && item.riskScore >= 60 ? '中密度' : '常态' },
+        { label: '管制状态', value: item.risk },
+      ],
+      weather: [
+        { label: '天气态势', value: weatherCondition },
+        { label: '风力', value: item.wind },
+        { label: '浪高', value: item.wave },
+        { label: '能见度', value: item.visibility },
+        { label: '限速', value: `${item.snapshot.speedLimit.toFixed(1)} kn` },
+        { label: '偏差', value: `${Math.max(item.snapshot.actualSpeed - item.snapshot.speedLimit, 0).toFixed(1)} kn` },
+      ],
+    },
+  };
+};
+
+type WarningRule = {
+  id: string;
+  name: string;
+  category: string;
+  trigger: string;
+  enabled: boolean;
+  severity: '高' | '中' | '低';
+  responseLevel: '自动提醒' | '值班确认' | '联动处置';
+  description: string;
+  effectiveAreaIds: string[];
+};
+
+const INITIAL_WARNING_RULES: WarningRule[] = [
+  {
+    id: 'wr-1',
+    name: '进入禁航区',
+    category: '单船行为风险',
+    trigger: '敏感区域进出',
+    enabled: true,
+    severity: '高',
+    responseLevel: '联动处置',
+    description: '当船舶进入禁航区、警戒封控区等限制水域时触发高等级预警。',
+    effectiveAreaIds: ['1', '13', '15'],
+  },
+  {
+    id: 'wr-2',
+    name: '禁锚区抛锚',
+    category: '单船行为风险',
+    trigger: '敏感区域进出',
+    enabled: true,
+    severity: '高',
+    responseLevel: '值班确认',
+    description: '在禁锚区内识别出减速、驻留、抛锚等行为时触发。',
+    effectiveAreaIds: ['9', '14'],
+  },
+  {
+    id: 'wr-3',
+    name: '走锚',
+    category: '单船行为风险',
+    trigger: '异常行为',
+    enabled: false,
+    severity: '中',
+    responseLevel: '值班确认',
+    description: '对锚泊船位移、漂移速度异常等特征进行识别。',
+    effectiveAreaIds: ['9', '14'],
+  },
+  {
+    id: 'wr-4',
+    name: '非锚地水域锚泊',
+    category: '单船事件',
+    trigger: '单船事件',
+    enabled: false,
+    severity: '中',
+    responseLevel: '自动提醒',
+    description: '对非授权锚泊水域内的异常停船、抛锚行为进行提醒。',
+    effectiveAreaIds: ['2', '12'],
+  },
+  {
+    id: 'wr-5',
+    name: '航道内偏航',
+    category: '单船行为风险',
+    trigger: '异常行为',
+    enabled: false,
+    severity: '中',
+    responseLevel: '值班确认',
+    description: '船舶航向、航迹偏离航道中心线超过阈值时触发。',
+    effectiveAreaIds: ['10', '11'],
+  },
+  {
+    id: 'wr-6',
+    name: '非掉头区掉头',
+    category: '单船行为风险',
+    trigger: '异常行为',
+    enabled: false,
+    severity: '中',
+    responseLevel: '自动提醒',
+    description: '监测船舶在非指定掉头区域内进行大幅转向或掉头操作。',
+    effectiveAreaIds: ['10', '12'],
+  },
+  {
+    id: 'wr-7',
+    name: '反航道航行',
+    category: '单船行为风险',
+    trigger: '异常行为',
+    enabled: false,
+    severity: '高',
+    responseLevel: '联动处置',
+    description: '识别船舶沿航道逆向行驶的高风险动态。',
+    effectiveAreaIds: ['10', '11', '12'],
+  },
+  {
+    id: 'wr-8',
+    name: '航道内超速',
+    category: '单船行为风险',
+    trigger: '异常行为',
+    enabled: true,
+    severity: '中',
+    responseLevel: '自动提醒',
+    description: '对超出航道限速阈值的行为进行持续监测与提醒。',
+    effectiveAreaIds: ['10', '11', '12'],
+  },
+  {
+    id: 'wr-9',
+    name: '搁浅',
+    category: '单船行为风险',
+    trigger: '异常行为',
+    enabled: false,
+    severity: '高',
+    responseLevel: '联动处置',
+    description: '结合水深、吃水与航速变化识别可能的搁浅事件。',
+    effectiveAreaIds: ['13', '15'],
+  },
+  {
+    id: 'wr-10',
+    name: '进入特定区域',
+    category: '单船行为风险',
+    trigger: '异常行为',
+    enabled: true,
+    severity: '中',
+    responseLevel: '值班确认',
+    description: '对重点保护、施工、演练等指定区域的进入行为进行监测。',
+    effectiveAreaIds: ['13', '14', '8'],
+  },
+  {
+    id: 'wr-11',
+    name: '航道内滞航',
+    category: '单船行为风险',
+    trigger: '异常行为',
+    enabled: true,
+    severity: '低',
+    responseLevel: '自动提醒',
+    description: '对航道内长时间低速或停滞状态进行识别。',
+    effectiveAreaIds: ['10', '11'],
+  },
+  {
+    id: 'wr-12',
+    name: '多船碰撞',
+    category: '多船行为风险',
+    trigger: '异常行为',
+    enabled: false,
+    severity: '高',
+    responseLevel: '联动处置',
+    description: '结合 CPA、TCPA 与多船会遇态势识别碰撞风险。',
+    effectiveAreaIds: ['1', '10', '11', '13'],
   },
 ];
 
@@ -1097,20 +1507,21 @@ const IntentConflictPanel = () => (
         <button 
           onClick={() => {
             const item = MOCK_RISK_STATS[0];
-            (window as any).setDynamicPlaybackSession({
-              vessel: { name: item.name, mmsi: item.mmsi, type: item.type },
-              event: {
-                time: item.time,
-                coords: item.coords,
-                type: 'risk',
-                label: '意图冲突',
-                desc: '系统识别到该船存在非法锚泊意图，与当前航道规则冲突。',
-                timeline: item.timeline,
-                dialogue: [
-                  { sender: '系统', content: '识别到意图冲突：非法锚泊。', time: item.time }
-                ]
-              }
-            });
+            const openDynamicPlayback = (window as any).setDynamicPlaybackSession;
+            if (typeof openDynamicPlayback === 'function') {
+              openDynamicPlayback({
+                ...getRiskPlaybackSession(item),
+                event: {
+                  ...getRiskPlaybackSession(item).event,
+                  label: '意图冲突',
+                  desc: '系统识别到该船存在非法锚泊意图，与当前航道规则冲突。',
+                  dialogue: [
+                    { sender: '系统', content: '识别到意图冲突：非法锚泊。', time: item.time },
+                    { sender: '吴淞交管', content: '请立即核查当前锚泊状态并修正作业计划。', time: item.time },
+                  ],
+                },
+              });
+            }
           }}
           className="bg-white/5 hover:bg-white/10 border border-white/10 text-white/60 text-[10px] font-black uppercase tracking-widest py-2 rounded transition-all"
         >
@@ -1208,6 +1619,170 @@ const AdminPanel = ({
   const [isEditing, setIsEditing] = useState(false);
   const [expandedRowId, setExpandedRowId] = useState<string | null>(null);
   const [editData, setEditData] = useState<any>(null);
+  const [areaConfig, setAreaConfig] = useState<MockAreaMap>(() =>
+    Object.fromEntries(
+      Object.entries(MOCK_AREAS).map(([category, areas]) => [
+        category,
+        areas.map((area) => ({
+          ...area,
+          fields: { ...area.fields },
+        })),
+      ]),
+    ) as MockAreaMap,
+  );
+  const [warningRules, setWarningRules] = useState(() => INITIAL_WARNING_RULES.map((rule) => ({ ...rule })));
+  const [selectedWarningRuleId, setSelectedWarningRuleId] = useState<string>('wr-4');
+  const [isWarningConfigOpen, setIsWarningConfigOpen] = useState(false);
+  const [selectedWarningAreaCategory, setSelectedWarningAreaCategory] = useState<string>(AREA_CATEGORIES[0]);
+  const [warningAreaSearchQuery, setWarningAreaSearchQuery] = useState('');
+  const [selectedWarningAreaTypes, setSelectedWarningAreaTypes] = useState<string[]>([]);
+  const [isWarningAreaBoxSelectEnabled, setIsWarningAreaBoxSelectEnabled] = useState(false);
+  const [expandedWarningAreaCategories, setExpandedWarningAreaCategories] = useState<string[]>(() => [...AREA_CATEGORIES]);
+  const [areaSearchQuery, setAreaSearchQuery] = useState('');
+  const [areaTypeFilter, setAreaTypeFilter] = useState('全部类型');
+  const [areaPageSize, setAreaPageSize] = useState(10);
+  const [areaCurrentPage, setAreaCurrentPage] = useState(1);
+  const warningAreaGroups = useMemo(
+    () => AREA_CATEGORIES.map((category) => ({ category, areas: areaConfig[category] || [] })),
+    [areaConfig],
+  );
+  const warningAreaLookup = useMemo(
+    () =>
+      new Map(
+        warningAreaGroups.flatMap(({ areas }) =>
+          areas.map((area) => [area.id, area] as const),
+        ),
+      ),
+    [warningAreaGroups],
+  );
+  const allWarningAreas = useMemo(
+    () =>
+      warningAreaGroups.flatMap(({ category, areas }) =>
+        areas.map((area) => ({
+          ...area,
+          category,
+        })),
+      ),
+    [warningAreaGroups],
+  );
+  const selectedWarningAreaGroup = useMemo(
+    () => warningAreaGroups.find(({ category }) => category === selectedWarningAreaCategory) ?? warningAreaGroups[0] ?? null,
+    [selectedWarningAreaCategory, warningAreaGroups],
+  );
+  const warningAreaTypeOptions = useMemo(
+    () => (selectedWarningAreaGroup ? [...new Set(selectedWarningAreaGroup.areas.map((area) => area.type))] : []),
+    [selectedWarningAreaGroup],
+  );
+  const deferredWarningAreaSearchQuery = useDeferredValue(warningAreaSearchQuery);
+  const deferredSelectedWarningAreaTypes = useDeferredValue(selectedWarningAreaTypes);
+  const filteredWarningAreas = useMemo(() => {
+    if (!selectedWarningAreaGroup) return [];
+    const keyword = deferredWarningAreaSearchQuery.trim().toLowerCase();
+    return selectedWarningAreaGroup.areas.filter((area) => {
+      const matchesType =
+        deferredSelectedWarningAreaTypes.length === 0 ||
+        deferredSelectedWarningAreaTypes.includes(area.type);
+      const matchesKeyword =
+        !keyword ||
+        area.name.toLowerCase().includes(keyword) ||
+        area.type.toLowerCase().includes(keyword);
+      return matchesType && matchesKeyword;
+    });
+  }, [deferredSelectedWarningAreaTypes, deferredWarningAreaSearchQuery, selectedWarningAreaGroup]);
+  const deferredFilteredWarningAreas = useDeferredValue(filteredWarningAreas);
+  const selectedWarningRule = useMemo(
+    () => warningRules.find((rule) => rule.id === selectedWarningRuleId) ?? warningRules[0] ?? null,
+    [selectedWarningRuleId, warningRules],
+  );
+  const selectedWarningAreaIds = selectedWarningRule?.effectiveAreaIds ?? [];
+  const selectedWarningAreaPreview = useMemo(
+    () =>
+      selectedWarningAreaIds
+        .slice(0, 8)
+        .map((areaId) => warningAreaLookup.get(areaId))
+        .filter(Boolean),
+    [selectedWarningAreaIds, warningAreaLookup],
+  );
+  const selectedWarningAreaHiddenCount = Math.max(0, selectedWarningAreaIds.length - selectedWarningAreaPreview.length);
+  const selectedWarningAreaTypeSummary = useMemo(() => {
+    const typeCounts = new Map<string, number>();
+    selectedWarningAreaIds.forEach((areaId) => {
+      const area = warningAreaLookup.get(areaId);
+      if (!area) return;
+      typeCounts.set(area.type, (typeCounts.get(area.type) || 0) + 1);
+    });
+    return Array.from(typeCounts.entries())
+      .map(([type, count]) => ({ type, count }))
+      .sort((left, right) => right.count - left.count);
+  }, [selectedWarningAreaIds, warningAreaLookup]);
+  const selectedWarningAreaGroupSelectedCount = useMemo(() => {
+    if (!selectedWarningAreaGroup) return 0;
+    return selectedWarningAreaGroup.areas.filter((area) => selectedWarningAreaIds.includes(area.id)).length;
+  }, [selectedWarningAreaGroup, selectedWarningAreaIds]);
+  const warningAreaTypeStats = useMemo(
+    () =>
+      warningAreaTypeOptions.map((type) => {
+        const areas = selectedWarningAreaGroup?.areas.filter((area) => area.type === type) ?? [];
+        return {
+          type,
+          count: areas.length,
+          selectedCount: areas.filter((area) => selectedWarningAreaIds.includes(area.id)).length,
+        };
+      }),
+    [selectedWarningAreaGroup, selectedWarningAreaIds, warningAreaTypeOptions],
+  );
+  const warningAreaIndexLookup = useMemo(
+    () =>
+      new Map(
+        (selectedWarningAreaGroup?.areas ?? []).map((area, index) => [area.id, index] as const),
+      ),
+    [selectedWarningAreaGroup],
+  );
+  const warningMapFeatures = useMemo(
+    () =>
+      deferredFilteredWarningAreas.map((area, index) =>
+        createWarningAreaFeature(
+          area,
+          selectedWarningAreaCategory,
+          warningAreaIndexLookup.get(area.id) ?? index,
+          selectedWarningAreaGroup?.areas.length ?? deferredFilteredWarningAreas.length,
+        ),
+      ),
+    [deferredFilteredWarningAreas, selectedWarningAreaCategory, selectedWarningAreaGroup, warningAreaIndexLookup],
+  );
+  const activeAreaList = useMemo(() => areaConfig[activeSubTab] || [], [activeSubTab, areaConfig]);
+  const activeAreaTypeOptions = useMemo(
+    () => ['全部类型', ...new Set(activeAreaList.map((area) => area.type))],
+    [activeAreaList],
+  );
+  const filteredAreaList = useMemo(() => {
+    const keyword = areaSearchQuery.trim().toLowerCase();
+    return activeAreaList.filter((area) => {
+      const matchesKeyword =
+        !keyword ||
+        area.name.toLowerCase().includes(keyword) ||
+        area.type.toLowerCase().includes(keyword);
+      const matchesType = areaTypeFilter === '全部类型' || area.type === areaTypeFilter;
+      return matchesKeyword && matchesType;
+    });
+  }, [activeAreaList, areaSearchQuery, areaTypeFilter]);
+  const areaTotalPages = Math.max(1, Math.ceil(filteredAreaList.length / areaPageSize));
+  const paginatedAreaList = useMemo(() => {
+    const startIndex = (areaCurrentPage - 1) * areaPageSize;
+    return filteredAreaList.slice(startIndex, startIndex + areaPageSize);
+  }, [areaCurrentPage, areaPageSize, filteredAreaList]);
+  const areaPageNumbers = useMemo(() => {
+    if (areaTotalPages <= 7) {
+      return Array.from({ length: areaTotalPages }, (_, index) => index + 1);
+    }
+    if (areaCurrentPage <= 4) {
+      return [1, 2, 3, 4, 5, 'ellipsis-end', areaTotalPages];
+    }
+    if (areaCurrentPage >= areaTotalPages - 3) {
+      return [1, 'ellipsis-start', areaTotalPages - 4, areaTotalPages - 3, areaTotalPages - 2, areaTotalPages - 1, areaTotalPages];
+    }
+    return [1, 'ellipsis-start', areaCurrentPage - 1, areaCurrentPage, areaCurrentPage + 1, 'ellipsis-end', areaTotalPages];
+  }, [areaCurrentPage, areaTotalPages]);
 
   const menus = [
     { name: '个人信息', icon: User },
@@ -1250,6 +1825,203 @@ const AdminPanel = ({
     setIsEditing(true);
   };
 
+  const handleSaveArea = () => {
+    if (!editData?.name?.trim() || !editData?.category || !editData?.type) {
+      return;
+    }
+
+    const normalizedArea = {
+      id: editData.id || `custom-${Date.now()}`,
+      name: editData.name.trim(),
+      time: editData.time || new Date().toISOString().slice(0, 19).replace('T', ' '),
+      type: editData.type,
+      status: editData.status || '正常',
+      fields: { ...(editData.fields || {}) },
+    };
+
+    setAreaConfig((current) => {
+      const nextAreas = [...(current[editData.category] || [])];
+      const existingIndex = nextAreas.findIndex((area) => area.id === normalizedArea.id);
+
+      if (existingIndex >= 0) {
+        nextAreas[existingIndex] = normalizedArea;
+      } else {
+        nextAreas.push(normalizedArea);
+      }
+
+      return {
+        ...current,
+        [editData.category]: nextAreas,
+      };
+    });
+    setIsEditing(false);
+  };
+
+  const handleDeleteArea = (category: string, areaId: string) => {
+    setAreaConfig((current) => ({
+      ...current,
+      [category]: (current[category] || []).filter((area) => area.id !== areaId),
+    }));
+    setWarningRules((current) =>
+      current.map((rule) => ({
+        ...rule,
+        effectiveAreaIds: rule.effectiveAreaIds.filter((id) => id !== areaId),
+      })),
+    );
+    if (editData?.id === areaId) {
+      setIsEditing(false);
+      setEditData(null);
+    }
+  };
+
+  const toggleWarningRule = (ruleId: string) => {
+    setWarningRules((current) =>
+      current.map((rule) =>
+        rule.id === ruleId
+          ? { ...rule, enabled: !rule.enabled }
+          : rule,
+      ),
+    );
+  };
+
+  const updateWarningRule = (ruleId: string, updater: (rule: WarningRule) => WarningRule) => {
+    setWarningRules((current) =>
+      current.map((rule) => (rule.id === ruleId ? updater(rule) : rule)),
+    );
+  };
+
+  const toggleWarningRuleArea = (ruleId: string, areaId: string) => {
+    updateWarningRule(ruleId, (rule) => ({
+      ...rule,
+      effectiveAreaIds: rule.effectiveAreaIds.includes(areaId)
+        ? rule.effectiveAreaIds.filter((id) => id !== areaId)
+        : [...rule.effectiveAreaIds, areaId],
+    }));
+  };
+
+  const toggleWarningRuleAreaCategory = (ruleId: string, areaIds: string[]) => {
+    updateWarningRule(ruleId, (rule) => {
+      const hasAll = areaIds.every((id) => rule.effectiveAreaIds.includes(id));
+      const nextIds = hasAll
+        ? rule.effectiveAreaIds.filter((id) => !areaIds.includes(id))
+        : [...new Set([...rule.effectiveAreaIds, ...areaIds])];
+
+      return {
+        ...rule,
+        effectiveAreaIds: nextIds,
+      };
+    });
+  };
+
+  const invertWarningRuleAreas = (ruleId: string, areaIds: string[]) => {
+    updateWarningRule(ruleId, (rule) => {
+      const nextSelected = new Set(rule.effectiveAreaIds);
+      areaIds.forEach((areaId) => {
+        if (nextSelected.has(areaId)) {
+          nextSelected.delete(areaId);
+        } else {
+          nextSelected.add(areaId);
+        }
+      });
+      return {
+        ...rule,
+        effectiveAreaIds: Array.from(nextSelected),
+      };
+    });
+  };
+
+  const clearWarningRuleAreas = (ruleId: string, areaIds?: string[]) => {
+    updateWarningRule(ruleId, (rule) => ({
+      ...rule,
+      effectiveAreaIds: areaIds?.length
+        ? rule.effectiveAreaIds.filter((id) => !areaIds.includes(id))
+        : [],
+    }));
+  };
+
+  const handleToggleWarningAreaType = (type: string) => {
+    startTransition(() => {
+      setSelectedWarningAreaTypes((current) => {
+        if (current.includes(type)) {
+          return current.length === 1 ? current : current.filter((item) => item !== type);
+        }
+        return [...current, type];
+      });
+    });
+  };
+
+  const toggleExpandedWarningAreaCategory = (category: string) => {
+    setExpandedWarningAreaCategories((current) =>
+      current.includes(category)
+        ? current.filter((item) => item !== category)
+        : [...current, category],
+    );
+  };
+
+  const handleSelectWarningAreasByBounds = (ruleId: string, bounds: L.LatLngBounds) => {
+    const areaIds = warningMapFeatures
+      .filter((feature) => bounds.contains(feature.center))
+      .map((feature) => feature.id);
+
+    if (areaIds.length === 0) return;
+    updateWarningRule(ruleId, (rule) => ({
+      ...rule,
+      effectiveAreaIds: Array.from(new Set([...rule.effectiveAreaIds, ...areaIds])),
+    }));
+  };
+
+  const resetWarningRuleConfig = (ruleId: string) => {
+    const fallback = INITIAL_WARNING_RULES.find((rule) => rule.id === ruleId);
+    if (!fallback) return;
+    updateWarningRule(ruleId, () => ({ ...fallback }));
+  };
+
+  const handleToggleAreaStatus = (category: string, areaId: string) => {
+    setAreaConfig((current) => ({
+      ...current,
+      [category]: (current[category] || []).map((area) =>
+        area.id === areaId
+          ? { ...area, status: area.status === '停用' ? '正常' : '停用' }
+          : area,
+      ),
+    }));
+  };
+
+  useEffect(() => {
+    setAreaCurrentPage(1);
+  }, [activeSubTab, areaSearchQuery, areaTypeFilter, areaPageSize]);
+
+  useEffect(() => {
+    if (!activeAreaTypeOptions.includes(areaTypeFilter)) {
+      setAreaTypeFilter('全部类型');
+    }
+  }, [activeAreaTypeOptions, areaTypeFilter]);
+
+  useEffect(() => {
+    if (areaCurrentPage > areaTotalPages) {
+      setAreaCurrentPage(areaTotalPages);
+    }
+  }, [areaCurrentPage, areaTotalPages]);
+
+  useEffect(() => {
+    if (!selectedWarningRule) return;
+
+    const categoryWithSelection = warningAreaGroups.find(({ areas }) =>
+      areas.some((area) => selectedWarningRule.effectiveAreaIds.includes(area.id)),
+    );
+
+    setSelectedWarningAreaCategory(categoryWithSelection?.category || AREA_CATEGORIES[0]);
+  }, [selectedWarningRule, warningAreaGroups]);
+
+  useEffect(() => {
+    setSelectedWarningAreaTypes((current) => {
+      const nextTypes = warningAreaTypeOptions;
+      const retainedTypes = current.filter((type) => nextTypes.includes(type));
+      return retainedTypes.length > 0 ? retainedTypes : nextTypes;
+    });
+    setIsWarningAreaBoxSelectEnabled(false);
+  }, [selectedWarningAreaCategory, warningAreaTypeOptions]);
+
   if (isEditing) {
     return (
       <motion.div 
@@ -1283,7 +2055,7 @@ const AdminPanel = ({
               取消并返回
             </button>
             <button 
-              onClick={() => setIsEditing(false)}
+              onClick={handleSaveArea}
               className="bg-sky-600 hover:bg-sky-500 text-white px-4 py-1.5 rounded-lg text-xs font-bold transition-all shadow-lg shadow-sky-600/20"
             >
               保存并返回
@@ -1419,149 +2191,277 @@ const AdminPanel = ({
         </aside>
 
         {/* 主内容区 */}
-        <main className="flex-1 bg-[#050a10] p-6 overflow-y-auto">
-          <div className="mb-6 flex items-center justify-between">
-            <h2 className="text-lg font-black tracking-tight text-white/90 flex items-center gap-3">
-              <div className="w-1 h-6 bg-sky-500 rounded-full" />
-              {activeMenu}
-              {activeMenu === '业务统计' && (
-                <div className="flex bg-white/5 rounded-lg p-0.5 ml-4">
-                  {['值班统计', '船舶风险统计', '意图统计'].map(tab => (
-                    <button
-                      key={tab}
-                      onClick={() => setActiveStatsTab(tab)}
-                      className={`px-4 py-1.5 text-[11px] font-bold rounded-md transition-all whitespace-nowrap ${activeStatsTab === tab ? 'bg-sky-500 text-white shadow-lg shadow-sky-500/20' : 'text-white/40 hover:text-white/60'}`}
-                    >
-                      {tab}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </h2>
-            <div className="text-xs text-white/30 font-mono">
-              Admin / {activeMenu}
-            </div>
-          </div>
-
-          {activeMenu === '区域设置' && (
-            <div className="space-y-4">
-              {/* 区域设置内部导航与搜索 */}
-              <div className="flex items-center justify-between bg-white/5 p-3 rounded-2xl border border-white/10">
-                <div className="flex items-center gap-4">
-                  <div className="flex bg-white/5 rounded-lg p-0.5">
-                    {AREA_CATEGORIES.map(tab => (
+        <main className={`flex-1 bg-[#050a10] overflow-y-auto ${activeMenu === '预警管理' || activeMenu === '区域设置' ? 'p-0' : 'p-6'}`}>
+          {activeMenu !== '预警管理' && activeMenu !== '区域设置' && (
+            <div className="mb-6 flex items-center justify-between">
+              <h2 className="text-lg font-black tracking-tight text-white/90 flex items-center gap-3">
+                <div className="w-1 h-6 bg-sky-500 rounded-full" />
+                {activeMenu}
+                {activeMenu === '业务统计' && (
+                  <div className="flex bg-white/5 rounded-lg p-0.5 ml-4">
+                    {['值班统计', '船舶风险统计', '意图统计'].map(tab => (
                       <button
                         key={tab}
-                        onClick={() => setActiveSubTab(tab)}
-                        className={`px-4 py-1 text-xs font-medium rounded-md transition-all ${activeSubTab === tab ? 'bg-sky-500 text-white shadow-lg shadow-sky-500/20' : 'text-white/40 hover:text-white/60'}`}
+                        onClick={() => setActiveStatsTab(tab)}
+                        className={`px-4 py-1.5 text-[11px] font-bold rounded-md transition-all whitespace-nowrap ${activeStatsTab === tab ? 'bg-sky-500 text-white shadow-lg shadow-sky-500/20' : 'text-white/40 hover:text-white/60'}`}
                       >
                         {tab}
                       </button>
                     ))}
                   </div>
-                </div>
+                )}
+              </h2>
+              <div className="text-xs text-white/30 font-mono">
+                Admin / {activeMenu}
+              </div>
+            </div>
+          )}
 
+          {activeMenu === '区域设置' && (
+            <div className="h-full min-h-full bg-[#07111f] flex flex-col">
+              <div className="h-12 border-b border-white/10 bg-[#101925] px-4 flex items-center justify-between shrink-0">
                 <div className="flex items-center gap-3">
-                  <button 
-                    onClick={handleCreate}
-                    className="bg-blue-600 hover:bg-blue-500 text-white px-4 py-1.5 rounded-lg text-xs font-bold transition-all shadow-lg shadow-blue-600/20 flex items-center gap-1"
-                  >
-                    <Plus size={14} /> 新建区域
+                  <Layout size={14} className="text-white/70" />
+                  <div className="w-1 h-4 rounded-full bg-sky-400" />
+                  <span className="text-[15px] font-semibold text-white">区域设置</span>
+                </div>
+                <div className="flex items-center gap-4 text-white/70">
+                  <button className="hover:text-white transition-colors">
+                    <Search size={16} />
                   </button>
-                  <button className="bg-white/5 hover:bg-white/10 border border-white/10 text-white/60 px-4 py-1.5 rounded-lg text-xs font-bold transition-all">
-                    筛选
+                  <button className="hover:text-white transition-colors">
+                    <Maximize2 size={15} />
                   </button>
                 </div>
               </div>
 
-              <div className="bg-white/5 border border-white/10 rounded-2xl overflow-hidden">
-                <table className="w-full text-left border-collapse">
-                  <thead>
-                    <tr className="bg-white/5 border-b border-white/10">
-                      <th className="w-12 px-6 py-4"></th>
-                      <th className="px-6 py-4 text-[11px] font-bold text-white/40 uppercase tracking-widest">区域名称</th>
-                      <th className="px-6 py-4 text-[11px] font-bold text-white/40 uppercase tracking-widest">创建时间</th>
-                      <th className="px-6 py-4 text-[11px] font-bold text-white/40 uppercase tracking-widest">类型</th>
-                      <th className="px-6 py-4 text-[11px] font-bold text-white/40 uppercase tracking-widest text-right">操作</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {MOCK_AREAS[activeSubTab]?.map((area) => (
-                      <React.Fragment key={area.id}>
-                        <tr 
-                          className={`border-b border-white/5 hover:bg-white/[0.02] transition-colors cursor-pointer ${expandedRowId === area.id ? 'bg-white/[0.03]' : ''}`}
-                          onClick={() => setExpandedRowId(expandedRowId === area.id ? null : area.id)}
-                        >
-                          <td className="px-6 py-4">
-                            <ChevronRight size={14} className={`text-white/20 transition-transform ${expandedRowId === area.id ? 'rotate-90' : ''}`} />
-                          </td>
-                          <td className="px-6 py-4">
-                            <div className="flex items-center gap-3">
-                              <div className="w-2 h-2 rounded-full bg-sky-500" />
-                              <span className="text-xs font-bold text-white/90">{area.name}</span>
-                            </div>
-                          </td>
-                          <td className="px-6 py-4 text-xs text-white/40 font-mono">{area.time}</td>
-                          <td className="px-6 py-4">
-                            <span className="px-2 py-0.5 bg-white/5 border border-white/10 rounded text-[10px] font-bold text-white/60">{area.type}</span>
-                          </td>
-                          <td className="px-6 py-4 text-right">
-                            <div className="flex items-center justify-end gap-2">
-                              <button className="text-[10px] font-bold text-sky-400 hover:text-sky-300 transition-colors">查看</button>
-                              <button 
-                                onClick={(e) => { e.stopPropagation(); handleEdit(area); }}
-                                className="text-[10px] font-bold text-blue-400 hover:text-blue-300 transition-colors"
-                              >
-                                修改
-                              </button>
-                              <button className="text-[10px] font-bold text-red-400 hover:text-red-300 transition-colors">删除</button>
-                            </div>
-                          </td>
-                        </tr>
-                        <AnimatePresence>
-                          {expandedRowId === area.id && (
-                            <tr>
-                              <td colSpan={5} className="bg-black/20 p-0">
-                                <motion.div
-                                  initial={{ height: 0, opacity: 0 }}
-                                  animate={{ height: 'auto', opacity: 1 }}
-                                  exit={{ height: 0, opacity: 0 }}
-                                  className="overflow-hidden"
+              <div className="flex-1 overflow-y-auto custom-scrollbar px-5 py-5">
+                <div className="flex items-center justify-end">
+                  <button className="rounded bg-sky-500/10 px-4 py-2 text-[12px] font-semibold text-sky-300 border border-sky-500/20 hover:bg-sky-500/20 transition-colors">
+                    全图预览
+                  </button>
+                </div>
+
+                <div className="mt-8 flex items-center justify-between gap-6">
+                  <div className="flex rounded-xl bg-white/[0.06] p-1">
+                    {AREA_CATEGORIES.map((tab) => (
+                      <button
+                        key={tab}
+                        onClick={() => setActiveSubTab(tab)}
+                        className={`min-w-[120px] rounded-lg px-5 py-3 text-[13px] font-medium transition-all ${
+                          activeSubTab === tab
+                            ? 'bg-sky-500 text-white shadow-[0_0_20px_rgba(14,165,233,0.28)]'
+                            : 'text-white/45 hover:text-white/70'
+                        }`}
+                      >
+                        {tab}
+                      </button>
+                    ))}
+                  </div>
+
+                  <div className="flex items-center gap-3">
+                    <div className="relative">
+                      <Search size={14} className="absolute left-4 top-1/2 -translate-y-1/2 text-white/25" />
+                      <input
+                        value={areaSearchQuery}
+                        onChange={(e) => setAreaSearchQuery(e.target.value)}
+                        placeholder="搜索区域名称..."
+                        className="h-10 w-52 rounded-lg border border-white/10 bg-white/[0.03] pl-10 pr-4 text-[12px] text-white placeholder:text-white/20 focus:outline-none focus:border-sky-500/40"
+                      />
+                    </div>
+                    <select
+                      value={areaTypeFilter}
+                      onChange={(e) => setAreaTypeFilter(e.target.value)}
+                      className="h-10 min-w-[120px] rounded-lg border border-white/10 bg-white/[0.03] px-4 text-[12px] text-white focus:outline-none focus:border-sky-500/40"
+                    >
+                      {activeAreaTypeOptions.map((type) => (
+                        <option key={type} value={type} className="bg-[#111923] text-white">
+                          {type}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                <div className="mt-6 flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="h-4 w-1 rounded-full bg-sky-400" />
+                    <span className="text-[14px] font-semibold text-white">数据列表</span>
+                    <span className="text-[12px] text-white/35">共 {filteredAreaList.length} 条</span>
+                  </div>
+                  <button
+                    onClick={handleCreate}
+                    className="rounded-lg bg-sky-500/10 px-4 py-2 text-[12px] font-semibold text-sky-300 border border-sky-500/20 hover:bg-sky-500/20 transition-colors flex items-center gap-1.5"
+                  >
+                    <Plus size={14} /> 新增区域
+                  </button>
+                </div>
+
+                <div className="mt-4 overflow-hidden rounded-2xl border border-white/10 bg-white/[0.04]">
+                  <table className="w-full border-collapse text-left">
+                    <thead>
+                      <tr className="border-b border-white/10 bg-white/[0.05]">
+                        <th className="w-10 px-4 py-4"></th>
+                        <th className="px-4 py-4 text-[11px] font-bold text-white/40">区域名称</th>
+                        <th className="px-4 py-4 text-[11px] font-bold text-white/40">类型</th>
+                        <th className="px-4 py-4 text-[11px] font-bold text-white/40">状态</th>
+                        <th className="px-4 py-4 text-[11px] font-bold text-white/40">操作</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {paginatedAreaList.map((area) => {
+                        const isEnabled = area.status !== '停用';
+                        return (
+                          <React.Fragment key={area.id}>
+                            <tr
+                              className={`border-b border-white/5 transition-colors ${expandedRowId === area.id ? 'bg-white/[0.05]' : 'hover:bg-white/[0.03]'}`}
+                            >
+                              <td className="px-4 py-4">
+                                <button
+                                  onClick={() => setExpandedRowId(expandedRowId === area.id ? null : area.id)}
+                                  className="text-white/30 hover:text-white transition-colors"
+                                  aria-label={`展开 ${area.name}`}
                                 >
-                                  <div className="p-6">
-                                    <div className="space-y-3">
-                                      <h4 className="text-[10px] font-black text-white/20 uppercase tracking-[0.2em]">业务属性</h4>
-                                      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                                        {Object.entries(area.fields || {}).map(([key, value]) => (
-                                          <div key={key} className="bg-white/5 rounded-xl p-3 border border-white/5 hover:border-sky-500/30 transition-all">
-                                            <span className="text-[9px] text-white/30 block mb-1 uppercase tracking-wider font-bold">{key}</span>
-                                            <span className="text-xs font-bold text-white/90">{value as string}</span>
-                                          </div>
-                                        ))}
-                                        {(!area.fields || Object.keys(area.fields).length === 0) && (
-                                          <div className="col-span-full py-8 text-center border border-dashed border-white/5 rounded-2xl">
-                                            <span className="text-[10px] font-bold text-white/20 uppercase tracking-widest">该区域暂无额外业务属性配置</span>
-                                          </div>
-                                        )}
-                                      </div>
-                                    </div>
-                                  </div>
-                                </motion.div>
+                                  <ChevronRight size={14} className={`transition-transform ${expandedRowId === area.id ? 'rotate-90' : ''}`} />
+                                </button>
+                              </td>
+                              <td className="px-4 py-4">
+                                <div className="flex items-center gap-3">
+                                  <div className="h-2.5 w-2.5 rounded-full bg-sky-400" />
+                                  <span className="text-[13px] text-white/88">{area.name}</span>
+                                </div>
+                              </td>
+                              <td className="px-4 py-4">
+                                <span className="inline-flex rounded-md border border-white/10 bg-white/[0.03] px-2 py-1 text-[10px] text-white/45">
+                                  {area.type}
+                                </span>
+                              </td>
+                              <td className="px-4 py-4">
+                                <button
+                                  onClick={() => handleToggleAreaStatus(activeSubTab, area.id)}
+                                  className={`relative h-5 w-9 rounded-full transition-all ${isEnabled ? 'bg-[#0d76e8]' : 'bg-white/20'}`}
+                                  aria-label={`${area.name}${isEnabled ? '停用' : '启用'}`}
+                                >
+                                  <span
+                                    className={`absolute top-0.5 h-4 w-4 rounded-full bg-white transition-all ${isEnabled ? 'left-[18px]' : 'left-0.5'}`}
+                                  />
+                                </button>
+                              </td>
+                              <td className="px-4 py-4">
+                                <div className="flex items-center gap-4 text-[12px] font-semibold">
+                                  <button
+                                    onClick={() => setExpandedRowId(expandedRowId === area.id ? null : area.id)}
+                                    className="text-sky-400 hover:text-sky-300 transition-colors"
+                                  >
+                                    查看
+                                  </button>
+                                  <button
+                                    onClick={() => handleEdit(area)}
+                                    className="text-sky-400 hover:text-sky-300 transition-colors"
+                                  >
+                                    修改
+                                  </button>
+                                  <button
+                                    onClick={() => handleDeleteArea(activeSubTab, area.id)}
+                                    className="text-red-400 hover:text-red-300 transition-colors"
+                                  >
+                                    删除
+                                  </button>
+                                </div>
                               </td>
                             </tr>
-                          )}
-                        </AnimatePresence>
-                      </React.Fragment>
-                    ))}
-                  </tbody>
-                </table>
-                
-                <div className="p-4 border-t border-white/5 flex justify-between items-center">
-                  <span className="text-[10px] font-bold text-white/20 uppercase tracking-widest">共 {MOCK_AREAS[activeSubTab]?.length} 条记录</span>
-                  <div className="flex gap-2">
-                    <button className="p-1.5 rounded-lg border border-white/10 text-white/30 hover:text-white transition-all"><ChevronLeft size={16} /></button>
-                    <button className="w-8 h-8 rounded-lg bg-sky-500 text-white text-xs font-bold shadow-lg shadow-sky-500/20">1</button>
-                    <button className="p-1.5 rounded-lg border border-white/10 text-white/30 hover:text-white transition-all"><ChevronRight size={16} /></button>
+                            <AnimatePresence>
+                              {expandedRowId === area.id && (
+                                <tr>
+                                  <td colSpan={5} className="bg-black/20 p-0">
+                                    <motion.div
+                                      initial={{ height: 0, opacity: 0 }}
+                                      animate={{ height: 'auto', opacity: 1 }}
+                                      exit={{ height: 0, opacity: 0 }}
+                                      className="overflow-hidden"
+                                    >
+                                      <div className="px-6 py-5">
+                                        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+                                          <div className="rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3">
+                                            <div className="text-[10px] font-bold uppercase tracking-widest text-white/30">创建时间</div>
+                                            <div className="mt-2 text-[12px] text-white/75">{area.time}</div>
+                                          </div>
+                                          <div className="rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3">
+                                            <div className="text-[10px] font-bold uppercase tracking-widest text-white/30">当前状态</div>
+                                            <div className="mt-2 text-[12px] text-white/75">{area.status}</div>
+                                          </div>
+                                          {Object.entries(area.fields || {}).slice(0, 6).map(([key, value]) => (
+                                            <div key={key} className="rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3">
+                                              <div className="text-[10px] font-bold uppercase tracking-widest text-white/30">{key}</div>
+                                              <div className="mt-2 text-[12px] text-white/75">{value as string}</div>
+                                            </div>
+                                          ))}
+                                          {Object.keys(area.fields || {}).length === 0 && (
+                                            <div className="col-span-full rounded-xl border border-dashed border-white/10 px-4 py-6 text-center text-[11px] text-white/30">
+                                              该区域暂无额外业务属性配置
+                                            </div>
+                                          )}
+                                        </div>
+                                      </div>
+                                    </motion.div>
+                                  </td>
+                                </tr>
+                              )}
+                            </AnimatePresence>
+                          </React.Fragment>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+
+                <div className="mt-4 flex items-center justify-between rounded-2xl border border-white/10 bg-white/[0.04] px-5 py-3">
+                  <div className="text-[12px] text-white/55">共 {filteredAreaList.length} 条</div>
+                  <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-2">
+                      <select
+                        value={areaPageSize}
+                        onChange={(e) => setAreaPageSize(Number(e.target.value))}
+                        className="h-8 rounded-lg border border-white/10 bg-white/[0.03] px-3 text-[12px] text-white focus:outline-none"
+                      >
+                        {[10, 20, 50].map((size) => (
+                          <option key={size} value={size} className="bg-[#111923] text-white">
+                            {size}条/页
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        onClick={() => setAreaCurrentPage((page) => Math.max(1, page - 1))}
+                        disabled={areaCurrentPage === 1}
+                        className="h-8 w-8 rounded bg-white/[0.03] text-white/40 disabled:opacity-40"
+                      >
+                        <ChevronLeft size={14} className="mx-auto" />
+                      </button>
+                      {areaPageNumbers.map((page) =>
+                        typeof page === 'number' ? (
+                          <button
+                            key={page}
+                            onClick={() => setAreaCurrentPage(page)}
+                            className={`h-8 min-w-8 rounded px-2 text-[12px] font-semibold transition-colors ${
+                              areaCurrentPage === page ? 'bg-sky-500 text-white' : 'bg-white/[0.03] text-white/55 hover:text-white'
+                            }`}
+                          >
+                            {page}
+                          </button>
+                        ) : (
+                          <span key={page} className="px-1 text-white/30">...</span>
+                        ),
+                      )}
+                      <button
+                        onClick={() => setAreaCurrentPage((page) => Math.min(areaTotalPages, page + 1))}
+                        disabled={areaCurrentPage === areaTotalPages}
+                        className="h-8 w-8 rounded bg-white/[0.03] text-white/40 disabled:opacity-40"
+                      >
+                        <ChevronRight size={14} className="mx-auto" />
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -1779,27 +2679,623 @@ const AdminPanel = ({
           )}
 
           {activeMenu === '预警管理' && (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {['进入禁航区', '走锚风险', '超速警报', '碰撞风险', '异常停泊'].map(type => (
-                <div key={type} className="bg-white/5 border border-white/10 rounded-2xl p-5 hover:border-sky-500/30 transition-all group">
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="p-2 bg-sky-500/10 rounded-xl text-sky-400">
-                      <Shield size={20} />
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-[10px] font-bold text-white/20 uppercase tracking-widest">启用状态</span>
-                      <div className="w-8 h-4 bg-sky-500 rounded-full relative">
-                        <div className="absolute right-0.5 top-0.5 w-3 h-3 bg-white rounded-full" />
-                      </div>
-                    </div>
-                  </div>
-                  <h3 className="text-sm font-bold text-white/90 mb-2">{type}设置</h3>
-                  <p className="text-xs text-white/40 leading-relaxed mb-4">配置该预警类型的触发阈值、通知对象及响应等级。</p>
-                  <button className="w-full py-2 bg-white/5 border border-white/10 rounded-xl text-xs font-bold text-white/60 hover:bg-white/10 hover:text-white transition-all">
-                    进入配置
+            <div className="h-full min-h-full bg-[#07111f] flex flex-col">
+              <div className="h-12 border-b border-white/10 bg-[#101925] px-4 flex items-center justify-between shrink-0">
+                <div className="flex items-center gap-3">
+                  <Layout size={14} className="text-white/70" />
+                  <div className="w-1 h-4 rounded-full bg-sky-400" />
+                  <span className="text-[15px] font-semibold text-white">预警管理</span>
+                </div>
+                <div className="flex items-center gap-4 text-white/70">
+                  <button className="hover:text-white transition-colors">
+                    <Search size={16} />
+                  </button>
+                  <button className="hover:text-white transition-colors">
+                    <Maximize2 size={15} />
                   </button>
                 </div>
-              ))}
+              </div>
+
+              <div className="flex-1 min-h-0 flex flex-col">
+                <div className="grid grid-cols-3 border-b border-white/10 bg-[#0d1724] shrink-0">
+                  <div className="px-4 py-3">
+                    <div className="text-[10px] font-bold text-white/35 uppercase tracking-widest">规则总数</div>
+                    <div className="mt-1 text-xl font-semibold text-white">{warningRules.length}</div>
+                  </div>
+                  <div className="px-4 py-3 border-l border-white/5">
+                    <div className="text-[10px] font-bold text-white/35 uppercase tracking-widest">开启规则</div>
+                    <div className="mt-1 text-xl font-semibold text-sky-400">{warningRules.filter((rule) => rule.enabled).length}</div>
+                  </div>
+                  <div className="px-4 py-3 border-l border-white/5">
+                    <div className="text-[10px] font-bold text-white/35 uppercase tracking-widest">已配置区域</div>
+                    <div className="mt-1 text-xl font-semibold text-white">
+                      {new Set(warningRules.flatMap((rule) => rule.effectiveAreaIds)).size}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex-1 overflow-auto">
+                  <table className="w-full min-w-[1120px] border-collapse">
+                    <thead>
+                      <tr className="border-b border-white/10 bg-[#101925] text-left">
+                        <th className="px-4 py-3 text-[11px] font-medium text-white/75">预警名称</th>
+                        <th className="px-4 py-3 text-[11px] font-medium text-white/75">预警类别</th>
+                        <th className="px-4 py-3 text-[11px] font-medium text-white/75">监测维度</th>
+                        <th className="px-4 py-3 text-[11px] font-medium text-white/75">生效区域</th>
+                        <th className="px-4 py-3 text-[11px] font-medium text-white/75">状态</th>
+                        <th className="px-4 py-3 text-[11px] font-medium text-white/75">操作</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {warningRules.map((rule) => {
+                        const areaNames = rule.effectiveAreaIds
+                          .map((id) => warningAreaLookup.get(id)?.name)
+                          .filter(Boolean) as string[];
+                        const areaSummary = areaNames.length > 2
+                          ? `${areaNames.slice(0, 2).join('、')} +${areaNames.length - 2}`
+                          : areaNames.join('、') || '未配置';
+
+                        return (
+                          <tr
+                            key={rule.id}
+                            onClick={() => setSelectedWarningRuleId(rule.id)}
+                            className={`border-b border-white/5 transition-colors ${
+                              selectedWarningRuleId === rule.id
+                                ? 'bg-white/[0.06]'
+                                : 'bg-[#06101d] hover:bg-white/[0.03]'
+                            }`}
+                          >
+                            <td className="px-4 py-3">
+                              <div className="flex items-center gap-3">
+                                <div className={`h-2 w-2 rounded-full ${rule.enabled ? 'bg-sky-400' : 'bg-white/25'}`} />
+                                <div>
+                                  <div className="text-[13px] text-white/88">{rule.name}</div>
+                                  <div className="mt-1 text-[10px] text-white/30">等级 {rule.severity}</div>
+                                </div>
+                              </div>
+                            </td>
+                            <td className="px-4 py-3 text-[12px] text-white/72">{rule.category}</td>
+                            <td className="px-4 py-3 text-[12px] text-white/72">{rule.trigger}</td>
+                            <td className="px-4 py-3">
+                              <div className="text-[12px] text-white/72">{areaSummary}</div>
+                            </td>
+                            <td className="px-4 py-3">
+                              <div className="flex items-center gap-3">
+                                <span className={`text-[12px] ${rule.enabled ? 'text-white/50' : 'text-sky-400'}`}>关闭</span>
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    toggleWarningRule(rule.id);
+                                  }}
+                                  className={`relative h-5 w-9 rounded-full transition-all ${
+                                    rule.enabled ? 'bg-[#0d76e8]' : 'bg-white/25'
+                                  }`}
+                                  aria-label={`${rule.name}${rule.enabled ? '关闭' : '开启'}`}
+                                >
+                                  <span
+                                    className={`absolute top-0.5 h-4 w-4 rounded-full bg-white shadow-sm transition-all ${
+                                      rule.enabled ? 'left-[18px]' : 'left-0.5'
+                                    }`}
+                                  />
+                                </button>
+                                <span className={`text-[12px] ${rule.enabled ? 'text-sky-400' : 'text-white/50'}`}>开启</span>
+                              </div>
+                            </td>
+                            <td className="px-4 py-3">
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setSelectedWarningRuleId(rule.id);
+                                  setIsWarningConfigOpen(true);
+                                }}
+                                className="rounded bg-[#0d76e8] px-3 py-1 text-[11px] font-semibold text-white hover:bg-[#2590ff] transition-colors"
+                              >
+                                配置
+                              </button>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              <AnimatePresence>
+                {isWarningConfigOpen && selectedWarningRule && (
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    className="absolute inset-0 z-20 bg-black/55 backdrop-blur-[2px] flex items-center justify-center p-6"
+                  >
+                    <motion.div
+                      initial={{ opacity: 0, y: 12, scale: 0.98 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: 12, scale: 0.98 }}
+                      className="h-[min(820px,calc(100vh-64px))] w-[min(980px,calc(100vw-96px))] overflow-hidden rounded-2xl border border-white/10 bg-[#0a1420] shadow-2xl"
+                    >
+                      <div className="flex h-full flex-col">
+                        <div className="border-b border-white/10 px-5 py-4 shrink-0">
+                          <div className="flex items-start justify-between gap-4">
+                            <div>
+                              <div className="flex items-center gap-2">
+                                <Shield size={15} className="text-sky-400" />
+                                <span className="text-[15px] font-semibold text-white">{selectedWarningRule.name}</span>
+                              </div>
+                              <p className="mt-2 text-[12px] leading-6 text-white/45">
+                                通过弹窗配置当前预警规则的等级、响应方式以及生效区域。
+                              </p>
+                            </div>
+                            <div className="flex items-center gap-2 shrink-0">
+                              <button
+                                onClick={() => resetWarningRuleConfig(selectedWarningRule.id)}
+                                className="rounded border border-white/10 px-3 py-1.5 text-[11px] font-semibold text-white/65 hover:bg-white/5 hover:text-white transition-colors"
+                              >
+                                恢复默认
+                              </button>
+                              <button
+                                onClick={() => setIsWarningConfigOpen(false)}
+                                className="rounded border border-white/10 p-2 text-white/50 hover:bg-white/5 hover:text-white transition-colors"
+                                aria-label="关闭配置弹窗"
+                              >
+                                <X size={14} />
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="flex-1 overflow-y-auto custom-scrollbar px-5 py-4 space-y-5">
+                          <section className="space-y-3">
+                            <div className="flex items-center gap-2">
+                              <Info size={14} className="text-white/50" />
+                              <span className="text-[11px] font-bold text-white/55 uppercase tracking-widest">基础配置</span>
+                            </div>
+                            <div className="grid grid-cols-2 gap-3">
+                              <label className="space-y-1.5">
+                                <span className="text-[11px] text-white/40">预警等级</span>
+                                <select
+                                  value={selectedWarningRule.severity}
+                                  onChange={(e) =>
+                                    updateWarningRule(selectedWarningRule.id, (rule) => ({
+                                      ...rule,
+                                      severity: e.target.value as WarningRule['severity'],
+                                    }))
+                                  }
+                                  className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-[12px] text-white focus:outline-none focus:border-sky-500/50"
+                                >
+                                  {['高', '中', '低'].map((level) => (
+                                    <option key={level} value={level} className="bg-[#0f1723] text-white">
+                                      {level}
+                                    </option>
+                                  ))}
+                                </select>
+                              </label>
+                              <label className="space-y-1.5">
+                                <span className="text-[11px] text-white/40">响应方式</span>
+                                <select
+                                  value={selectedWarningRule.responseLevel}
+                                  onChange={(e) =>
+                                    updateWarningRule(selectedWarningRule.id, (rule) => ({
+                                      ...rule,
+                                      responseLevel: e.target.value as WarningRule['responseLevel'],
+                                    }))
+                                  }
+                                  className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-[12px] text-white focus:outline-none focus:border-sky-500/50"
+                                >
+                                  {['自动提醒', '值班确认', '联动处置'].map((level) => (
+                                    <option key={level} value={level} className="bg-[#0f1723] text-white">
+                                      {level}
+                                    </option>
+                                  ))}
+                                </select>
+                              </label>
+                            </div>
+
+                            <div className="flex items-center justify-between rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2">
+                              <div>
+                                <div className="text-[12px] text-white/85">预警开关</div>
+                                <div className="mt-1 text-[10px] text-white/35">关闭后该规则不再参与当前原型的预警检测</div>
+                              </div>
+                              <button
+                                onClick={() => toggleWarningRule(selectedWarningRule.id)}
+                                className={`relative h-6 w-11 rounded-full transition-all ${
+                                  selectedWarningRule.enabled ? 'bg-[#0d76e8]' : 'bg-white/20'
+                                }`}
+                                aria-label={`${selectedWarningRule.name}${selectedWarningRule.enabled ? '关闭' : '开启'}`}
+                              >
+                                <span
+                                  className={`absolute top-0.5 h-5 w-5 rounded-full bg-white transition-all ${
+                                    selectedWarningRule.enabled ? 'left-[22px]' : 'left-0.5'
+                                  }`}
+                                />
+                              </button>
+                            </div>
+
+                            <label className="block space-y-1.5">
+                              <span className="text-[11px] text-white/40">规则说明</span>
+                              <textarea
+                                value={selectedWarningRule.description}
+                                onChange={(e) =>
+                                  updateWarningRule(selectedWarningRule.id, (rule) => ({
+                                    ...rule,
+                                    description: e.target.value,
+                                  }))
+                                }
+                                rows={4}
+                                className="w-full resize-none rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-[12px] leading-6 text-white focus:outline-none focus:border-sky-500/50"
+                              />
+                            </label>
+                          </section>
+
+                          <section className="space-y-3">
+                            <div className="flex items-center justify-between gap-4">
+                              <div className="flex items-center gap-2">
+                                <LocateFixed size={14} className="text-sky-400" />
+                                <span className="text-[11px] font-bold text-white/55 uppercase tracking-widest">生效区域配置</span>
+                              </div>
+                              <div className="flex items-center gap-2 text-[11px] text-white/40">
+                                <span>已选 {selectedWarningAreaIds.length} / {allWarningAreas.length}</span>
+                                <span className="h-1 w-1 rounded-full bg-white/15" />
+                                <span>当前辖区 {selectedWarningAreaGroupSelectedCount} / {selectedWarningAreaGroup?.areas.length ?? 0}</span>
+                              </div>
+                            </div>
+
+                            <div className="rounded-xl border border-white/10 bg-[linear-gradient(180deg,rgba(12,24,36,0.96),rgba(8,18,28,0.96))] p-4">
+                              <div className="flex flex-wrap items-start justify-between gap-3">
+                                <div className="space-y-2">
+                                  <div className="text-[11px] text-white/35">当前作用范围</div>
+                                  <div className="flex flex-wrap gap-2">
+                                    {selectedWarningAreaPreview.length > 0 ? (
+                                      <>
+                                        {selectedWarningAreaPreview.map((area) => (
+                                          <button
+                                            key={area.id}
+                                            onClick={() => toggleWarningRuleArea(selectedWarningRule.id, area.id)}
+                                            className="rounded-full border border-sky-500/25 bg-sky-500/10 px-2.5 py-1 text-[11px] text-sky-300 transition-colors hover:bg-sky-500/18"
+                                          >
+                                            {area.name}
+                                          </button>
+                                        ))}
+                                        {selectedWarningAreaHiddenCount > 0 && (
+                                          <span className="rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-1 text-[11px] text-white/55">
+                                            +{selectedWarningAreaHiddenCount}
+                                          </span>
+                                        )}
+                                      </>
+                                    ) : (
+                                      <span className="text-[11px] text-white/30">未选择生效区域</span>
+                                    )}
+                                  </div>
+                                </div>
+
+                                <div className="flex flex-wrap items-center gap-2">
+                                  <button
+                                    onClick={() => clearWarningRuleAreas(selectedWarningRule.id)}
+                                    className="rounded border border-white/10 px-3 py-1.5 text-[11px] font-semibold text-white/60 transition-colors hover:bg-white/5 hover:text-white"
+                                  >
+                                    一键清空
+                                  </button>
+                                  <button
+                                    onClick={() => invertWarningRuleAreas(selectedWarningRule.id, filteredWarningAreas.map((area) => area.id))}
+                                    className="rounded border border-white/10 px-3 py-1.5 text-[11px] font-semibold text-white/60 transition-colors hover:bg-white/5 hover:text-white"
+                                  >
+                                    反选当前结果
+                                  </button>
+                                </div>
+                              </div>
+
+                              <div className="mt-3 flex flex-wrap gap-2">
+                                {selectedWarningAreaTypeSummary.length > 0 ? (
+                                  selectedWarningAreaTypeSummary.map(({ type, count }) => (
+                                    <span
+                                      key={type}
+                                      className="rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-1 text-[11px] text-white/72"
+                                    >
+                                      {type} {count}
+                                    </span>
+                                  ))
+                                ) : (
+                                  <span className="text-[11px] text-white/28">当前规则尚未绑定任何区域类型</span>
+                                )}
+                              </div>
+                            </div>
+
+                            <div className="space-y-3">
+                              {selectedWarningAreaGroup && (
+                                <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-[#060d16]">
+                                  <div className="relative h-[560px]">
+                                    <MapContainer
+                                      key={selectedWarningAreaCategory}
+                                      center={WARNING_AREA_CATEGORY_META[selectedWarningAreaCategory]?.center || WARNING_AREA_CATEGORY_META.值班区域.center}
+                                      zoom={WARNING_AREA_CATEGORY_META[selectedWarningAreaCategory]?.zoom || WARNING_AREA_CATEGORY_META.值班区域.zoom}
+                                      className="h-full w-full"
+                                      preferCanvas
+                                      zoomControl={false}
+                                      attributionControl={false}
+                                    >
+                                      <TileLayer url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png" />
+
+                                      {warningMapFeatures.map((feature) => {
+                                        const checked = selectedWarningAreaIds.includes(feature.id);
+                                        const pathOptions = feature.polyline
+                                          ? {
+                                              color: checked ? '#38bdf8' : feature.color,
+                                              weight: checked ? 5 : 3,
+                                              opacity: checked ? 0.98 : 0.74,
+                                            }
+                                          : {
+                                              color: checked ? '#38bdf8' : feature.color,
+                                              weight: checked ? 2.2 : 1.2,
+                                              fillColor: checked ? '#0ea5e9' : feature.color,
+                                              fillOpacity: checked ? 0.34 : 0.16,
+                                              opacity: checked ? 0.95 : 0.8,
+                                            };
+
+                                        if (feature.polyline) {
+                                          return (
+                                            <Polyline
+                                              key={feature.id}
+                                              positions={feature.polyline}
+                                              pathOptions={pathOptions}
+                                              eventHandlers={{
+                                                click: () => toggleWarningRuleArea(selectedWarningRule.id, feature.id),
+                                              }}
+                                            />
+                                          );
+                                        }
+
+                                        return (
+                                          <Polygon
+                                            key={feature.id}
+                                            positions={feature.polygon || []}
+                                            pathOptions={pathOptions}
+                                            eventHandlers={{
+                                              click: () => toggleWarningRuleArea(selectedWarningRule.id, feature.id),
+                                            }}
+                                          />
+                                        );
+                                      })}
+
+                                      <WarningAreaBoxSelector
+                                        enabled={isWarningAreaBoxSelectEnabled}
+                                        onSelect={(bounds) => handleSelectWarningAreasByBounds(selectedWarningRule.id, bounds)}
+                                      />
+                                    </MapContainer>
+
+                                    <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_18%_18%,rgba(74,222,128,0.08),transparent_22%),radial-gradient(circle_at_76%_24%,rgba(56,189,248,0.08),transparent_24%),linear-gradient(180deg,rgba(4,10,18,0.12),rgba(4,10,18,0.44))]" />
+                                    <div className="pointer-events-none absolute inset-0 opacity-20" style={{ backgroundImage: 'linear-gradient(rgba(255,255,255,0.08) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.08) 1px, transparent 1px)', backgroundSize: '110px 110px' }} />
+
+                                    <div className="absolute left-4 top-4 z-[500] w-[280px] rounded-2xl border border-white/10 bg-[linear-gradient(180deg,rgba(15,24,17,0.78),rgba(6,17,26,0.8))] p-4 shadow-[0_24px_80px_rgba(0,0,0,0.45)] backdrop-blur-xl">
+                                      <div className="flex items-center justify-between gap-3">
+                                        <div>
+                                          <div className="text-[15px] font-semibold text-white">区域资源树</div>
+                                          <div className="mt-1 text-[10px] text-white/35">地图主交互，左侧只做轻量导航和筛选</div>
+                                        </div>
+                                        <button
+                                          onClick={() => setSelectedWarningAreaTypes(warningAreaTypeOptions)}
+                                          className="rounded-lg border border-sky-500/30 bg-sky-500/10 px-2.5 py-1.5 text-[11px] font-semibold text-sky-300 transition-colors hover:bg-sky-500/18"
+                                        >
+                                          全显
+                                        </button>
+                                      </div>
+
+                                      <div className="relative mt-4">
+                                        <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-white/25" />
+                                        <input
+                                          value={warningAreaSearchQuery}
+                                          onChange={(e) =>
+                                            startTransition(() => {
+                                              setWarningAreaSearchQuery(e.target.value);
+                                            })
+                                          }
+                                          placeholder="快速检索区域名称..."
+                                          className="h-10 w-full rounded-xl border border-white/10 bg-black/20 pl-9 pr-3 text-[12px] text-white placeholder:text-white/20 focus:outline-none focus:border-sky-500/40"
+                                        />
+                                      </div>
+
+                                      <div className="mt-4 max-h-[360px] space-y-2 overflow-y-auto custom-scrollbar pr-1">
+                                        {warningAreaGroups.map(({ category, areas }) => {
+                                          const isExpanded = expandedWarningAreaCategories.includes(category);
+                                          const isActiveCategory = selectedWarningAreaCategory === category;
+                                          const selectedCount = areas.filter((area) => selectedWarningAreaIds.includes(area.id)).length;
+                                          const categoryTypes = [...new Set<string>(areas.map((area) => area.type))];
+
+                                          return (
+                                            <div key={category} className="rounded-xl border border-white/8 bg-black/10">
+                                              <div className="flex items-center gap-2 px-3 py-2.5">
+                                                <button
+                                                  onClick={() => toggleExpandedWarningAreaCategory(category)}
+                                                  className="rounded p-1 text-white/45 transition-colors hover:bg-white/5 hover:text-white"
+                                                >
+                                                  <ChevronRight
+                                                    size={13}
+                                                    className={`transition-transform ${isExpanded ? 'rotate-90' : ''}`}
+                                                  />
+                                                </button>
+                                                <button
+                                                  onClick={() =>
+                                                    startTransition(() => {
+                                                      setSelectedWarningAreaCategory(category);
+                                                    })
+                                                  }
+                                                  className={`min-w-0 flex-1 rounded-lg px-2 py-1.5 text-left transition-colors ${
+                                                    isActiveCategory
+                                                      ? 'bg-sky-500/12 text-white'
+                                                      : 'text-white/72 hover:bg-white/5 hover:text-white'
+                                                  }`}
+                                                >
+                                                  <div className="truncate text-[12px] font-semibold">{category}</div>
+                                                  <div className="mt-1 text-[10px] text-white/35">已选 {selectedCount} / {areas.length}</div>
+                                                </button>
+                                              </div>
+
+                                              {isExpanded && (
+                                                <div className="space-y-1 px-3 pb-3">
+                                                  {categoryTypes.map((type) => {
+                                                    const typeAreas = areas.filter((area) => area.type === type);
+                                                    const typeSelected = typeAreas.filter((area) => selectedWarningAreaIds.includes(area.id)).length;
+                                                    const isTypeActive =
+                                                      category === selectedWarningAreaCategory &&
+                                                      selectedWarningAreaTypes.includes(type);
+
+                                                    return (
+                                                      <button
+                                                        key={`${category}-${type}`}
+                                                        onClick={() => {
+                                                          startTransition(() => {
+                                                            setSelectedWarningAreaCategory(category);
+                                                          });
+                                                          if (!(category === selectedWarningAreaCategory && selectedWarningAreaTypes.includes(type))) {
+                                                            setSelectedWarningAreaTypes([type]);
+                                                          } else {
+                                                            handleToggleWarningAreaType(type);
+                                                          }
+                                                        }}
+                                                        className={`ml-6 flex w-[calc(100%-24px)] items-center justify-between rounded-lg px-3 py-2 text-left transition-colors ${
+                                                          isTypeActive
+                                                            ? 'bg-sky-500/[0.12] text-sky-100'
+                                                            : 'text-white/58 hover:bg-white/[0.04] hover:text-white'
+                                                        }`}
+                                                      >
+                                                        <div className="flex min-w-0 items-center gap-2">
+                                                          <span
+                                                            className="h-2 w-2 rounded-full"
+                                                            style={{ backgroundColor: WARNING_AREA_TYPE_COLORS[type] || '#38bdf8' }}
+                                                          />
+                                                          <span className="truncate text-[11px]">{type}</span>
+                                                        </div>
+                                                        <span className="text-[10px] text-white/35">{typeSelected}/{typeAreas.length}</span>
+                                                      </button>
+                                                    );
+                                                  })}
+                                                </div>
+                                              )}
+                                            </div>
+                                          );
+                                        })}
+                                      </div>
+                                    </div>
+
+                                    <div className="absolute right-4 top-4 z-[500] flex max-w-[360px] flex-col gap-3">
+                                      <div className="rounded-2xl border border-white/10 bg-[#08121c]/84 px-4 py-3 shadow-[0_18px_60px_rgba(0,0,0,0.35)] backdrop-blur-xl">
+                                        <div className="flex items-start justify-between gap-3">
+                                          <div>
+                                            <div className="text-[13px] font-semibold text-white">{selectedWarningAreaGroup.category}</div>
+                                            <div className="mt-1 text-[10px] text-white/38">当前结果 {filteredWarningAreas.length} 条，地图渲染 {warningMapFeatures.length} 个区域图形</div>
+                                          </div>
+                                          <div className="rounded-full border border-white/10 px-2 py-1 text-[10px] text-white/52">
+                                            图层 {selectedWarningAreaTypes.length}/{warningAreaTypeOptions.length}
+                                          </div>
+                                        </div>
+                                      </div>
+
+                                      <div className="rounded-2xl border border-white/10 bg-[#08121c]/84 px-4 py-3 shadow-[0_18px_60px_rgba(0,0,0,0.35)] backdrop-blur-xl">
+                                        <div className="text-[10px] font-bold uppercase tracking-widest text-white/35">已选区域</div>
+                                        <div className="mt-2 flex flex-wrap gap-2">
+                                          {selectedWarningAreaPreview.length > 0 ? (
+                                            <>
+                                              {selectedWarningAreaPreview.map((area) => (
+                                                <button
+                                                  key={area.id}
+                                                  onClick={() => toggleWarningRuleArea(selectedWarningRule.id, area.id)}
+                                                  className="rounded-full border border-sky-500/25 bg-sky-500/10 px-2.5 py-1 text-[11px] text-sky-300 transition-colors hover:bg-sky-500/18"
+                                                >
+                                                  {area.name}
+                                                </button>
+                                              ))}
+                                              {selectedWarningAreaHiddenCount > 0 && (
+                                                <span className="rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-1 text-[11px] text-white/55">
+                                                  +{selectedWarningAreaHiddenCount}
+                                                </span>
+                                              )}
+                                            </>
+                                          ) : (
+                                            <span className="text-[11px] text-white/30">未选择生效区域</span>
+                                          )}
+                                        </div>
+                                        <div className="mt-3 flex flex-wrap gap-2">
+                                          {selectedWarningAreaTypeSummary.length > 0 ? (
+                                            selectedWarningAreaTypeSummary.map(({ type, count }) => (
+                                              <span
+                                                key={type}
+                                                className="rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-1 text-[11px] text-white/72"
+                                              >
+                                                {type} {count}
+                                              </span>
+                                            ))
+                                          ) : (
+                                            <span className="text-[11px] text-white/28">暂无类型统计</span>
+                                          )}
+                                        </div>
+                                      </div>
+                                    </div>
+
+                                    <div className="absolute bottom-4 left-4 z-[500] max-w-[320px] rounded-2xl border border-white/10 bg-[#08121c]/84 px-4 py-3 shadow-[0_18px_60px_rgba(0,0,0,0.35)] backdrop-blur-xl">
+                                      <div className="text-[10px] font-bold uppercase tracking-widest text-white/35">操作提示</div>
+                                      <div className="mt-2 text-[10px] leading-5 text-white/40">
+                                        点击地图图形即可直接生效。按住 Shift 拖动，或开启框选模式后拖动地图，可一次选择多个区域。
+                                      </div>
+                                    </div>
+
+                                    <div className="absolute bottom-4 right-4 z-[500] flex flex-wrap items-center justify-end gap-2">
+                                      <button
+                                        onClick={() => setIsWarningAreaBoxSelectEnabled((enabled) => !enabled)}
+                                        className={`rounded-xl border px-3 py-2 text-[11px] font-semibold shadow-[0_10px_30px_rgba(0,0,0,0.24)] transition-colors ${
+                                          isWarningAreaBoxSelectEnabled
+                                            ? 'border-sky-400/35 bg-sky-500/[0.16] text-sky-200'
+                                            : 'border-white/10 bg-[#08121c]/84 text-white/65 backdrop-blur-xl hover:bg-white/[0.08] hover:text-white'
+                                        }`}
+                                      >
+                                        {isWarningAreaBoxSelectEnabled ? '退出框选' : '框选模式'}
+                                      </button>
+                                      <button
+                                        onClick={() => toggleWarningRuleAreaCategory(selectedWarningRule.id, filteredWarningAreas.map((area) => area.id))}
+                                        className="rounded-xl border border-white/10 bg-[#08121c]/84 px-3 py-2 text-[11px] font-semibold text-white/65 shadow-[0_10px_30px_rgba(0,0,0,0.24)] backdrop-blur-xl transition-colors hover:bg-white/[0.08] hover:text-white"
+                                      >
+                                        {filteredWarningAreas.length > 0 && filteredWarningAreas.every((area) => selectedWarningAreaIds.includes(area.id))
+                                          ? '取消全选'
+                                          : '全选结果'}
+                                      </button>
+                                      <button
+                                        onClick={() => invertWarningRuleAreas(selectedWarningRule.id, filteredWarningAreas.map((area) => area.id))}
+                                        className="rounded-xl border border-white/10 bg-[#08121c]/84 px-3 py-2 text-[11px] font-semibold text-white/65 shadow-[0_10px_30px_rgba(0,0,0,0.24)] backdrop-blur-xl transition-colors hover:bg-white/[0.08] hover:text-white"
+                                      >
+                                        反选结果
+                                      </button>
+                                      <button
+                                        onClick={() => clearWarningRuleAreas(selectedWarningRule.id, selectedWarningAreaGroup.areas.map((area) => area.id))}
+                                        className="rounded-xl border border-white/10 bg-[#08121c]/84 px-3 py-2 text-[11px] font-semibold text-white/65 shadow-[0_10px_30px_rgba(0,0,0,0.24)] backdrop-blur-xl transition-colors hover:bg-white/[0.08] hover:text-white"
+                                      >
+                                        清空辖区
+                                      </button>
+                                    </div>
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          </section>
+                        </div>
+
+                        <div className="border-t border-white/10 px-5 py-3 shrink-0 flex items-center justify-end gap-3">
+                          <button
+                            onClick={() => setIsWarningConfigOpen(false)}
+                            className="rounded border border-white/10 px-4 py-2 text-[12px] font-semibold text-white/65 hover:bg-white/5 hover:text-white transition-colors"
+                          >
+                            关闭
+                          </button>
+                          <button
+                            onClick={() => setIsWarningConfigOpen(false)}
+                            className="rounded bg-[#0d76e8] px-4 py-2 text-[12px] font-semibold text-white hover:bg-[#2590ff] transition-colors"
+                          >
+                            保存配置
+                          </button>
+                        </div>
+                      </div>
+                    </motion.div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
           )}
 
@@ -1980,7 +3476,7 @@ const AdminPanel = ({
                     onChange={(e) => setStatsArea(e.target.value)}
                     className="bg-white/5 border border-white/10 rounded-lg py-1 px-2 text-[11px] text-white/80 focus:outline-none focus:border-sky-500/50 min-w-[120px] cursor-pointer hover:bg-white/10 transition-colors"
                   >
-                    {['全部区域', ...MOCK_AREAS['值班区域'].map(a => a.name)].map(area => (
+                    {['全部区域', ...(areaConfig['值班区域'] || []).map(a => a.name)].map(area => (
                       <option key={area} value={area} className="bg-[#1a1c20] text-white">{area}</option>
                     ))}
                   </select>
@@ -2098,6 +3594,16 @@ const AdminPanel = ({
                                 <td className="px-6 py-4 text-[10px] text-white/40 font-mono">{item.time}</td>
                                 <td className="px-6 py-4">
                                   <div className="flex items-center gap-2">
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setDynamicPlaybackSession(getRiskPlaybackSession(item));
+                                      }}
+                                      className="px-2.5 py-1 bg-sky-500/10 hover:bg-sky-500/20 border border-sky-500/25 rounded-lg text-[10px] font-bold text-sky-300 transition-all flex items-center gap-1.5"
+                                    >
+                                      <Play size={11} />
+                                      轨迹回放
+                                    </button>
                                     <ChevronDown 
                                       size={14} 
                                       className={`text-white/20 transition-transform duration-300 ${expandedRowId === item.id ? 'rotate-180' : ''}`} 
@@ -2248,6 +3754,13 @@ const AdminPanel = ({
                                                 </div>
                                               </div>
                                             </div>
+                                            <button
+                                              onClick={() => setDynamicPlaybackSession(getRiskPlaybackSession(item))}
+                                              className="w-full py-2.5 bg-sky-500 hover:bg-sky-400 text-white text-xs font-bold rounded-xl transition-all shadow-lg shadow-sky-500/20 flex items-center justify-center gap-2"
+                                            >
+                                              <Play size={14} />
+                                              进入轨迹回放
+                                            </button>
                                           </div>
                                         </div>
                                       </motion.div>
@@ -2803,6 +4316,7 @@ const DynamicPlaybackView = ({
   const [playbackSpeed, setPlaybackSpeed] = useState(1);
   const [selectedAreas, setSelectedAreas] = useState<Set<string>>(new Set());
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set(Object.keys(MOCK_AREAS)));
+  const playbackDialogue = session.event.dialogue || [];
   
   // 生成模拟轨迹数据 (基于原始坐标点)
   const trajectory = useMemo(() => {
@@ -2981,91 +4495,133 @@ const DynamicPlaybackView = ({
       </div>
 
       <div className="flex-1 flex overflow-hidden">
-        {/* 左侧区域面板 - 树形结构 */}
-        <div className="w-64 bg-black/40 backdrop-blur-md border-r border-white/10 flex flex-col z-[10]">
-          <div className="p-4 border-b border-white/10 flex items-center justify-between">
+        {/* 左侧信息面板 */}
+        <div className="w-80 bg-black/40 backdrop-blur-md border-r border-white/10 flex flex-col z-[10]">
+          <div className="p-4 border-b border-white/10">
             <div className="flex items-center gap-2">
-              <MapIcon size={16} className="text-sky-400" />
-              <h3 className="text-xs font-black text-white uppercase tracking-wider">辖区管理面板</h3>
+              <History size={16} className="text-sky-400" />
+              <h3 className="text-xs font-black text-white uppercase tracking-wider">风险回放信息</h3>
             </div>
-            <span className="text-[9px] font-bold text-sky-400/60 uppercase tracking-widest bg-sky-500/10 px-1.5 py-0.5 rounded">
-              已选 {selectedAreas.size}
-            </span>
+            <p className="mt-2 text-[10px] text-white/35 leading-relaxed">
+              {session.event.desc || '支持风险轨迹回放、环境信息与天气信息联动查看。'}
+            </p>
           </div>
-          <div className="flex-1 overflow-y-auto custom-scrollbar p-2">
-            <div className="space-y-1">
-              {Object.entries(MOCK_AREAS).map(([category, areas]) => {
-                const isExpanded = expandedCategories.has(category);
-                const allSelected = areas.every(a => selectedAreas.has(a.id));
-                const someSelected = areas.some(a => selectedAreas.has(a.id)) && !allSelected;
 
-                return (
-                  <div key={category} className="space-y-0.5">
-                    {/* 分类节点 */}
-                    <div className="flex items-center gap-2 p-2 hover:bg-white/5 rounded-lg transition-all group">
-                      <button 
-                        onClick={() => toggleCategory(category)}
-                        className="p-0.5 hover:bg-white/10 rounded text-white/40 transition-all"
-                      >
-                        {isExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
-                      </button>
-                      <div 
-                        onClick={() => toggleAllInCategory(category, areas)}
-                        className="flex-1 flex items-center gap-2 cursor-pointer"
-                      >
-                        <div className={`w-3.5 h-3.5 rounded border flex items-center justify-center transition-all ${
-                          allSelected ? 'bg-sky-500 border-sky-500' : someSelected ? 'bg-sky-500/40 border-sky-500/60' : 'border-white/20'
-                        }`}>
-                          {allSelected && <Check size={10} className="text-white" strokeWidth={4} />}
-                          {someSelected && <div className="w-1.5 h-0.5 bg-white rounded-full" />}
-                        </div>
-                        <span className="text-[11px] font-bold text-white/60 group-hover:text-white transition-colors">{category}</span>
-                      </div>
-                    </div>
-
-                    {/* 子区域列表 */}
-                    <AnimatePresence>
-                      {isExpanded && (
-                        <motion.div 
-                          initial={{ height: 0, opacity: 0 }}
-                          animate={{ height: 'auto', opacity: 1 }}
-                          exit={{ height: 0, opacity: 0 }}
-                          className="overflow-hidden ml-6 space-y-0.5"
-                        >
-                          {areas.map(area => (
-                            <div 
-                              key={area.id}
-                              onClick={() => toggleArea(area.id)}
-                              className="flex items-center gap-2 p-2 hover:bg-white/5 rounded-lg cursor-pointer group transition-all"
-                            >
-                              <div className={`w-3.5 h-3.5 rounded border flex items-center justify-center transition-all ${
-                                selectedAreas.has(area.id) ? 'bg-sky-500 border-sky-500' : 'border-white/20'
-                              }`}>
-                                {selectedAreas.has(area.id) && <Check size={10} className="text-white" strokeWidth={4} />}
-                              </div>
-                              <div className="flex flex-col">
-                                <span className={`text-[11px] transition-colors ${selectedAreas.has(area.id) ? 'text-white font-bold' : 'text-white/40 group-hover:text-white/60'}`}>
-                                  {area.name}
-                                </span>
-                                <span className="text-[8px] text-white/20">{area.type}</span>
-                              </div>
-                            </div>
-                          ))}
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
+          <div className="flex-1 overflow-y-auto custom-scrollbar p-3 space-y-3">
+            <section className="bg-white/[0.03] border border-white/5 rounded-2xl p-3 space-y-3">
+              <div className="flex items-center gap-2">
+                <Compass size={14} className="text-sky-400" />
+                <span className="text-[10px] font-black text-white/55 uppercase tracking-widest">环境信息</span>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                {(session.event.environment || []).map((item: any) => (
+                  <div key={item.label} className="rounded-xl border border-white/5 bg-black/20 px-2.5 py-2">
+                    <div className="text-[8px] font-black text-white/25 uppercase tracking-widest">{item.label}</div>
+                    <div className="mt-1 text-[10px] font-semibold text-white/75 leading-snug">{item.value}</div>
                   </div>
-                );
-              })}
-            </div>
-          </div>
-          <div className="p-4 border-t border-white/10 bg-white/[0.02]">
-            <button 
-              onClick={() => setSelectedAreas(new Set())}
-              className="w-full py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-white/40 hover:text-white text-[10px] font-bold transition-all"
-            >
-              重置选择
-            </button>
+                ))}
+              </div>
+            </section>
+
+            <section className="bg-white/[0.03] border border-white/5 rounded-2xl p-3 space-y-3">
+              <div className="flex items-center gap-2">
+                <CloudSun size={14} className="text-amber-400" />
+                <span className="text-[10px] font-black text-white/55 uppercase tracking-widest">天气信息</span>
+              </div>
+              <div className="space-y-2">
+                {(session.event.weather || []).map((item: any) => (
+                  <div key={item.label} className="flex items-center justify-between gap-3 rounded-xl border border-white/5 bg-black/20 px-2.5 py-2">
+                    <span className="text-[9px] font-bold text-white/35">{item.label}</span>
+                    <span className="text-[10px] font-semibold text-white/80 text-right">{item.value}</span>
+                  </div>
+                ))}
+              </div>
+            </section>
+
+            <section className="bg-white/[0.03] border border-white/5 rounded-2xl overflow-hidden">
+              <div className="p-3 border-b border-white/5 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <MapIcon size={14} className="text-sky-400" />
+                  <span className="text-[10px] font-black text-white/55 uppercase tracking-wider">关联辖区</span>
+                </div>
+                <span className="text-[9px] font-bold text-sky-400/60 uppercase tracking-widest bg-sky-500/10 px-1.5 py-0.5 rounded">
+                  已选 {selectedAreas.size}
+                </span>
+              </div>
+              <div className="max-h-[320px] overflow-y-auto custom-scrollbar p-2">
+                <div className="space-y-1">
+                  {Object.entries(MOCK_AREAS).map(([category, areas]) => {
+                    const isExpanded = expandedCategories.has(category);
+                    const allSelected = areas.every(a => selectedAreas.has(a.id));
+                    const someSelected = areas.some(a => selectedAreas.has(a.id)) && !allSelected;
+
+                    return (
+                      <div key={category} className="space-y-0.5">
+                        <div className="flex items-center gap-2 p-2 hover:bg-white/5 rounded-lg transition-all group">
+                          <button
+                            onClick={() => toggleCategory(category)}
+                            className="p-0.5 hover:bg-white/10 rounded text-white/40 transition-all"
+                          >
+                            {isExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+                          </button>
+                          <div
+                            onClick={() => toggleAllInCategory(category, areas)}
+                            className="flex-1 flex items-center gap-2 cursor-pointer"
+                          >
+                            <div className={`w-3.5 h-3.5 rounded border flex items-center justify-center transition-all ${
+                              allSelected ? 'bg-sky-500 border-sky-500' : someSelected ? 'bg-sky-500/40 border-sky-500/60' : 'border-white/20'
+                            }`}>
+                              {allSelected && <Check size={10} className="text-white" strokeWidth={4} />}
+                              {someSelected && <div className="w-1.5 h-0.5 bg-white rounded-full" />}
+                            </div>
+                            <span className="text-[11px] font-bold text-white/60 group-hover:text-white transition-colors">{category}</span>
+                          </div>
+                        </div>
+
+                        <AnimatePresence>
+                          {isExpanded && (
+                            <motion.div
+                              initial={{ height: 0, opacity: 0 }}
+                              animate={{ height: 'auto', opacity: 1 }}
+                              exit={{ height: 0, opacity: 0 }}
+                              className="overflow-hidden ml-6 space-y-0.5"
+                            >
+                              {areas.map(area => (
+                                <div
+                                  key={area.id}
+                                  onClick={() => toggleArea(area.id)}
+                                  className="flex items-center gap-2 p-2 hover:bg-white/5 rounded-lg cursor-pointer group transition-all"
+                                >
+                                  <div className={`w-3.5 h-3.5 rounded border flex items-center justify-center transition-all ${
+                                    selectedAreas.has(area.id) ? 'bg-sky-500 border-sky-500' : 'border-white/20'
+                                  }`}>
+                                    {selectedAreas.has(area.id) && <Check size={10} className="text-white" strokeWidth={4} />}
+                                  </div>
+                                  <div className="flex flex-col">
+                                    <span className={`text-[11px] transition-colors ${selectedAreas.has(area.id) ? 'text-white font-bold' : 'text-white/40 group-hover:text-white/60'}`}>
+                                      {area.name}
+                                    </span>
+                                    <span className="text-[8px] text-white/20">{area.type}</span>
+                                  </div>
+                                </div>
+                              ))}
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+              <div className="p-3 border-t border-white/5 bg-white/[0.02]">
+                <button
+                  onClick={() => setSelectedAreas(new Set())}
+                  className="w-full py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-white/40 hover:text-white text-[10px] font-bold transition-all"
+                >
+                  重置选择
+                </button>
+              </div>
+            </section>
           </div>
         </div>
 
@@ -3245,7 +4801,7 @@ const DynamicPlaybackView = ({
               <h4 className="text-xs font-black text-white uppercase tracking-wider">历史通讯记录</h4>
             </div>
             <div className="space-y-2 max-h-48 overflow-y-auto custom-scrollbar pr-2">
-              {session.event.dialogue.map((chat: any, idx: number) => (
+              {playbackDialogue.map((chat: any, idx: number) => (
                 <div key={idx} className={`space-y-0.5 ${progress < (idx + 1) * 20 ? 'opacity-20' : 'opacity-100 transition-opacity duration-500'}`}>
                   <div className="flex justify-between items-center">
                     <span className="text-[9px] font-bold text-white/30 uppercase">{chat.sender}</span>
@@ -3256,6 +4812,11 @@ const DynamicPlaybackView = ({
                   </p>
                 </div>
               ))}
+              {playbackDialogue.length === 0 && (
+                <div className="rounded-lg border border-white/5 bg-white/5 px-2 py-3 text-[10px] text-white/35">
+                  暂无关联通话记录
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -3382,6 +4943,13 @@ export default function App() {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
     return () => clearInterval(timer);
   }, []);
+
+  useEffect(() => {
+    (window as any).setDynamicPlaybackSession = setDynamicPlaybackSession;
+    return () => {
+      delete (window as any).setDynamicPlaybackSession;
+    };
+  }, [setDynamicPlaybackSession]);
 
   useEffect(() => {
     if (vhfSessions.length === 0) {
