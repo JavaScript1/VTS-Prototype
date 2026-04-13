@@ -52,6 +52,9 @@ import {
   MOCK_VESSEL_DYNAMICS
 } from '../../mockData';
 
+const VTS_CHART_TILE_URL = 'https://test.shipdt.com/vts/chart/{z}/{x}/{y}.png';
+const VTS_CHART_TILE_ATTRIBUTION = '&copy; ShipDT';
+
 interface AdminPanelProps {
   onClose: () => void;
   playbackData: any;
@@ -231,8 +234,8 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
               zoomControl={false}
             >
               <TileLayer
-                url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
-                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
+                url={VTS_CHART_TILE_URL}
+                attribution={VTS_CHART_TILE_ATTRIBUTION}
               />
               <div className="absolute top-4 right-4 z-[1000] flex flex-col gap-2">
                 <button className="w-10 h-10 bg-[#0a101a] border border-white/10 rounded-xl flex items-center justify-center text-white/60 hover:text-white transition-all shadow-2xl">
@@ -876,8 +879,8 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
                         zoomControl={false}
                       >
                         <TileLayer
-                          url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
-                          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
+                          url={VTS_CHART_TILE_URL}
+                          attribution={VTS_CHART_TILE_ATTRIBUTION}
                         />
                         <Polyline 
                           positions={[

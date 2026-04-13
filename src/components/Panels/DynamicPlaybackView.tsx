@@ -19,6 +19,9 @@ import {
   type PlaybackSessionLike,
 } from '../../mockData';
 
+const VTS_CHART_TILE_URL = 'https://test.shipdt.com/vts/chart/{z}/{x}/{y}.png';
+const VTS_CHART_TILE_ATTRIBUTION = '&copy; ShipDT';
+
 interface DynamicPlaybackViewProps {
   session: PlaybackSessionLike;
   onClose: () => void;
@@ -316,11 +319,8 @@ const DynamicPlaybackView: React.FC<DynamicPlaybackViewProps> = ({
             zoomControl={false}
           >
           <TileLayer
-            url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
-            attribution='Tiles &copy; Esri'
-          />
-          <TileLayer
-            url="https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}"
+            url={VTS_CHART_TILE_URL}
+            attribution={VTS_CHART_TILE_ATTRIBUTION}
           />
           
           {/* 渲染选中的辖区 */}

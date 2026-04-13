@@ -1,4 +1,4 @@
-export type SidebarTab = 'vhf' | 'intent' | 'warning' | 'anchorage' | 'risk';
+export type SidebarTab = 'ship' | 'vhf' | 'intent' | 'warning' | 'anchorage' | 'risk';
 
 export interface VHFMessage {
   id: string;

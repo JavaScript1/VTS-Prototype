@@ -78,17 +78,31 @@ import {
   type VhfMessage as AggregatedVhfMessage,
 } from './utils/vhfConversation';
 
+const VTS_CHART_TILE_URL = 'https://test.shipdt.com/vts/chart/{z}/{x}/{y}.png';
+const VTS_CHART_TILE_ATTRIBUTION = '&copy; ShipDT';
+const HOME_MAP_DEFAULT_CENTER: [number, number] = [31.316261, 121.723495];
+const HOME_MAP_BASE_CENTER: [number, number] = [31.425, 121.565];
+const HOME_MAP_CENTER_STORAGE_KEY = 'vts-map-center-v5';
+const HOME_MAP_ZOOM_STORAGE_KEY = 'vts-map-zoom';
+const HOME_MAP_LAT_OFFSET = HOME_MAP_DEFAULT_CENTER[0] - HOME_MAP_BASE_CENTER[0];
+const HOME_MAP_LNG_OFFSET = HOME_MAP_DEFAULT_CENTER[1] - HOME_MAP_BASE_CENTER[1];
+
+const shiftHomeMapCoordinates = ([lat, lng]: [number, number]): [number, number] => [
+  lat + HOME_MAP_LAT_OFFSET,
+  lng + HOME_MAP_LNG_OFFSET,
+];
+
 // 地图状态持久化组件
 const MapStatePersister = () => {
   useMapEvents({
     moveend: (e) => {
       const map = e.target;
       const center = map.getCenter();
-      localStorage.setItem('vts-map-center', JSON.stringify([center.lat, center.lng]));
+      localStorage.setItem(HOME_MAP_CENTER_STORAGE_KEY, JSON.stringify([center.lat, center.lng]));
     },
     zoomend: (e) => {
       const map = e.target;
-      localStorage.setItem('vts-map-zoom', map.getZoom().toString());
+      localStorage.setItem(HOME_MAP_ZOOM_STORAGE_KEY, map.getZoom().toString());
     },
   });
   return null;
@@ -101,6 +115,20 @@ const MousePositionTracker = ({ onMouseMove }: { onMouseMove: (coords: { lat: nu
       onMouseMove(e.latlng);
     },
   });
+  return null;
+};
+
+const HomeMapFocusController = ({ target }: { target: [number, number] | null }) => {
+  const map = useMap();
+
+  useEffect(() => {
+    if (!target) return;
+    map.flyTo(target, Math.max(map.getZoom(), 14), {
+      animate: true,
+      duration: 0.8,
+    });
+  }, [map, target]);
+
   return null;
 };
 
@@ -144,6 +172,26 @@ const WARNING_AREA_TYPE_COLORS: Record<string, string> = {
   浅水区: '#facc15',
   引航作业区: '#10b981',
   调头区: '#60a5fa',
+};
+
+type RiskConfigAreaType = '全部' | '航道' | '锚地' | '泊位';
+
+const getRiskConfigAreaType = ({
+  type,
+  category,
+}: {
+  type: string;
+  category: string;
+}): Exclude<RiskConfigAreaType, '全部'> | null => {
+  if (type === '锚地') return '锚地';
+  if (type === '泊位' || type === '码头') return '泊位';
+  if (
+    category === '航道航行设施' &&
+    ['主航道', '辅助航道', '小型船舶航道', '航道分割线', '报告线', '导堤'].includes(type)
+  ) {
+    return '航道';
+  }
+  return null;
 };
 
 const hashWarningAreaSeed = (value: string) =>
@@ -354,7 +402,7 @@ const PlaybackMapController = ({ playbackData }: { playbackData: any }) => {
 };
 
 // 模拟船舶位置数据 (以吴淞口5号锚地为中心分布)
-const SHIP_POSITIONS: ShipPosition[] = [
+const SHIP_POSITIONS: ShipPosition[] = ([
   {id: 'ship-001', lat: 31.4382, lng: 121.5618, heading: 32, name: '远洋 123', mmsi: '413000001', type: '货轮', speed: 12.4, destination: '外高桥码头', status: 'normal'},
   {id: 'ship-002', lat: 31.4315, lng: 121.5742, heading: 218, name: '海丰 77', mmsi: '413000002', type: '集装箱船', speed: 9.8, destination: '圆圆沙锚地', status: 'warning'},
   {id: 'ship-003', lat: 31.4236, lng: 121.5484, heading: 84, name: '振华 15', mmsi: '413000003', type: '工程船', speed: 4.1, destination: '作业区 B5', status: 'caution'},
@@ -367,24 +415,101 @@ const SHIP_POSITIONS: ShipPosition[] = [
   {id: 'ship-010', lat: 31.4612, lng: 121.5686, heading: 56, name: '蓝波', mmsi: '413000015', type: '拖船', speed: 8.4, destination: '吴淞口警戒区', status: 'normal'},
   {id: 'ship-011', lat: 31.4145, lng: 121.5634, heading: 332, name: '运兴 96', mmsi: '413000096', type: '货船', speed: 9.2, destination: '黄浦江', status: 'normal'},
   {id: 'ship-012', lat: 31.4347, lng: 121.5449, heading: 274, name: '远洋 99', mmsi: '413000099', type: '散货船', speed: 13.1, destination: '6号锚地', status: 'caution'},
-];
+] satisfies ShipPosition[]).map((ship): ShipPosition => ({
+  ...ship,
+  lat: ship.lat + HOME_MAP_LAT_OFFSET,
+  lng: ship.lng + HOME_MAP_LNG_OFFSET,
+}));
 
-const createShipIcon = (ship: ShipPosition) =>
+type HomeMapOverlayBadge = {
+  id: string;
+  label: string;
+  kind: 'intent' | 'warning';
+  position: [number, number];
+  detail: string;
+};
+
+const HOME_MAP_OVERLAY_BADGES: HomeMapOverlayBadge[] = ([
+  {
+    id: 'intent-anchor',
+    label: '起锚',
+    kind: 'intent',
+    position: [31.4371, 121.5307],
+    detail: '意图表达: 6 号锚地起锚后沿主航道进入下游通行序列。',
+  },
+  {
+    id: 'warning-01',
+    label: '航道内滞航',
+    kind: 'warning',
+    position: [31.4406, 121.5584],
+    detail: '预警表达: 主航道上持续低速，已触发自动提醒。',
+  },
+  {
+    id: 'warning-02',
+    label: '航道内滞航',
+    kind: 'warning',
+    position: [31.4314, 121.5558],
+    detail: '预警表达: 航道中心线附近滞航，建议值班持续跟踪。',
+  },
+  {
+    id: 'warning-03',
+    label: '航道内滞航',
+    kind: 'warning',
+    position: [31.4148, 121.5691],
+    detail: '预警表达: 贴近码头前沿航道，低速停滞时间持续拉长。',
+  },
+  {
+    id: 'warning-04',
+    label: '航道内滞航',
+    kind: 'warning',
+    position: [31.4132, 121.5866],
+    detail: '预警表达: 南侧航道边缘滞航，建议结合 VHF 进一步确认。',
+  },
+  {
+    id: 'warning-05',
+    label: '航道内滞航',
+    kind: 'warning',
+    position: [31.4097, 121.5989],
+    detail: '预警表达: 航道末端持续低速，已进入低效通行观察名单。',
+  },
+] satisfies HomeMapOverlayBadge[]).map((badge): HomeMapOverlayBadge => ({
+  ...badge,
+  position: shiftHomeMapCoordinates(badge.position),
+}));
+
+const createShipIcon = (ship: ShipPosition, isSelected = false) =>
   L.divIcon({
     className: 'ship-marker-icon',
     html: `
-      <div class="ship-marker ship-marker--${ship.status}" style="--ship-rotation:${ship.heading}deg">
-        <div class="ship-marker__pulse"></div>
-        <div class="ship-marker__triangle"></div>
+      <div class="ship-marker ${isSelected ? 'ship-marker--selected' : ''}" style="--ship-rotation:${ship.heading}deg">
+        <div class="ship-marker__halo"></div>
+        <div class="ship-marker__body">
+          <span class="ship-marker__bridge"></span>
+        </div>
+        <div class="ship-marker__trail"></div>
       </div>
     `,
-    iconSize: [28, 28],
-    iconAnchor: [14, 14],
+    iconSize: [30, 30],
+    iconAnchor: [15, 15],
+  });
+
+const createHomeMapBadgeIcon = ({ label, kind }: Pick<HomeMapOverlayBadge, 'label' | 'kind'>) =>
+  L.divIcon({
+    className: 'map-overlay-badge-icon',
+    html: `
+      <div class="map-overlay-badge map-overlay-badge--${kind}">
+        <span class="map-overlay-badge__label">${label}</span>
+        <span class="map-overlay-badge__pointer"></span>
+        <span class="map-overlay-badge__dot"></span>
+      </div>
+    `,
+    iconSize: [96, 48],
+    iconAnchor: [18, 36],
   });
 
 // --- 类型定义 ---
 
-type SidebarTab = 'vhf' | 'intent' | 'warning' | 'anchorage';
+type SidebarTab = 'ship' | 'vhf' | 'intent' | 'warning' | 'anchorage';
 
 interface VHFMessage {
   id: string;
@@ -435,6 +560,15 @@ interface ShipPosition {
   speed: number;
   destination: string;
   status: 'normal' | 'warning' | 'caution';
+}
+
+interface ShipSearchResult {
+  id: string;
+  name: string;
+  mmsi: string;
+  type: string;
+  destination: string;
+  status: ShipPosition['status'];
 }
 
 // --- 模拟数据 ---
@@ -905,6 +1039,157 @@ const mergeVhfShipInfo = (
   cargoType: next.cargoType ?? current?.cargoType,
 });
 
+interface HomeShipTrackPoint {
+  id: string;
+  label: string;
+  time: string;
+  coords: [number, number];
+  note: string;
+  kind: 'history' | 'current';
+}
+
+interface HomeShipBusinessInfo {
+  plannedBerth: string;
+  movement: string;
+  plannedTime: string;
+  previousPort: string;
+  nextPort: string;
+  applicant: string;
+  operator: string;
+  teu: string;
+  dischargeVolume: string;
+  eta: string;
+  departureTime: string;
+}
+
+interface HomeShipCargoInfo {
+  cargoName: string;
+  cargoAmount: string;
+  localHazardAmount: string;
+  actualHazardAmount: string;
+}
+
+interface HomeShipDynamicEvent {
+  id: string;
+  time: string;
+  text: string;
+  trackPointId: string | null;
+}
+
+interface HomeShipDetail {
+  id: string;
+  name: string;
+  displayName: string;
+  mmsi: string;
+  type: string;
+  status: ShipPosition['status'];
+  destination: string;
+  speed: number;
+  heading: number;
+  lat: number;
+  lng: number;
+  length: string;
+  width: string;
+  draft: string;
+  cargo: string;
+  callsign: string;
+  imo: string;
+  grossTonnage: string;
+  statusBanner: string;
+  route: {
+    past: string;
+    current: string;
+    destination: string;
+  };
+  intentSummary: string;
+  vhfSummary: string;
+  riskSummary: string;
+  businessInfo: HomeShipBusinessInfo;
+  cargoInfo: HomeShipCargoInfo;
+  dynamicEvents: HomeShipDynamicEvent[];
+  track: HomeShipTrackPoint[];
+}
+
+const createHomeShipTrack = (
+  ship: ShipPosition,
+  route: HomeShipDetail['route'],
+): HomeShipTrackPoint[] => {
+  const headingRadians = (ship.heading * Math.PI) / 180;
+  const latStep = Math.cos(headingRadians) * 0.0068;
+  const lngStep = Math.sin(headingRadians) * 0.0086;
+  const offsets = [3.2, 2.2, 1.2, 0];
+  const labels = [
+    route.past || '上游航段',
+    '进入辖区',
+    route.current || '当前航段',
+    '当前船位',
+  ];
+  const notes = [
+    `从${route.past || '上游航段'}进入当前值班辖区`,
+    '最近一次轨迹回放点，已完成航段切换',
+    `正在沿 ${route.current || route.destination} 航行`,
+    `当前航向 ${ship.heading}°，航速 ${ship.speed.toFixed(1)} kn`,
+  ];
+  const times = ['10:36', '10:52', '11:08', '11:20'];
+
+  return offsets.map((offset, index) => ({
+    id: `${ship.id}-track-${index}`,
+    label: labels[index],
+    time: times[index],
+    coords: [ship.lat - latStep * offset, ship.lng - lngStep * offset],
+    note: notes[index],
+    kind: index === offsets.length - 1 ? 'current' : 'history',
+  }));
+};
+
+const getHomeShipEnglishName = (name: string) => `MV ${name.replace(/\s+/g, '').toUpperCase()}`;
+
+const getHomeShipMovement = (destination: string) => {
+  if (destination.includes('锚地')) return '锚泊申请';
+  if (destination.includes('码头') || destination.includes('港')) return '进港';
+  return '出港';
+};
+
+const getHomeShipOperator = (destination: string) => {
+  if (destination.includes('码头')) return `${destination}有限公司`;
+  if (destination.includes('锚地')) return `${destination}调度中心`;
+  return `${destination}港务公司`;
+};
+
+const createHomeShipDynamicEvents = ({
+  shipId,
+  route,
+  intent,
+  track,
+}: {
+  shipId: string;
+  route: HomeShipDetail['route'];
+  intent?: IntentItem;
+  track: HomeShipTrackPoint[];
+}): HomeShipDynamicEvent[] => {
+  const fromTimeline = (intent?.timeline || []).map((item, index) => ({
+    id: `${shipId}-timeline-${index}`,
+    time: item.time.replace(' UTC', ''),
+    text: item.content,
+    trackPointId: track[Math.max(track.length - 1 - index, 0)]?.id ?? null,
+  }));
+
+  const baseDate = intent?.occurrenceTime?.split(' ')[0] || '2026-03-19';
+  const fromTrack = [...track].reverse().map((point) => ({
+    id: `${shipId}-${point.id}`,
+    time: `${baseDate} ${point.time}:12`,
+    text:
+      point.kind === 'current'
+        ? `进入${route.current}`
+        : point.label === '进入辖区'
+          ? `申请锚地（被值班员拒绝）`
+          : point.note,
+    trackPointId: point.id,
+  }));
+
+  return [...fromTrack, ...fromTimeline].slice(0, 4);
+};
+
 interface IntentStep {
   label: string;
   status: 'completed' | 'active' | 'pending';
@@ -1323,6 +1608,10 @@ const SidebarPanel = ({
   position = 'left',
   showBars,
   onToggleBars,
+  shipSearchQuery,
+  onShipSearchQueryChange,
+  shipSearchResults,
+  onShipSearchSelect,
   children
 }: { 
   activeTab: SidebarTab;
@@ -1332,9 +1621,14 @@ const SidebarPanel = ({
   position?: 'left' | 'right';
   showBars: boolean;
   onToggleBars: () => void;
+  shipSearchQuery: string;
+  onShipSearchQueryChange: (value: string) => void;
+  shipSearchResults: ShipSearchResult[];
+  onShipSearchSelect: (shipId: string) => void;
   children: React.ReactNode;
 }) => {
   const tabs = [
+    { id: 'ship' as const, icon: Ship, label: '船舶' },
     { id: 'vhf' as const, icon: Radio, label: 'VHF' },
     { id: 'intent' as const, icon: LocateFixed, label: '意图' },
     { id: 'warning' as const, icon: AlertTriangle, label: '预警' },
@@ -1370,9 +1664,33 @@ const SidebarPanel = ({
                   <input 
                     autoFocus
                     type="text" 
+                    value={shipSearchQuery}
+                    onChange={(e) => onShipSearchQueryChange(e.target.value)}
                     placeholder="搜索船名/MMSI..." 
                     className="w-full bg-[#0a0a0a] border border-sky-500/30 rounded-lg py-1.5 pl-9 pr-3 text-xs text-white focus:outline-none focus:border-sky-500 shadow-2xl"
                   />
+                  {shipSearchQuery.trim().length > 0 && (
+                    <div className="mt-2 overflow-hidden rounded-xl border border-white/10 bg-[#05080d]/96 shadow-2xl">
+                      {shipSearchResults.length > 0 ? shipSearchResults.slice(0, 6).map((ship) => (
+                        <button
+                          key={ship.id}
+                          onClick={() => {
+                            onShipSearchSelect(ship.id);
+                            setIsSearchExpanded(false);
+                          }}
+                          className="flex w-full items-center justify-between gap-3 border-b border-white/5 px-3 py-2 text-left last:border-b-0 hover:bg-white/[0.04]"
+                        >
+                          <div className="min-w-0">
+                            <div className="truncate text-[11px] font-semibold text-white">{ship.name}</div>
+                            <div className="mt-0.5 text-[9px] text-white/35">{ship.mmsi} · {ship.type}</div>
+                          </div>
+                          <span className="truncate text-[9px] text-sky-300/80">{ship.destination}</span>
+                        </button>
+                      )) : (
+                        <div className="px-3 py-2 text-[10px] text-white/35">未匹配到船舶，请继续输入关键字。</div>
+                      )}
+                    </div>
+                  )}
                 </div>
               </motion.div>
             )}
@@ -1458,13 +1776,12 @@ const SidebarPanel = ({
             animate={{ width: 320, opacity: 1 }}
             exit={{ width: 0, opacity: 0 }}
             className={`h-full transition-colors duration-500 border-${isLeft ? 'r' : 'l'} border-white/10 flex flex-col overflow-hidden ${
-              activeTab === 'vhf' 
+              activeTab === 'vhf' || activeTab === 'ship'
                 ? 'bg-[#0a0a0a]/90 backdrop-blur-md' 
                 : 'bg-transparent backdrop-blur-none'
             }`}
           >
-
-            <div className="flex-1 overflow-y-auto custom-scrollbar">
+            <div className="flex-1 min-h-0">
               {children}
             </div>
           </motion.div>
@@ -1634,6 +1951,7 @@ const AdminPanel = ({
   const [selectedWarningRuleId, setSelectedWarningRuleId] = useState<string>('wr-4');
   const [isWarningConfigOpen, setIsWarningConfigOpen] = useState(false);
   const [selectedWarningAreaCategory, setSelectedWarningAreaCategory] = useState<string>(AREA_CATEGORIES[0]);
+  const [selectedRiskConfigAreaType, setSelectedRiskConfigAreaType] = useState<RiskConfigAreaType>('全部');
   const [warningAreaSearchQuery, setWarningAreaSearchQuery] = useState('');
   const [selectedWarningAreaTypes, setSelectedWarningAreaTypes] = useState<string[]>([]);
   const [isWarningAreaBoxSelectEnabled, setIsWarningAreaBoxSelectEnabled] = useState(false);
@@ -1646,15 +1964,6 @@ const AdminPanel = ({
     () => AREA_CATEGORIES.map((category) => ({ category, areas: areaConfig[category] || [] })),
     [areaConfig],
   );
-  const warningAreaLookup = useMemo(
-    () =>
-      new Map(
-        warningAreaGroups.flatMap(({ areas }) =>
-          areas.map((area) => [area.id, area] as const),
-        ),
-      ),
-    [warningAreaGroups],
-  );
   const allWarningAreas = useMemo(
     () =>
       warningAreaGroups.flatMap(({ category, areas }) =>
@@ -1664,6 +1973,13 @@ const AdminPanel = ({
         })),
       ),
     [warningAreaGroups],
+  );
+  const warningAreaLookup = useMemo(
+    () =>
+      new Map(
+        allWarningAreas.map((area) => [area.id, area] as const),
+      ),
+    [allWarningAreas],
   );
   const selectedWarningAreaGroup = useMemo(
     () => warningAreaGroups.find(({ category }) => category === selectedWarningAreaCategory) ?? warningAreaGroups[0] ?? null,
@@ -1731,6 +2047,24 @@ const AdminPanel = ({
       }),
     [selectedWarningAreaGroup, selectedWarningAreaIds, warningAreaTypeOptions],
   );
+  const riskConfigAreaTypeStats = useMemo(() => {
+    const options: RiskConfigAreaType[] = ['全部', '航道', '锚地', '泊位'];
+    return options.map((option) => {
+      const relatedAreas =
+        option === '全部'
+          ? allWarningAreas
+          : allWarningAreas.filter((area) => getRiskConfigAreaType(area) === option);
+      return {
+        key: option,
+        label: option === '全部' ? '全部区域' : option,
+        count: relatedAreas.length,
+        selectedCount:
+          option === '全部'
+            ? selectedWarningAreaIds.length
+            : relatedAreas.filter((area) => selectedWarningAreaIds.includes(area.id)).length,
+      };
+    });
+  }, [allWarningAreas, selectedWarningAreaIds]);
   const warningAreaIndexLookup = useMemo(
     () =>
       new Map(
@@ -1950,6 +2284,34 @@ const AdminPanel = ({
     });
   };
 
+  const handleSelectRiskConfigAreaType = (type: RiskConfigAreaType) => {
+    const nextCategory =
+      type === '航道'
+        ? '航道航行设施'
+        : type === '锚地' || type === '泊位'
+          ? '作业与停泊设施'
+          : selectedWarningAreaCategory;
+    const targetGroup =
+      warningAreaGroups.find(({ category }) => category === nextCategory) ?? selectedWarningAreaGroup;
+
+    startTransition(() => {
+      setSelectedRiskConfigAreaType(type);
+      if (!targetGroup) return;
+
+      const nextTypes = [...new Set(
+        targetGroup.areas
+          .filter((area) => type === '全部' || getRiskConfigAreaType({ type: area.type, category: targetGroup.category }) === type)
+          .map((area) => area.type),
+      )];
+
+      setSelectedWarningAreaCategory(targetGroup.category);
+      setSelectedWarningAreaTypes(nextTypes.length > 0 ? nextTypes : warningAreaTypeOptions);
+      setExpandedWarningAreaCategories((current) =>
+        current.includes(targetGroup.category) ? current : [...current, targetGroup.category],
+      );
+    });
+  };
+
   const toggleExpandedWarningAreaCategory = (category: string) => {
     setExpandedWarningAreaCategories((current) =>
       current.includes(category)
@@ -2011,6 +2373,7 @@ const AdminPanel = ({
     );
 
     setSelectedWarningAreaCategory(categoryWithSelection?.category || AREA_CATEGORIES[0]);
+    setSelectedRiskConfigAreaType('全部');
   }, [selectedWarningRule, warningAreaGroups]);
 
   useEffect(() => {
@@ -2073,8 +2436,8 @@ const AdminPanel = ({
               zoomControl={false}
             >
               <TileLayer
-                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                url={VTS_CHART_TILE_URL}
+                attribution={VTS_CHART_TILE_ATTRIBUTION}
               />
               <div className="absolute inset-0 pointer-events-none border-4 border-sky-500/20 z-[1000]" />
             </MapContainer>
@@ -3014,7 +3377,7 @@ const AdminPanel = ({
                                       zoomControl={false}
                                       attributionControl={false}
                                     >
-                                      <TileLayer url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png" />
+                                      <TileLayer url={VTS_CHART_TILE_URL} attribution={VTS_CHART_TILE_ATTRIBUTION} />
 
                                       {warningMapFeatures.map((feature) => {
                                         const checked = selectedWarningAreaIds.includes(feature.id);
@@ -3066,18 +3429,44 @@ const AdminPanel = ({
                                     <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_18%_18%,rgba(74,222,128,0.08),transparent_22%),radial-gradient(circle_at_76%_24%,rgba(56,189,248,0.08),transparent_24%),linear-gradient(180deg,rgba(4,10,18,0.12),rgba(4,10,18,0.44))]" />
                                     <div className="pointer-events-none absolute inset-0 opacity-20" style={{ backgroundImage: 'linear-gradient(rgba(255,255,255,0.08) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.08) 1px, transparent 1px)', backgroundSize: '110px 110px' }} />
 
-                                    <div className="absolute left-4 top-4 z-[500] w-[280px] rounded-2xl border border-white/10 bg-[linear-gradient(180deg,rgba(15,24,17,0.78),rgba(6,17,26,0.8))] p-4 shadow-[0_24px_80px_rgba(0,0,0,0.45)] backdrop-blur-xl">
+                                    <div className="absolute left-4 top-4 z-[500] w-[300px] rounded-2xl border border-white/10 bg-[linear-gradient(180deg,rgba(15,24,17,0.78),rgba(6,17,26,0.8))] p-4 shadow-[0_24px_80px_rgba(0,0,0,0.45)] backdrop-blur-xl">
                                       <div className="flex items-center justify-between gap-3">
                                         <div>
-                                          <div className="text-[15px] font-semibold text-white">区域资源树</div>
-                                          <div className="mt-1 text-[10px] text-white/35">地图主交互，左侧只做轻量导航和筛选</div>
+                                          <div className="text-[15px] font-semibold text-white">风险区域筛选</div>
+                                          <div className="mt-1 text-[10px] text-white/35">左侧筛选，右侧地图直接选择生效范围</div>
                                         </div>
                                         <button
-                                          onClick={() => setSelectedWarningAreaTypes(warningAreaTypeOptions)}
+                                          onClick={() => {
+                                            setSelectedRiskConfigAreaType('全部');
+                                            setSelectedWarningAreaTypes(warningAreaTypeOptions);
+                                          }}
                                           className="rounded-lg border border-sky-500/30 bg-sky-500/10 px-2.5 py-1.5 text-[11px] font-semibold text-sky-300 transition-colors hover:bg-sky-500/18"
                                         >
-                                          全显
+                                          重置
                                         </button>
+                                      </div>
+
+                                      <div className="mt-4 grid grid-cols-2 gap-2">
+                                        {riskConfigAreaTypeStats.map((item) => {
+                                          const isActive = selectedRiskConfigAreaType === item.key;
+
+                                          return (
+                                            <button
+                                              key={item.key}
+                                              onClick={() => handleSelectRiskConfigAreaType(item.key)}
+                                              className={`rounded-xl border px-3 py-2 text-left transition-colors ${
+                                                isActive
+                                                  ? 'border-sky-400/40 bg-sky-500/[0.14] text-white'
+                                                  : 'border-white/8 bg-black/20 text-white/72 hover:bg-white/[0.05] hover:text-white'
+                                              }`}
+                                            >
+                                              <div className="text-[11px] font-semibold">{item.label}</div>
+                                              <div className="mt-1 text-[10px] text-white/35">
+                                                已选 {item.selectedCount} / {item.count}
+                                              </div>
+                                            </button>
+                                          );
+                                        })}
                                       </div>
 
                                       <div className="relative mt-4">
@@ -3116,6 +3505,7 @@ const AdminPanel = ({
                                                 <button
                                                   onClick={() =>
                                                     startTransition(() => {
+                                                      setSelectedRiskConfigAreaType('全部');
                                                       setSelectedWarningAreaCategory(category);
                                                     })
                                                   }
@@ -3135,6 +3525,7 @@ const AdminPanel = ({
                                                   {categoryTypes.map((type) => {
                                                     const typeAreas = areas.filter((area) => area.type === type);
                                                     const typeSelected = typeAreas.filter((area) => selectedWarningAreaIds.includes(area.id)).length;
+                                                    const mappedRiskType = getRiskConfigAreaType({ type, category });
                                                     const isTypeActive =
                                                       category === selectedWarningAreaCategory &&
                                                       selectedWarningAreaTypes.includes(type);
@@ -3144,6 +3535,7 @@ const AdminPanel = ({
                                                         key={`${category}-${type}`}
                                                         onClick={() => {
                                                           startTransition(() => {
+                                                            setSelectedRiskConfigAreaType(mappedRiskType ?? '全部');
                                                             setSelectedWarningAreaCategory(category);
                                                           });
                                                           if (!(category === selectedWarningAreaCategory && selectedWarningAreaTypes.includes(type))) {
@@ -3181,8 +3573,12 @@ const AdminPanel = ({
                                       <div className="rounded-2xl border border-white/10 bg-[#08121c]/84 px-4 py-3 shadow-[0_18px_60px_rgba(0,0,0,0.35)] backdrop-blur-xl">
                                         <div className="flex items-start justify-between gap-3">
                                           <div>
-                                            <div className="text-[13px] font-semibold text-white">{selectedWarningAreaGroup.category}</div>
-                                            <div className="mt-1 text-[10px] text-white/38">当前结果 {filteredWarningAreas.length} 条，地图渲染 {warningMapFeatures.length} 个区域图形</div>
+                                            <div className="text-[13px] font-semibold text-white">
+                                              {selectedRiskConfigAreaType === '全部' ? selectedWarningAreaGroup.category : `${selectedRiskConfigAreaType}区域`}
+                                            </div>
+                                            <div className="mt-1 text-[10px] text-white/38">
+                                              当前分类 {selectedWarningAreaGroup.category}，结果 {filteredWarningAreas.length} 条，地图渲染 {warningMapFeatures.length} 个图形
+                                            </div>
                                           </div>
                                           <div className="rounded-full border border-white/10 px-2 py-1 text-[10px] text-white/52">
                                             图层 {selectedWarningAreaTypes.length}/{warningAreaTypeOptions.length}
@@ -3234,7 +3630,7 @@ const AdminPanel = ({
                                     <div className="absolute bottom-4 left-4 z-[500] max-w-[320px] rounded-2xl border border-white/10 bg-[#08121c]/84 px-4 py-3 shadow-[0_18px_60px_rgba(0,0,0,0.35)] backdrop-blur-xl">
                                       <div className="text-[10px] font-bold uppercase tracking-widest text-white/35">操作提示</div>
                                       <div className="mt-2 text-[10px] leading-5 text-white/40">
-                                        点击地图图形即可直接生效。按住 Shift 拖动，或开启框选模式后拖动地图，可一次选择多个区域。
+                                        点击地图图形即可直接选中区域。按住 Shift 拖动，或开启框选模式后拖动地图，可一次框选多个区域；“清空辖区”会清除当前分类下的选择。
                                       </div>
                                     </div>
 
@@ -3327,7 +3723,7 @@ const AdminPanel = ({
                   zoomControl={false}
                   attributionControl={false}
                 >
-                  <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+                  <TileLayer url={VTS_CHART_TILE_URL} attribution={VTS_CHART_TILE_ATTRIBUTION} />
                   
                   {/* VHF 会话模式：展示两个主体及其各自的气泡 */}
                   {activeScenarioTab === 'VHF船舶会话' ? (
@@ -4092,8 +4488,8 @@ const AdminPanel = ({
                         zoomControl={false}
                       >
                         <TileLayer
-                          url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
-                          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
+                          url={VTS_CHART_TILE_URL}
+                          attribution={VTS_CHART_TILE_ATTRIBUTION}
                         />
                         {/* 历史轨迹线 */}
                         <Polyline 
@@ -4634,11 +5030,8 @@ const DynamicPlaybackView = ({
             zoomControl={false}
           >
           <TileLayer
-            url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
-            attribution='Tiles &copy; Esri'
-          />
-          <TileLayer
-            url="https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}"
+            url={VTS_CHART_TILE_URL}
+            attribution={VTS_CHART_TILE_ATTRIBUTION}
           />
           
           {/* 渲染选中的辖区 */}
@@ -4830,6 +5223,9 @@ export default function App() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [sidebarPosition, setSidebarPosition] = useState<'left' | 'right'>('left');
   const [showBars, setShowBars] = useState(true);
+  const [shipSearchQuery, setShipSearchQuery] = useState('');
+  const [selectedHomeShipId, setSelectedHomeShipId] = useState<string | null>(SHIP_POSITIONS[0]?.id ?? null);
+  const [selectedHomeShipTrackPointId, setSelectedHomeShipTrackPointId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<SidebarTab>('vhf');
   const [vhfViewMode, setVhfViewMode] = useState<'list' | 'flow'>('list');
   const [selectedIntent, setSelectedIntent] = useState<number | null>(null);
@@ -4938,6 +5334,126 @@ export default function App() {
     () => vhfSessions.filter((session) => session.sessionId !== activeVhfSession?.sessionId),
     [activeVhfSession?.sessionId, vhfSessions],
   );
+  const homeShipDetails = useMemo<HomeShipDetail[]>(() =>
+    SHIP_POSITIONS.map((ship) => {
+      const shipKey = normalizeVhfShipName(ship.name);
+      const intent = INTENT_DATA.find((item) => normalizeVhfShipName(item.ship) === shipKey);
+      const riskStat = MOCK_RISK_STATS.find((item) => item.mmsi === ship.mmsi || normalizeVhfShipName(item.name) === shipKey);
+      const alert = MOCK_ALERTS.find((item) => item.mmsi === ship.mmsi || normalizeVhfShipName(item.ship) === shipKey);
+      const session = vhfSessions.find((item) => normalizeVhfShipName(item.shipName) === shipKey);
+      const info = vhfShipInfoLookup.get(shipKey);
+      const route = {
+        past: intent?.past || '上游航段',
+        current: intent?.current || ship.destination,
+        destination: intent?.destination || ship.destination,
+      };
+      const track = createHomeShipTrack(ship, route);
+      const movement = getHomeShipMovement(route.destination);
+      const operator = getHomeShipOperator(route.destination);
+      const cargoName = info?.cargoType || riskStat?.cargo || alert?.cargo || '普通货物';
+      const isContainerShip = (info?.shipType || riskStat?.type || ship.type).includes('集装箱');
+      const isHazardous = ship.type.includes('油') || cargoName.includes('油') || cargoName.includes('危险');
+      const grossTonnage = `${Math.max(800, Math.round(ship.speed * 260 + ship.heading * 7))}`;
+      const dynamicEvents = createHomeShipDynamicEvents({
+        shipId: ship.id,
+        route,
+        intent,
+        track,
+      });
+
+      return {
+        id: ship.id,
+        name: ship.name,
+        displayName: `${getHomeShipEnglishName(ship.name)} / ${ship.name}`,
+        mmsi: ship.mmsi,
+        type: info?.shipType || riskStat?.type || ship.type,
+        status: ship.status,
+        destination: ship.destination,
+        speed: ship.speed,
+        heading: ship.heading,
+        lat: ship.lat,
+        lng: ship.lng,
+        length: info?.length || (riskStat ? `${riskStat.length}m` : '--'),
+        width: info?.width || (riskStat ? `${riskStat.width}m` : '--'),
+        draft: info?.draft || (riskStat ? `${riskStat.draft}m` : '--'),
+        cargo: cargoName,
+        callsign: riskStat?.callsign || alert?.callsign || `VTS${ship.mmsi.slice(-4)}`,
+        imo: `${9700000 + Number(ship.mmsi.slice(-4))}`,
+        grossTonnage,
+        statusBanner:
+          ship.status === 'warning'
+            ? '10分钟前申请锚地'
+            : ship.status === 'caution'
+              ? '15分钟前提交进港申请'
+              : '当前动态正常',
+        route,
+        intentSummary:
+          intent?.intentSummary ||
+          `当前前往 ${route.destination}，保持 ${ship.heading}° 航向，持续沿推荐航路航行。`,
+        vhfSummary: session
+          ? `${session.intent} · 最近通话 ${session.latestTime.split(' ').pop()}`
+          : '暂无实时 VHF 对话',
+        riskSummary: riskStat?.risk || alert?.type || (ship.status === 'warning' ? '重点关注' : '常规监控'),
+        businessInfo: {
+          plannedBerth: route.destination,
+          movement,
+          plannedTime: intent?.intentEta || '待调度确认',
+          previousPort: route.past,
+          nextPort: route.destination,
+          applicant: session?.operatorName || '值班员',
+          operator,
+          teu: isContainerShip ? `${Math.max(220, Math.round(ship.speed * 36))}` : '--',
+          dischargeVolume: isContainerShip ? `${Math.max(120, Math.round(ship.speed * 18))}` : `${Math.max(300, Math.round(ship.speed * 42))}吨`,
+          eta: intent?.occurrenceTime || '待更新',
+          departureTime: session?.latestTime || intent?.occurrenceTime || '待更新',
+        },
+        cargoInfo: {
+          cargoName,
+          cargoAmount: isContainerShip ? `${Math.max(260, Math.round(ship.speed * 40))}TEU` : `${Math.max(500, Math.round(ship.speed * 55))}吨`,
+          localHazardAmount: isHazardous ? `${Math.max(20, Math.round(ship.speed * 4))}吨` : '--',
+          actualHazardAmount: isHazardous ? `${Math.max(80, Math.round(ship.speed * 8))}吨` : '--',
+        },
+        dynamicEvents,
+        track,
+      };
+    }),
+  [vhfSessions, vhfShipInfoLookup]);
+  const selectedHomeShip = useMemo(
+    () => homeShipDetails.find((ship) => ship.id === selectedHomeShipId) ?? homeShipDetails[0] ?? null,
+    [homeShipDetails, selectedHomeShipId],
+  );
+  const selectedHomeShipTrackPoint = useMemo(() => {
+    if (!selectedHomeShip) return null;
+    return (
+      selectedHomeShip.track.find((point) => point.id === selectedHomeShipTrackPointId) ??
+      selectedHomeShip.track[selectedHomeShip.track.length - 1] ??
+      null
+    );
+  }, [selectedHomeShip, selectedHomeShipTrackPointId]);
+  const homeMapFocusTarget = useMemo<[number, number] | null>(() => {
+    if (selectedHomeShipTrackPoint) return selectedHomeShipTrackPoint.coords;
+    if (!selectedHomeShip) return null;
+    return [selectedHomeShip.lat, selectedHomeShip.lng];
+  }, [selectedHomeShip, selectedHomeShipTrackPoint]);
+  const shipSearchResults = useMemo<ShipSearchResult[]>(() => {
+    const keyword = shipSearchQuery.trim().toLowerCase();
+    if (!keyword) return homeShipDetails;
+    return homeShipDetails.filter((ship) =>
+      ship.name.toLowerCase().includes(keyword) ||
+      ship.mmsi.includes(keyword) ||
+      ship.type.toLowerCase().includes(keyword) ||
+      ship.destination.toLowerCase().includes(keyword),
+    );
+  }, [homeShipDetails, shipSearchQuery]);
+
+  const handleSelectHomeShip = (shipId: string) => {
+    setSelectedHomeShipId(shipId);
+    setShipSearchQuery('');
+    setActiveTab('ship');
+    if (!sidebarOpen) {
+      setSidebarOpen(true);
+    }
+  };
 
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
@@ -4963,6 +5479,153 @@ export default function App() {
       setSelectedVhfSessionId(vhfSessions[0].sessionId);
     }
   }, [selectedVhfSessionId, vhfSessions]);
+
+  useEffect(() => {
+    if (!selectedHomeShip) return;
+    setSelectedHomeShipTrackPointId(selectedHomeShip.track[selectedHomeShip.track.length - 1]?.id ?? null);
+  }, [selectedHomeShipId, selectedHomeShip]);
+
+  useEffect(() => {
+    if (!selectedHomeShipId && homeShipDetails.length > 0) {
+      setSelectedHomeShipId(homeShipDetails[0].id);
+    }
+  }, [homeShipDetails, selectedHomeShipId]);
+
+  const homeShipDetailModule = selectedHomeShip ? (
+    <div className="px-3 py-3">
+      <div className="py-1">
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <div className="flex items-center gap-2">
+              <Ship size={14} className="text-sky-400" />
+              <span className="text-[10px] font-black uppercase tracking-widest text-white/45">船舶详情</span>
+            </div>
+            <div className="mt-2 flex items-center gap-2">
+              <span className="truncate text-[16px] font-semibold text-white">{selectedHomeShip.displayName}</span>
+              <span className={`text-[9px] font-black ${
+                selectedHomeShip.status === 'warning'
+                  ? 'text-red-300'
+                  : selectedHomeShip.status === 'caution'
+                    ? 'text-amber-300'
+                    : 'text-emerald-300'
+              }`}>
+                {selectedHomeShip.status === 'warning' ? '风险关注' : selectedHomeShip.status === 'caution' ? '持续跟踪' : '动态正常'}
+              </span>
+            </div>
+            <div className="mt-1 text-[10px] text-white/35">{selectedHomeShip.type} · MMSI {selectedHomeShip.mmsi}</div>
+          </div>
+          <div className="flex flex-col items-end gap-2">
+            <div className="flex items-center gap-1 text-[8px] font-black uppercase tracking-widest text-sky-300">
+              <div className="h-1.5 w-1.5 rounded-full bg-sky-400 animate-pulse" />
+              实时跟踪
+            </div>
+            <button
+              onClick={() => setSelectedHomeShipTrackPointId(selectedHomeShip.track[selectedHomeShip.track.length - 1]?.id ?? null)}
+              className="px-0 py-0 text-[10px] font-semibold text-white/60 hover:text-white"
+            >
+              定位当前
+            </button>
+          </div>
+        </div>
+
+        <div className="mt-3 rounded-xl bg-white/[0.03] px-3 py-2 text-[11px] font-semibold text-white/92">
+          {selectedHomeShip.statusBanner}
+        </div>
+
+        <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-[9px] text-white/38">
+          <span>{selectedHomeShip.vhfSummary}</span>
+          <span className="text-red-300/90">风险: {selectedHomeShip.riskSummary}</span>
+          <span>轨迹点 {selectedHomeShip.track.length}</span>
+        </div>
+
+        <div className="mt-4 grid grid-cols-2 gap-x-4 gap-y-3 text-[10px]">
+          <div>
+            <div className="text-[8px] font-black uppercase tracking-widest text-white/25">航速</div>
+            <div className="mt-1 text-[12px] font-semibold text-white">{selectedHomeShip.speed.toFixed(1)} kn</div>
+          </div>
+          <div>
+            <div className="text-[8px] font-black uppercase tracking-widest text-white/25">航向</div>
+            <div className="mt-1 text-[12px] font-semibold text-white">{selectedHomeShip.heading}°</div>
+          </div>
+          <div>
+            <div className="text-[8px] font-black uppercase tracking-widest text-white/25">当前位置</div>
+            <div className="mt-1 text-[11px] leading-5 text-white/80">{selectedHomeShip.route.current}</div>
+          </div>
+          <div>
+            <div className="text-[8px] font-black uppercase tracking-widest text-white/25">目的地</div>
+            <div className="mt-1 text-[11px] leading-5 text-white/80">{selectedHomeShip.route.destination}</div>
+          </div>
+          <div>
+            <div className="text-[8px] font-black uppercase tracking-widest text-white/25">经度</div>
+            <div className="mt-1 text-[11px] font-mono text-sky-300">{selectedHomeShip.lng.toFixed(5)}°E</div>
+          </div>
+          <div>
+            <div className="text-[8px] font-black uppercase tracking-widest text-white/25">纬度</div>
+            <div className="mt-1 text-[11px] font-mono text-sky-300">{selectedHomeShip.lat.toFixed(5)}°N</div>
+          </div>
+        </div>
+
+        <div className="mt-5">
+          <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-white/32">
+            <MapPin size={12} className="text-sky-400" />
+            航线概览
+          </div>
+          <div className="mt-2 flex items-center gap-2 text-[11px] text-white/82">
+            <span>{selectedHomeShip.route.past}</span>
+            <ChevronRight size={12} className="text-white/25" />
+            <span className="text-sky-300">{selectedHomeShip.route.current}</span>
+            <ChevronRight size={12} className="text-white/25" />
+            <span>{selectedHomeShip.route.destination}</span>
+          </div>
+          <div className="mt-2 text-[10px] leading-5 text-white/42">{selectedHomeShip.intentSummary}</div>
+        </div>
+
+        <div className="mt-5 grid grid-cols-2 gap-x-4 gap-y-3 text-[10px]">
+          <div className="flex items-center justify-between gap-2 text-white/40"><span>呼号</span><span className="font-mono text-sky-300">{selectedHomeShip.callsign}</span></div>
+          <div className="flex items-center justify-between gap-2 text-white/40"><span>货种</span><span className="truncate text-white/78">{selectedHomeShip.cargo}</span></div>
+          <div className="flex items-center justify-between gap-2 text-white/40"><span>船长</span><span className="text-white/78">{selectedHomeShip.length}</span></div>
+          <div className="flex items-center justify-between gap-2 text-white/40"><span>船宽</span><span className="text-white/78">{selectedHomeShip.width}</span></div>
+          <div className="flex items-center justify-between gap-2 text-white/40"><span>吃水</span><span className="text-white/78">{selectedHomeShip.draft}</span></div>
+          <div className="flex items-center justify-between gap-2 text-white/40"><span>风险态势</span><span className="truncate text-white/78">{selectedHomeShip.riskSummary}</span></div>
+        </div>
+
+        <div className="mt-5">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-white/32">
+              <History size={12} className="text-sky-400" />
+              历史轨迹
+            </div>
+            <div className="text-[9px] text-white/28">
+              {selectedHomeShipTrackPoint ? `高亮 ${selectedHomeShipTrackPoint.label}` : '等待高亮'}
+            </div>
+          </div>
+          <div className="mt-2 space-y-1.5">
+            {selectedHomeShip.track.map((point) => {
+              const active = selectedHomeShipTrackPoint?.id === point.id;
+              return (
+                <button
+                  key={point.id}
+                  onClick={() => setSelectedHomeShipTrackPointId(point.id)}
+                  className={`flex w-full items-start justify-between gap-3 px-0 py-2 text-left transition-colors ${
+                    active ? 'text-white' : 'hover:text-white text-white/72'
+                  }`}
+                >
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className={`h-2 w-2 rounded-full ${active ? 'bg-sky-400' : point.kind === 'current' ? 'bg-emerald-400' : 'bg-white/28'}`} />
+                      <span className="truncate text-[11px] font-semibold">{point.label}</span>
+                    </div>
+                    <div className="mt-1 pl-4 text-[10px] leading-5 text-white/40">{point.note}</div>
+                  </div>
+                  <span className="shrink-0 text-[9px] font-mono text-white/28">{point.time}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+    </div>
+  ) : null;
 
   return (
     <div className="h-screen w-screen bg-[#0a0a0a] text-white font-sans overflow-hidden flex flex-col">
@@ -5091,7 +5754,28 @@ export default function App() {
           position={sidebarPosition}
           showBars={showBars}
           onToggleBars={() => setShowBars(!showBars)}
+          shipSearchQuery={shipSearchQuery}
+          onShipSearchQueryChange={setShipSearchQuery}
+          shipSearchResults={shipSearchResults}
+          onShipSearchSelect={handleSelectHomeShip}
         >
+          {activeTab === 'ship' && (
+            <div className="flex h-full min-h-0 flex-col">
+              <div className="px-3 py-2">
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-2">
+                    <div className="h-2 w-2 rounded-full bg-sky-500 animate-pulse" />
+                    <span className="text-[10px] font-black uppercase tracking-widest text-white/40">船舶详情</span>
+                  </div>
+                  <span className="text-[9px] font-bold text-white/28">地图点击 / 搜索联动</span>
+                </div>
+              </div>
+              <div className="flex-1 overflow-y-auto custom-scrollbar">
+                {homeShipDetailModule}
+              </div>
+            </div>
+          )}
+
           {activeTab === 'vhf' && (
             <div className="flex flex-col h-full">
               {/* VHF Header/Toggle */}
@@ -5128,33 +5812,39 @@ export default function App() {
                       initial={{ opacity: 0, x: msg.isVTS ? 20 : -20 }}
                       animate={{ opacity: 1, x: 0 }}
                       transition={{ delay: idx * 0.05 }}
-                      className={`flex flex-col ${msg.isVTS ? 'items-end' : 'items-start'}`}
+                      className={`pb-2 ${msg.isVTS ? 'text-right' : 'text-left'}`}
                     >
-                      {/* Header */}
-                      <div className={`flex items-center gap-2 mb-0.5 ${msg.isVTS ? 'flex-row-reverse' : 'flex-row'}`}>
-                        <span className="text-[10px] font-bold text-white/80">{msg.sender}</span>
-                        <div className={`flex items-center gap-1 px-1 py-0.5 rounded text-[9px] font-bold ${msg.isVTS ? 'bg-sky-600/40 text-sky-200' : 'bg-sky-900/40 text-sky-300'}`}>
-                          <Radio size={9} className={msg.isVTS ? 'text-sky-300' : 'text-sky-400'} />
-                          {msg.duration}
-                        </div>
-                        <span className="text-[9px] font-mono text-white/30">{msg.date} {msg.time}</span>
-                        {msg.isVTS && (
-                          <div className="w-4 h-4 bg-sky-500 rounded-full flex items-center justify-center">
-                            <User size={10} className="text-white" />
-                          </div>
+                      <div className={`flex items-center gap-2 ${msg.isVTS ? 'justify-end' : 'justify-start'}`}>
+                        {msg.isVTS ? (
+                          <>
+                            <span className="text-[9px] font-mono text-white/30">{msg.date} {msg.time}</span>
+                            <div className="flex items-center gap-1 px-1 py-0.5 text-[9px] font-bold text-sky-300/85">
+                              <Radio size={9} className="text-sky-300" />
+                              {msg.duration}
+                            </div>
+                            <span className="text-[10px] font-bold text-sky-200">{msg.sender}</span>
+                            <div className="flex h-4 w-4 items-center justify-center rounded-full bg-sky-500/90">
+                              <User size={10} className="text-white" />
+                            </div>
+                          </>
+                        ) : (
+                          <>
+                            <span className="text-[10px] font-bold text-white/80">{msg.sender}</span>
+                            <div className="flex items-center gap-1 px-1 py-0.5 text-[9px] font-bold text-sky-400/80">
+                              <Radio size={9} className="text-sky-400" />
+                              {msg.duration}
+                            </div>
+                            <span className="text-[9px] font-mono text-white/30">{msg.date} {msg.time}</span>
+                          </>
                         )}
                       </div>
-                      
-                      {/* Bubble */}
-                      <div className={`flex items-center gap-1.5 ${msg.isVTS ? 'flex-row-reverse' : 'flex-row'}`}>
-                        <div className={`max-w-[90%] px-2 py-1 rounded-lg text-[11px] leading-tight relative ${
-                          msg.isVTS 
-                            ? 'bg-sky-500/10 text-sky-100 border border-sky-500/30 shadow-[0_0_10px_rgba(14,165,233,0.05)]' 
-                            : 'bg-white/5 text-white/90 border border-white/10'
-                        }`}>
+
+                      <div className={`mt-1 flex items-start gap-2 ${msg.isVTS ? 'justify-end' : 'justify-start'}`}>
+                        {!msg.isVTS && <div className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-white/22" />}
+                        <p className={`max-w-[92%] text-[11px] leading-relaxed ${msg.isVTS ? 'text-sky-100' : 'text-white/88'}`}>
                           {msg.content}
-                        </div>
-                        <button className="p-0.5 text-sky-500/40 hover:text-sky-400 transition-colors">
+                        </p>
+                        <button className="mt-0.5 p-0.5 text-sky-500/35 hover:text-sky-400 transition-colors">
                           <Settings size={12} />
                         </button>
                       </div>
@@ -5973,11 +6663,11 @@ export default function App() {
         <div className="flex-1 relative bg-[#0a0a0a] overflow-hidden">
           <MapContainer 
             center={(() => {
-              const saved = localStorage.getItem('vts-map-center');
-              return saved ? JSON.parse(saved) : [31.425, 121.565];
+              const saved = localStorage.getItem(HOME_MAP_CENTER_STORAGE_KEY);
+              return saved ? JSON.parse(saved) : HOME_MAP_DEFAULT_CENTER;
             })()} 
             zoom={(() => {
-              const saved = localStorage.getItem('vts-map-zoom');
+              const saved = localStorage.getItem(HOME_MAP_ZOOM_STORAGE_KEY);
               return saved ? parseInt(saved, 10) : 13;
             })()} 
             className="h-full w-full"
@@ -5986,91 +6676,96 @@ export default function App() {
             <MapStatePersister />
             <MousePositionTracker onMouseMove={setMouseCoords} />
             <PlaybackMapController playbackData={playbackData} />
-            {/* ESRI 卫星图层 */}
+            <HomeMapFocusController target={homeMapFocusTarget} />
             <TileLayer
-              url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
-              attribution='Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community'
-            />
-            
-            {/* ESRI 边界与标注叠加层 - 确保在卫星图上能看到地名 */}
-            <TileLayer
-              url="https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}"
-              attribution='Tiles &copy; Esri'
+              url={VTS_CHART_TILE_URL}
+              attribution={VTS_CHART_TILE_ATTRIBUTION}
             />
 
-            {/* OpenSeaMap 叠加层 (航标、灯塔、航道) */}
-            <TileLayer
-              url="https://tiles.openseamap.org/seamark/{z}/{x}/{y}.png"
-              attribution='&copy; <a href="http://www.openseamap.org">OpenSeaMap</a> contributors'
-            />
+            {HOME_MAP_OVERLAY_BADGES.map((badge) => (
+              <Marker
+                key={badge.id}
+                position={badge.position}
+                icon={createHomeMapBadgeIcon(badge)}
+                zIndexOffset={badge.kind === 'warning' ? 600 : 520}
+              >
+                <Popup>
+                  <div className="min-w-[160px] p-1">
+                    <div className={`text-[12px] font-semibold ${badge.kind === 'warning' ? 'text-red-500' : 'text-amber-500'}`}>
+                      {badge.label}
+                    </div>
+                    <div className="mt-1 text-[11px] text-slate-500">{badge.detail}</div>
+                  </div>
+                </Popup>
+              </Marker>
+            ))}
 
-            {/* 冲突船舶与 CPA 锥形区域 (参考图片) */}
-            <CircleMarker
-              center={[31.43, 121.58]}
-              radius={8}
-              pathOptions={{
-                fillColor: '#ef4444',
-                color: '#ffffff',
-                weight: 2,
-                opacity: 1,
-                fillOpacity: 1
-              }}
-            />
-            <Polygon 
-              positions={[
-                [31.43, 121.58],
-                [31.44, 121.59],
-                [31.42, 121.60]
-              ]}
-              pathOptions={{
-                fillColor: '#ef4444',
-                color: '#ef4444',
-                weight: 1,
-                opacity: 0.3,
-                fillOpacity: 0.4
-              }}
-            />
-
-            {/* 申请船舶与 路径规划 (参考图片) */}
-            <CircleMarker
-              center={[31.41, 121.55]}
-              radius={6}
-              pathOptions={{
-                fillColor: '#0ea5e9',
-                color: '#ffffff',
-                weight: 1.5,
-                opacity: 1,
-                fillOpacity: 1
-              }}
-            />
-            <Polyline 
-              positions={[
-                [31.41, 121.55],
-                [31.42, 121.54],
-                [31.43, 121.53]
-              ]}
-              pathOptions={{
-                color: '#ffffff',
-                weight: 2,
-                dashArray: '5, 10',
-                opacity: 0.6
-              }}
-            />
+            {selectedHomeShip && (
+              <>
+                <Polyline
+                  positions={selectedHomeShip.track.map((point) => point.coords)}
+                  pathOptions={{
+                    color: '#38bdf8',
+                    weight: 2.5,
+                    opacity: 0.85,
+                    dashArray: '6 8',
+                  }}
+                />
+                {selectedHomeShip.track.map((point) => {
+                  const active = selectedHomeShipTrackPoint?.id === point.id;
+                  return (
+                    <CircleMarker
+                      key={point.id}
+                      center={point.coords}
+                      radius={active ? 6 : point.kind === 'current' ? 5 : 3}
+                      pathOptions={{
+                        fillColor: active ? '#38bdf8' : point.kind === 'current' ? '#22c55e' : '#94a3b8',
+                        color: active ? '#ffffff' : '#0f172a',
+                        weight: active ? 2 : 1,
+                        opacity: 1,
+                        fillOpacity: active ? 1 : 0.9,
+                      }}
+                      eventHandlers={{
+                        click: () => {
+                          handleSelectHomeShip(selectedHomeShip.id);
+                          setSelectedHomeShipTrackPointId(point.id);
+                        },
+                      }}
+                    >
+                      <Popup>
+                        <div className="min-w-[160px] p-1">
+                          <div className="text-[12px] font-semibold text-sky-500">{selectedHomeShip.name}</div>
+                          <div className="mt-1 text-[11px] text-slate-600">{point.label} · {point.time}</div>
+                          <div className="mt-1 text-[11px] text-slate-500">{point.note}</div>
+                        </div>
+                      </Popup>
+                    </CircleMarker>
+                  );
+                })}
+              </>
+            )}
 
             {/* 船舶标记 */}
             {SHIP_POSITIONS.map((ship) => (
-              <CircleMarker
+              <Marker
                 key={ship.id}
-                center={[ship.lat, ship.lng]}
-                radius={ship.status === 'warning' ? 6 : 4}
-                pathOptions={{
-                  fillColor: ship.status === 'warning' ? '#ef4444' : '#22c55e',
-                  color: ship.status === 'warning' ? '#ef4444' : '#22c55e',
-                  weight: 1,
-                  opacity: 1,
-                  fillOpacity: 0.8
+                position={[ship.lat, ship.lng]}
+                icon={createShipIcon(ship, selectedHomeShip?.id === ship.id)}
+                zIndexOffset={selectedHomeShip?.id === ship.id ? 900 : 320}
+                eventHandlers={{
+                  click: () => {
+                    handleSelectHomeShip(ship.id);
+                  }
                 }}
-              />
+              >
+                <Popup>
+                  <div className="min-w-[160px] p-1">
+                    <div className="text-[12px] font-semibold text-sky-500">{ship.name}</div>
+                    <div className="mt-1 text-[11px] text-slate-600">{ship.type} · {ship.mmsi}</div>
+                    <div className="mt-1 text-[11px] text-slate-500">航速 {ship.speed.toFixed(1)} kn · 目的地 {ship.destination}</div>
+                  </div>
+                </Popup>
+              </Marker>
             ))}
           </MapContainer>
 
