@@ -2,19 +2,36 @@
 <img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
 </div>
 
-# Run and deploy your AI Studio app
+# VTS 监管系统（VTS Prototype）
 
-This contains everything you need to run your app locally.
+本项目是一个基于 **React + TypeScript + Vite** 的 VTS 监管系统前端原型，后续由 **GPT-5.3-Codex（OpenAI）** 协助维护。
 
-View your app in AI Studio: https://ai.studio/apps/f8c916b0-fba5-4bdb-a836-bffa6f872dd7
+## 项目结构
 
-## Run Locally
+```text
+.
+├─ src/
+│  ├─ components/
+│  │  ├─ Map/                 # 地图及海事要素组件
+│  │  ├─ Panels/              # 业务面板（管理、冲突、建议、动态回放等）
+│  │  └─ Sidebar/             # 侧边栏
+│  ├─ App.tsx                 # 应用入口组件
+│  ├─ main.tsx                # 渲染入口
+│  ├─ index.css               # 全局样式
+│  └─ types.ts                # 类型定义
+├─ index.html                 # 页面模板
+├─ package.json               # 依赖与脚本
+├─ tsconfig.json              # TypeScript 配置
+└─ vite.config.ts             # Vite 配置
+```
 
-**Prerequisites:**  Node.js
+## 本地运行
 
+**前置条件：** Node.js
 
-1. Install dependencies:
+1. 安装依赖：
    `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
+2. 在项目根目录创建 `.env.local`，并设置：
+   `GEMINI_API_KEY=<你的 Gemini API Key>`
+3. 启动开发环境：
    `npm run dev`
