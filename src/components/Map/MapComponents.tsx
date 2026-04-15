@@ -7,17 +7,25 @@ import React, { useEffect } from 'react';
 import { useMapEvents, useMap, Marker } from 'react-leaflet';
 import L from 'leaflet';
 
+const safeSetLocalStorage = (key: string, value: string) => {
+  try {
+    localStorage.setItem(key, value);
+  } catch {
+    // Ignore storage write failures so map interactions do not break the UI.
+  }
+};
+
 // 地图状态持久化组件
 export const MapStatePersister = () => {
   useMapEvents({
     moveend: (e) => {
       const map = e.target;
       const center = map.getCenter();
-      localStorage.setItem('vts-map-center', JSON.stringify([center.lat, center.lng]));
+      safeSetLocalStorage('vts-map-center', JSON.stringify([center.lat, center.lng]));
     },
     zoomend: (e) => {
       const map = e.target;
-      localStorage.setItem('vts-map-zoom', map.getZoom().toString());
+      safeSetLocalStorage('vts-map-zoom', map.getZoom().toString());
     },
   });
   return null;
