@@ -47,7 +47,8 @@ import {
   CloudSun,
   Compass,
   Presentation,
-  X
+  X,
+  LayoutGrid
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
@@ -272,6 +273,50 @@ const formatRemainingDuration = (expiryTime: string, currentTime: Date): string 
   }
 
   return `剩余 ${minutes}分钟`;
+};
+
+const formatAnchorageRemainingDuration = (expiryTime: string, currentTime: Date) =>
+  formatRemainingDuration(expiryTime, currentTime).replaceAll(' ', '');
+
+const getAnchorageExpiryMeta = (expiryTime: string) => {
+  const [date = '--', time = '--:--'] = expiryTime.split(' ');
+  return {
+    date,
+    time,
+  };
+};
+
+const parseAnchorageOvertimeMinutes = (value: string) => {
+  const hoursMatch = value.match(/(\d+)h/i);
+  const minutesMatch = value.match(/(\d+)m/i);
+  const hours = hoursMatch ? Number.parseInt(hoursMatch[1], 10) : 0;
+  const minutes = minutesMatch ? Number.parseInt(minutesMatch[1], 10) : 0;
+  return (hours * 60) + minutes;
+};
+
+const getAnchorageOvertimeBuckets = (
+  ships: Array<{ overtimeDuration: string }> | undefined,
+) => {
+  const buckets = {
+    over24h: 0,
+    between12And24h: 0,
+    under12h: 0,
+  };
+
+  ships?.forEach((ship) => {
+    const totalMinutes = parseAnchorageOvertimeMinutes(ship.overtimeDuration);
+    if (totalMinutes >= 24 * 60) {
+      buckets.over24h += 1;
+      return;
+    }
+    if (totalMinutes >= 12 * 60) {
+      buckets.between12And24h += 1;
+      return;
+    }
+    buckets.under12h += 1;
+  });
+
+  return buckets;
 };
 
 const hashWarningAreaSeed = (value: string) =>
@@ -1737,6 +1782,17 @@ const getAnchorageTypeStats = (anchorageId: string) =>
     type,
     count: (hashString(`${anchorageId}-${type}-${index}`) % 5) + 1,
   })).sort((left, right) => right.count - left.count);
+
+const ANCHORAGE_TYPE_CHART_COLORS = [
+  '#47d77d',
+  '#55b7ff',
+  '#f6b73c',
+  '#ff6666',
+  '#a567ff',
+  '#6f86ff',
+  '#ff63c8',
+  '#8e9aac',
+];
 
 // --- 组件 ---
 
@@ -5374,6 +5430,7 @@ export default function App() {
   const [selectedAnchorage, setSelectedAnchorage] = useState<string | null>(null);
   const [selectedExpiringShip, setSelectedExpiringShip] = useState<string | null>(null);
   const [selectedOvertimeShip, setSelectedOvertimeShip] = useState<string | null>(null);
+  const [anchorageTypeViewMode, setAnchorageTypeViewMode] = useState<'chart' | 'tags'>('tags');
   const [intents, setIntents] = useState<IntentItem[]>(INTENT_DATA);
   const [intentFilter, setIntentFilter] = useState('全部');
   const [editingIntentIndex, setEditingIntentIndex] = useState<number | null>(null);
@@ -6597,7 +6654,19 @@ export default function App() {
             <div className="p-3 flex flex-col h-full space-y-2">
               <div className="flex-1 space-y-1 overflow-y-auto pr-1 custom-scrollbar">
                 {MOCK_ANCHORAGES.map((item) => {
-                  const typeStats = getAnchorageTypeStats(item.id);
+                  const typeStats = getAnchorageTypeStats(item.id).slice(0, 10);
+                  const chartStats = typeStats.slice(0, 8);
+                  const chartTotal = chartStats.reduce((sum, ship) => sum + ship.count, 0);
+                  const chartGradient = chartStats.length
+                    ? `conic-gradient(${chartStats.map((ship, idx) => {
+                        const start = chartStats.slice(0, idx).reduce((sum, current) => sum + current.count, 0);
+                        const end = start + ship.count;
+                        const startPct = (start / chartTotal) * 100;
+                        const endPct = (end / chartTotal) * 100;
+                        return `${ANCHORAGE_TYPE_CHART_COLORS[idx % ANCHORAGE_TYPE_CHART_COLORS.length]} ${startPct}% ${endPct}%`;
+                      }).join(', ')})`
+                    : 'conic-gradient(#223043 0% 100%)';
+                  const overtimeBuckets = getAnchorageOvertimeBuckets(item.overtimeShips);
                   return (
                     <motion.div 
                       key={item.id}
@@ -6605,60 +6674,38 @@ export default function App() {
                       onClick={() => {
                         const next = selectedAnchorage === item.id ? null : item.id;
                         setSelectedAnchorage(next);
-                        setSelectedExpiringShip(null);
+                        setSelectedExpiringShip(next ? item.expiringShips?.[0]?.id ?? null : null);
                         setSelectedOvertimeShip(null);
                       }}
-                      className={`bg-[#121212] border border-white/5 rounded-xl overflow-hidden hover:border-white/10 transition-all cursor-pointer group ${
-                        selectedAnchorage === item.id ? 'ring-1 ring-sky-500/30' : ''
+                      className={`overflow-hidden rounded-xl border border-white/5 bg-[#0F1115] shadow-2xl transition-all cursor-pointer group ${
+                        selectedAnchorage === item.id ? 'border-white/10' : 'hover:border-white/10'
                       }`}
                     >
-                      <div className="p-2">
-                      <div className="flex items-center justify-between mb-2">
-                        <div className="flex items-center gap-2">
-                          <div className="w-7 h-7 rounded-lg flex items-center justify-center bg-sky-500/20">
-                            <Anchor size={14} className="text-sky-400" />
+                      <div className="border-b border-white/5 px-3 py-2.5 transition-all">
+                        <div className="flex items-center justify-between gap-2 transition-all">
+                          <div className="flex min-w-0 flex-1 items-center gap-2 transition-all">
+                            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-[#1D3D26] transition-all">
+                              <Anchor size={16} className="text-[#4DFF88]" />
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <div className="truncate text-xs font-bold leading-none tracking-tight text-white transition-all">{item.name}</div>
+                            </div>
                           </div>
-                          <div className="flex items-center gap-2">
-                            <div className="text-xs font-black text-white/90">{item.name}</div>
-                            {(item.expiringCount > 0 || item.overtimeCount > 0) && (
-                              <div className="flex min-w-[78px] flex-col items-end gap-1">
-                                {item.expiringCount > 0 && (
-                                  <div className="flex w-full items-center justify-between text-[9px] font-black text-orange-300 px-1.5 py-0.5 rounded-full bg-orange-500/10 border border-orange-500/30 leading-none">
-                                    <span>临期</span>
-                                    <span>{item.expiringCount}</span>
-                                  </div>
-                                )}
-                                {item.overtimeCount > 0 && (
-                                  <div className="flex w-full items-center justify-between text-[9px] font-black text-red-300 px-1.5 py-0.5 rounded-full bg-red-500/10 border border-red-500/30 leading-none">
-                                    <span>超时</span>
-                                    <span>{item.overtimeCount}</span>
-                                  </div>
-                                )}
-                              </div>
+                          <div className="flex shrink-0 items-center gap-1.5 transition-all">
+                            {item.expiringCount > 0 && (
+                              <span className="shrink-0 rounded-full border border-[#FF9F43]/20 bg-[#3D2616] px-1.5 py-0.5 text-[9px] font-bold leading-none text-[#FF9F43] transition-all">
+                                临期 {item.expiringCount}
+                              </span>
                             )}
+                            {item.overtimeCount > 0 && (
+                              <span className="shrink-0 rounded-full border border-[#FF4D4D]/20 bg-[#3D1D1D] px-1.5 py-0.5 text-[9px] font-bold leading-none text-[#FF4D4D] transition-all">
+                                超时 {item.overtimeCount}
+                              </span>
+                            )}
+                            <ChevronRight size={12} className={`shrink-0 text-white/35 transition-transform duration-300 ${selectedAnchorage === item.id ? 'rotate-90 text-white/65' : ''}`} />
                           </div>
                         </div>
-                        <div className="flex items-center gap-2">
-                          <ChevronRight size={10} className={`text-white/20 transition-transform duration-300 ${selectedAnchorage === item.id ? 'rotate-90' : ''}`} />
-                        </div>
                       </div>
-
-                      <div className="space-y-1.5">
-                        <div className="flex justify-between items-end">
-                          <span className="text-[9px] font-bold text-white/30 uppercase tracking-widest">拥挤程度</span>
-                          <span className="text-[10px] font-mono font-bold text-white">
-                            {Math.round((item.occupied / item.capacity) * 100)}%
-                          </span>
-                        </div>
-                        <div className="h-1 bg-white/5 rounded-full overflow-hidden">
-                          <motion.div 
-                            initial={{ width: 0 }}
-                            animate={{ width: `${(item.occupied / item.capacity) * 100}%` }}
-                            className="h-full bg-sky-500"
-                          />
-                        </div>
-                      </div>
-                    </div>
 
                     <AnimatePresence>
                       {selectedAnchorage === item.id && (
@@ -6666,84 +6713,184 @@ export default function App() {
                           initial={{ height: 0, opacity: 0 }}
                           animate={{ height: 'auto', opacity: 1 }}
                           exit={{ height: 0, opacity: 0 }}
-                          className="border-t border-white/5 bg-white/[0.02] overflow-hidden"
+                          className="overflow-hidden"
                         >
-                          <div className="p-2 space-y-2">
-                            <div className="space-y-1.5">
-                              <div className="text-[7px] font-bold text-white/30 uppercase tracking-widest">船舶类型统计</div>
-                              <div className="flex flex-wrap gap-1.5">
-                                {typeStats.map((ship, idx) => (
-                                  <div
-                                    key={`${ship.type}-${idx}`}
-                                    className="flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.05] px-2 py-1 text-[8px] text-white/70"
+                            <div className="space-y-3 px-3 py-2.5">
+                            <div className="space-y-2.5">
+                              <div className="flex items-center justify-between">
+                                <div className="text-[10px] font-bold uppercase tracking-wider text-gray-500">船舶类型统计</div>
+                                <div className="flex rounded-lg border border-white/5 bg-[#1A1D23] p-0.5">
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setAnchorageTypeViewMode('tags');
+                                    }}
+                                    className={`flex h-6 w-6 items-center justify-center rounded-md transition-colors ${
+                                      anchorageTypeViewMode === 'tags'
+                                        ? 'bg-[#252A33] text-[#4DABFF]'
+                                        : 'text-gray-500 hover:text-gray-300'
+                                    }`}
                                   >
-                                    <Ship size={9} className="text-sky-400/70" />
-                                    <span className="text-white/85">{ship.type}</span>
-                                    <span className="text-sky-300 font-black">{ship.count}艘</span>
+                                    <LayoutGrid size={11} />
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setAnchorageTypeViewMode('chart');
+                                    }}
+                                    className={`flex h-6 w-6 items-center justify-center rounded-md transition-colors ${
+                                      anchorageTypeViewMode === 'chart'
+                                        ? 'bg-[#252A33] text-[#4DABFF]'
+                                        : 'text-gray-500 hover:text-gray-300'
+                                    }`}
+                                  >
+                                    <BarChart3 size={11} />
+                                  </button>
+                                </div>
+                              </div>
+                              {anchorageTypeViewMode === 'tags' ? (
+                                <div className="flex flex-wrap gap-1.5">
+                                  {typeStats.map((ship, idx) => (
+                                    <div
+                                      key={`${ship.type}-${idx}`}
+                                      className="flex items-center gap-1 rounded-full border border-white/5 bg-[#1A1D23] px-2 py-1 text-[10px] leading-none text-gray-300"
+                                    >
+                                      <Ship size={11} className="text-[#4DABFF]" />
+                                      <span>{ship.type}</span>
+                                      <span className="font-bold text-[#4DABFF]">{ship.count}艘</span>
+                                    </div>
+                                  ))}
+                                </div>
+                              ) : (
+                                <div className="relative flex gap-3 rounded-xl border border-white/5 bg-[#1A1D23]/50 p-2.5">
+                                  <div className="relative h-48 w-[45%] shrink-0">
+                                    <div className="pointer-events-none absolute inset-0 z-10 flex flex-col items-center justify-center">
+                                      <span className="max-w-[60px] truncate text-center text-[10px] font-medium text-gray-500">
+                                        {chartStats[chartStats.length - 1]?.type ?? chartStats[0]?.type ?? '船型'}
+                                      </span>
+                                      <span className="text-xs font-bold text-[#4DABFF]">
+                                        {chartTotal}艘
+                                      </span>
+                                    </div>
+                                    <div className="flex h-full items-center justify-center">
+                                      <div
+                                        className="relative flex h-[88px] w-[88px] items-center justify-center rounded-full"
+                                        style={{ background: chartGradient }}
+                                      >
+                                        <div className="flex h-[56px] w-[56px] flex-col items-center justify-center rounded-full bg-[#1A1D23]">
+                                          <span className="text-[10px] font-bold leading-none text-[#4DABFF]/80">船舶</span>
+                                          <span className="mt-1 text-xs font-bold leading-none text-[#4DABFF]">{chartTotal}艘</span>
+                                        </div>
+                                      </div>
+                                    </div>
                                   </div>
-                                ))}
+                                  <div className="flex-1 space-y-1 overflow-y-auto pr-1">
+                                      {chartStats.map((ship, idx) => {
+                                        const ratio = chartTotal > 0 ? Math.round((ship.count / chartTotal) * 100) : 0;
+                                        return (
+                                          <div
+                                            key={`${ship.type}-${idx}-chart`}
+                                            className="flex items-center gap-2 rounded-md px-1.5 py-1 transition-all hover:bg-white/5"
+                                          >
+                                            <span
+                                              className="h-1.5 w-1.5 shrink-0 rounded-full"
+                                              style={{ backgroundColor: ANCHORAGE_TYPE_CHART_COLORS[idx % ANCHORAGE_TYPE_CHART_COLORS.length] }}
+                                            />
+                                            <span className="min-w-0 flex-1 truncate text-[10px] leading-none text-gray-400">{ship.type}</span>
+                                            <span className="w-6 text-right text-[10px] leading-none text-gray-600">{ratio}%</span>
+                                            <span className="w-4 text-right text-[10px] font-bold leading-none text-[#4DABFF]">{ship.count}</span>
+                                          </div>
+                                        );
+                                      })}
+                                    </div>
+                                </div>
+                              )}
+                            </div>
+
+                            <div className="space-y-2.5">
+                              <div className="text-[10px] font-bold uppercase tracking-wider text-gray-500">超时统计</div>
+                              <div className="flex flex-wrap gap-2">
+                                <div className="flex items-center gap-1 rounded-full border border-white/5 bg-[#1A1D23] px-2 py-1 text-[10px] leading-none text-gray-300">
+                                  <AlertTriangle size={11} className="text-[#FF4D4D]" />
+                                  <span>超时 24h+</span>
+                                  <span className="font-bold text-[#FF4D4D]">{overtimeBuckets.over24h}艘</span>
+                                </div>
+                                <div className="flex items-center gap-1 rounded-full border border-white/5 bg-[#1A1D23] px-2 py-1 text-[10px] leading-none text-gray-300">
+                                  <AlertTriangle size={11} className="text-[#FF4D4D]" />
+                                  <span>超时 12-24h</span>
+                                  <span className="font-bold text-[#FF4D4D]">{overtimeBuckets.between12And24h}艘</span>
+                                </div>
+                                <div className="flex items-center gap-1 rounded-full border border-white/5 bg-[#1A1D23] px-2 py-1 text-[10px] leading-none text-gray-300">
+                                  <AlertTriangle size={11} className="text-[#FF4D4D]" />
+                                  <span>超时 0-12h</span>
+                                  <span className="font-bold text-[#FF4D4D]">{overtimeBuckets.under12h}艘</span>
+                                </div>
                               </div>
                             </div>
 
                             {item.expiringCount > 0 && (
-                              <div className="pt-2 border-t border-white/5 space-y-2">
+                              <div className="space-y-2 border-t border-white/5 pt-2.5">
                                 <div className="flex items-center justify-between">
                                   <div className="flex items-center gap-1.5">
-                                    <Clock size={10} className="text-orange-400" />
-                                    <span className="text-[9px] font-bold text-orange-400/80 uppercase tracking-widest">
-                                      {item.expiringCount} 艘船舶锚泊即将到期
+                                    <Clock size={9} className="text-orange-400" />
+                                    <span className="text-[10px] font-bold leading-none text-[#f7a52c]">
+                                      {item.expiringCount} 艘船舶锚泊临期
                                     </span>
                                   </div>
-                                  <div className="text-[8px] font-bold text-white/20 uppercase tracking-widest">
+                                  <div className="text-[10px] font-bold leading-none text-white/18">
                                     限时 48H
                                   </div>
                                 </div>
 
-                                <div className="space-y-1">
+                                <div className="space-y-1.5">
                                   {item.expiringShips?.map((ship) => {
                                     const remainingDuration = formatRemainingDuration(ship.expiryTime, currentTime);
+                                    const expiryMeta = getAnchorageExpiryMeta(ship.expiryTime);
+                                    const isExpanded = selectedExpiringShip === ship.id;
 
                                     return (
                                       <div key={ship.id} className="group/ship">
-                                        <div className={`p-2 rounded-lg transition-all ${selectedExpiringShip === ship.id ? 'bg-orange-500/10 border border-orange-500/20' : 'bg-white/5 border border-white/5 hover:bg-white/10'}`}>
-                                          <div className="flex items-center gap-2">
+                                        <div className={`rounded-xl border transition-all ${isExpanded ? 'border-[#5c4a2f] bg-[#252A33] p-2.5' : 'border-white/6 bg-[#1A1D23] px-2.5 py-2.5 hover:border-[#FF9F43]/30'}`}>
+                                          <div className="flex items-start gap-2.5">
                                             <div 
                                               onClick={(e) => {
                                                 e.stopPropagation();
-                                                setSelectedExpiringShip(selectedExpiringShip === ship.id ? null : ship.id);
+                                                setSelectedExpiringShip(isExpanded ? null : ship.id);
                                               }}
-                                              className="flex items-center gap-2 cursor-pointer flex-1"
+                                              className="flex flex-1 cursor-pointer items-start gap-2.5"
                                             >
-                                              <div className={`w-6 h-6 rounded flex items-center justify-center ${
-                                                selectedExpiringShip === ship.id ? 'bg-orange-500/20' : 'bg-white/5'
-                                              }`}>
-                                                <Ship size={12} className={selectedExpiringShip === ship.id ? 'text-orange-400' : 'text-white/40'} />
+                                              <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#252A33]">
+                                                <Ship size={15} className="text-white/40" />
                                               </div>
-                                              <div>
-                                                <div className="text-[10px] font-black text-white/90">
+                                              <div className="min-w-0">
+                                                <div className="text-[11px] font-black leading-none text-white/92">
                                                   {ship.name}
                                                   {ship.englishName ? (
-                                                    <span className="ml-1 text-[8px] font-semibold text-white/50">{ship.englishName}</span>
+                                                    <span className="ml-1 text-[10px] font-semibold text-white/45">{ship.englishName}</span>
                                                   ) : null}
                                                 </div>
-                                                <div className="text-[7px] font-mono text-white/30 uppercase tracking-tighter">到期: {ship.expiryTime}</div>
-                                                <div className={`text-[7px] font-semibold tracking-tight ${
-                                                  remainingDuration === '已到期' ? 'text-red-300/90' : 'text-orange-300/90'
+                                                <div className="mt-1 text-[10px] leading-none text-white/28">到期: {expiryMeta.date} {expiryMeta.time}</div>
+                                                <div className={`mt-1 text-[10px] font-black leading-none ${
+                                                  remainingDuration === '已到期' ? 'text-[#ff6269]' : 'text-[#f7a52c]'
                                                 }`}>
-                                                  {remainingDuration}
+                                                  {formatAnchorageRemainingDuration(ship.expiryTime, currentTime)}
                                                 </div>
                                               </div>
                                             </div>
-                                            <div className="flex flex-col items-center gap-1 text-[6px] font-black uppercase tracking-[0.18em] shrink-0">
+                                            <div className={`flex flex-col gap-1 transition-opacity ${isExpanded ? 'opacity-100' : 'opacity-0 group-hover/ship:opacity-100'}`}>
                                               <button
+                                                type="button"
                                                 onClick={(e) => e.stopPropagation()}
-                                                className="px-1.5 py-0.5 rounded-full border border-white/10 text-white/50 hover:bg-white/10 transition-colors leading-none"
+                                                className="rounded-md bg-[#30343d] px-2 py-1 text-[10px] font-black leading-none text-white/45 transition-colors hover:text-white/80"
                                               >
                                                 忽略
                                               </button>
                                               <button
+                                                type="button"
                                                 onClick={(e) => e.stopPropagation()}
-                                                className="px-1.5 py-0.5 rounded-full border border-orange-400/30 bg-orange-500/20 text-orange-300 hover:bg-orange-500/30 transition-colors leading-none"
+                                                className="rounded-md bg-[#3D2616] px-2 py-1 text-[10px] font-black leading-none text-[#FF9F43] transition-colors hover:bg-[#4D321D]"
                                               >
                                                 提醒
                                               </button>
@@ -6752,61 +6899,64 @@ export default function App() {
                                               type="button"
                                               onClick={(e) => {
                                                 e.stopPropagation();
-                                                setSelectedExpiringShip(selectedExpiringShip === ship.id ? null : ship.id);
+                                                setSelectedExpiringShip(isExpanded ? null : ship.id);
                                               }}
-                                              className="p-1 rounded hover:bg-white/10 transition-colors"
+                                              className="rounded-lg p-1 text-white/20 transition-colors hover:bg-white/5"
                                             >
-                                              <ChevronRight size={10} className={`text-white/20 transition-transform ${selectedExpiringShip === ship.id ? 'rotate-90 text-orange-400' : ''}`} />
+                                              <ChevronRight size={10} className={`transition-transform ${isExpanded ? 'rotate-90 text-white/55' : ''}`} />
                                             </button>
                                           </div>
                                         </div>
 
                                         <AnimatePresence>
-                                          {selectedExpiringShip === ship.id && (
+                                          {isExpanded && (
                                             <motion.div
                                               initial={{ height: 0, opacity: 0 }}
                                               animate={{ height: 'auto', opacity: 1 }}
                                               exit={{ height: 0, opacity: 0 }}
                                               className="overflow-hidden"
                                             >
-                                              <div className="mt-1 p-2 bg-black/40 rounded-lg border border-white/5 grid grid-cols-2 gap-2">
+                                              <div className="mt-2 grid grid-cols-2 gap-x-3 gap-y-2.5 rounded-xl border border-[#394150] bg-[#2c313a] p-2.5">
                                                 <div className="space-y-1">
-                                                  <div className="flex items-center justify-between">
-                                                    <span className="text-[7px] text-white/30 uppercase">MMSI</span>
-                                                    <span className="text-[8px] font-mono text-white/70">{ship.mmsi}</span>
-                                                  </div>
-                                                  <div className="flex items-center justify-between">
-                                                    <span className="text-[7px] text-white/30 uppercase">船型</span>
-                                                    <span className="text-[8px] text-white/70">{ship.type}</span>
-                                                  </div>
-                                                  <div className="flex items-center justify-between">
-                                                    <span className="text-[7px] text-white/30 uppercase">长/宽</span>
-                                                    <span className="text-[8px] text-white/70">{ship.details.length}m / {ship.details.width}m</span>
+                                                  <div className="text-[10px] uppercase tracking-[0.12em] text-white/30">MMSI</div>
+                                                  <div className="text-xs font-mono text-white/75">{ship.mmsi}</div>
+                                                </div>
+                                                <div className="space-y-1">
+                                                  <div className="text-[10px] uppercase tracking-[0.12em] text-white/30">船舶类型</div>
+                                                  <div className="flex items-center gap-2 text-xs text-white/75">
+                                                    <span>{ship.type}</span>
+                                                    <span className="rounded bg-green-500/10 px-1 py-0.5 text-[10px] text-green-400">锚泊</span>
                                                   </div>
                                                 </div>
                                                 <div className="space-y-1">
-                                                  <div className="flex items-center justify-between">
-                                                    <span className="text-[7px] text-white/30 uppercase">吃水</span>
-                                                    <span className="text-[8px] text-white/70">{ship.details.draft}m</span>
-                                                  </div>
-                                                  <div className="flex items-center justify-between">
-                                                    <span className="text-[7px] text-white/30 uppercase">货物</span>
-                                                    <span className="text-[8px] text-white/70">{ship.details.cargo}</span>
-                                                  </div>
-                                                  <div className="flex items-center justify-between">
-                                                    <span className="text-[7px] text-white/30 uppercase">代理</span>
-                                                    <span className="text-[8px] text-white/70">{ship.details.agent}</span>
+                                                  <div className="text-[10px] uppercase tracking-[0.12em] text-white/30">代理</div>
+                                                  <div className="text-xs text-white/75">{ship.details.agent}</div>
+                                                </div>
+                                                <div className="space-y-1">
+                                                  <div className="text-[10px] uppercase tracking-[0.12em] text-white/30">最大吃水</div>
+                                                  <div className="text-xs font-mono text-sky-300">{ship.details.draft}m</div>
+                                                </div>
+                                                <div className="space-y-1">
+                                                  <div className="text-[10px] uppercase tracking-[0.12em] text-white/30">船长 / 船宽</div>
+                                                  <div className="text-xs font-mono text-white/75">{ship.details.length}m × {ship.details.width}m</div>
+                                                </div>
+                                                <div className="space-y-1">
+                                                  <div className="text-[10px] uppercase tracking-[0.12em] text-white/30">到期时间</div>
+                                                  <div className="text-xs font-mono text-white/75">{ship.expiryTime}</div>
+                                                </div>
+                                                <div className="col-span-2 space-y-1">
+                                                  <div className="text-[10px] uppercase tracking-[0.12em] text-white/30">目的地</div>
+                                                  <div className="flex items-center gap-2 text-xs">
+                                                    <MapPin size={10} className="text-white/30" />
+                                                    <span className="font-bold text-sky-400">{ship.details.destination}</span>
                                                   </div>
                                                 </div>
-                                                <div className="col-span-2 pt-1 border-t border-white/5 flex justify-between items-center">
-                                                  <div className="flex items-center gap-1">
-                                                    <MapPin size={8} className="text-white/30" />
-                                                    <span className="text-[7px] text-white/30 uppercase">目的地:</span>
-                                                    <span className="text-[8px] text-sky-400 font-bold">{ship.details.destination}</span>
+                                                <div className="col-span-2 space-y-1">
+                                                  <div className="text-[10px] uppercase tracking-[0.12em] text-white/30">载货信息</div>
+                                                  <div className="text-xs text-white/75">
+                                                    <span className="mr-2 rounded bg-orange-500/10 px-1.5 py-0.5 text-[10px] text-orange-300">临期船舶</span>
+                                                    {ship.details.cargo}
                                                   </div>
-                                                  <button className="px-2 py-0.5 bg-orange-500/20 hover:bg-orange-500/30 text-orange-400 text-[6px] font-black uppercase tracking-widest rounded transition-colors">
-                                                    发送提醒
-                                                  </button>
                                                 </div>
                                               </div>
                                             </motion.div>
@@ -6820,58 +6970,58 @@ export default function App() {
                             )}
 
                             {item.overtimeCount > 0 && (
-                              <div className="pt-2 border-t border-white/5 space-y-2">
+                              <div className="space-y-2 border-t border-white/5 pt-2.5">
                                 <div className="flex items-center justify-between">
                                   <div className="flex items-center gap-1.5">
-                                    <AlertTriangle size={10} className="text-red-400" />
-                                    <span className="text-[9px] font-bold text-red-400/80 uppercase tracking-widest">
+                                    <AlertTriangle size={9} className="text-red-400" />
+                                    <span className="text-[10px] font-bold leading-none text-[#ff6269]">
                                       {item.overtimeCount} 艘船舶锚泊超时
                                     </span>
                                   </div>
-                                  <div className="text-[8px] font-bold text-white/20 uppercase tracking-widest">
+                                  <div className="text-[9px] font-bold leading-none text-white/18">
                                     实时监测
                                   </div>
                                 </div>
 
-                                <div className="space-y-1">
+                                <div className="space-y-1.5">
                                   {item.overtimeShips?.map((ship) => (
                                     <div key={ship.id} className="group/ship">
-                                      <div className={`p-2 rounded-lg transition-all ${selectedOvertimeShip === ship.id ? 'bg-red-500/10 border border-red-500/20' : 'bg-white/5 border border-white/5 hover:bg-white/10'}`}>
-                                        <div className="flex items-center gap-2">
+                                      <div className={`rounded-xl border transition-all ${selectedOvertimeShip === ship.id ? 'border-[#5a2a32] bg-[#252A33] p-2.5' : 'border-white/6 bg-[#1A1D23] px-2.5 py-2.5 hover:border-[#FF4D4D]/30'}`}>
+                                        <div className="flex items-start gap-2.5">
                                           <div 
                                             onClick={(e) => {
                                               e.stopPropagation();
                                               setSelectedOvertimeShip(selectedOvertimeShip === ship.id ? null : ship.id);
                                             }}
-                                            className="flex items-center gap-2 cursor-pointer flex-1"
+                                            className="flex flex-1 cursor-pointer items-start gap-2.5"
                                           >
-                                            <div className={`w-6 h-6 rounded flex items-center justify-center ${
-                                              selectedOvertimeShip === ship.id ? 'bg-red-500/20' : 'bg-white/5'
-                                            }`}>
-                                              <Clock size={12} className={selectedOvertimeShip === ship.id ? 'text-red-400' : 'text-white/40'} />
+                                            <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#252A33]">
+                                              <Clock size={15} className="text-white/40" />
                                             </div>
                                             <div>
-                                              <div className="text-[10px] font-black text-white/90">
+                                              <div className="text-[11px] font-black leading-none text-white/92">
                                                 {ship.name}
                                                 {ship.englishName ? (
-                                                  <span className="ml-1 text-[8px] font-semibold text-white/50">{ship.englishName}</span>
+                                                  <span className="ml-1 text-[10px] font-semibold text-white/45">{ship.englishName}</span>
                                                 ) : null}
                                               </div>
-                                              <div className="text-[7px] font-mono text-white/30 uppercase tracking-tighter">
-                                                超时: {ship.overtimeDuration}
+                                              <div className="mt-1 text-[10px] font-black leading-none text-[#ff6269]">
+                                                {ship.overtimeDuration.replace('超时 ', '超时 ')}
                                               </div>
                                             </div>
                                           </div>
-                                          <div className="flex flex-col items-center gap-1 text-[6px] font-black uppercase tracking-[0.18em] shrink-0">
+                                          <div className={`flex flex-col gap-1 transition-opacity ${selectedOvertimeShip === ship.id ? 'opacity-100' : 'opacity-0 group-hover/ship:opacity-100'}`}>
                                             <button
+                                              type="button"
                                               onClick={(e) => e.stopPropagation()}
-                                              className="px-1.5 py-0.5 rounded-full border border-white/10 text-white/50 hover:bg-white/10 transition-colors leading-none"
+                                              className="rounded-md bg-[#30343d] px-2 py-1 text-[10px] font-black leading-none text-white/45 transition-colors hover:text-white/80"
                                             >
                                               忽略
                                             </button>
                                             <button
+                                              type="button"
                                               onClick={(e) => e.stopPropagation()}
-                                              className="px-1.5 py-0.5 rounded-full border border-red-400/30 bg-red-500/20 text-red-300 hover:bg-red-500/30 transition-colors leading-none"
+                                              className="rounded-md bg-[#3D1D1D] px-2 py-1 text-[10px] font-black leading-none text-[#FF4D4D] transition-colors hover:bg-[#4D2525]"
                                             >
                                               提醒
                                             </button>
@@ -6882,9 +7032,9 @@ export default function App() {
                                               e.stopPropagation();
                                               setSelectedOvertimeShip(selectedOvertimeShip === ship.id ? null : ship.id);
                                             }}
-                                            className="p-1 rounded hover:bg-white/10 transition-colors"
+                                            className="rounded-lg p-1 text-white/20 transition-colors hover:bg-white/5"
                                           >
-                                            <ChevronRight size={10} className={`text-white/20 transition-transform ${selectedOvertimeShip === ship.id ? 'rotate-90 text-red-400' : ''}`} />
+                                            <ChevronRight size={10} className={`transition-transform ${selectedOvertimeShip === ship.id ? 'rotate-90 text-white/55' : ''}`} />
                                           </button>
                                         </div>
                                       </div>
@@ -6897,48 +7047,47 @@ export default function App() {
                                             exit={{ height: 0, opacity: 0 }}
                                             className="overflow-hidden"
                                           >
-                                            <div className="mt-1 p-2 bg-black/40 rounded-lg border border-white/5 grid grid-cols-2 gap-2">
+                                              <div className="mt-2 grid grid-cols-2 gap-x-3 gap-y-2.5 rounded-xl border border-[#392a31] bg-[#221b20] p-2.5">
                                               <div className="space-y-1">
-                                                <div className="flex items-center justify-between">
-                                                  <span className="text-[7px] text-white/30 uppercase">MMSI</span>
-                                                  <span className="text-[8px] font-mono text-white/70">{ship.mmsi}</span>
-                                                </div>
-                                                <div className="flex items-center justify-between">
-                                                  <span className="text-[7px] text-white/30 uppercase">船型</span>
-                                                  <span className="text-[8px] text-white/70">{ship.type}</span>
-                                                </div>
-                                                <div className="flex items-center justify-between">
-                                                  <span className="text-[7px] text-white/30 uppercase">长/宽</span>
-                                                  <span className="text-[8px] text-white/70">{ship.details.length}m / {ship.details.width}m</span>
-                                                </div>
-                                                <div className="flex items-center justify-between">
-                                                  <span className="text-[7px] text-white/30 uppercase">超时时长</span>
-                                                  <span className="text-[8px] text-red-300 font-bold">{ship.overtimeDuration}</span>
+                                                <div className="text-[10px] uppercase tracking-[0.12em] text-white/30">MMSI</div>
+                                                <div className="text-xs font-mono text-white/75">{ship.mmsi}</div>
+                                              </div>
+                                              <div className="space-y-1">
+                                                <div className="text-[10px] uppercase tracking-[0.12em] text-white/30">船舶类型</div>
+                                                <div className="flex items-center gap-2 text-xs text-white/75">
+                                                  <span>{ship.type}</span>
+                                                  <span className="rounded bg-red-500/10 px-1 py-0.5 text-[10px] text-red-300">超时</span>
                                                 </div>
                                               </div>
                                               <div className="space-y-1">
-                                                <div className="flex items-center justify-between">
-                                                  <span className="text-[7px] text-white/30 uppercase">吃水</span>
-                                                  <span className="text-[8px] text-white/70">{ship.details.draft}m</span>
-                                                </div>
-                                                <div className="flex items-center justify-between">
-                                                  <span className="text-[7px] text-white/30 uppercase">货物</span>
-                                                  <span className="text-[8px] text-white/70">{ship.details.cargo}</span>
-                                                </div>
-                                                <div className="flex items-center justify-between">
-                                                  <span className="text-[7px] text-white/30 uppercase">代理</span>
-                                                  <span className="text-[8px] text-white/70">{ship.details.agent}</span>
+                                                <div className="text-[10px] uppercase tracking-[0.12em] text-white/30">代理</div>
+                                                <div className="text-xs text-white/75">{ship.details.agent}</div>
+                                              </div>
+                                              <div className="space-y-1">
+                                                <div className="text-[10px] uppercase tracking-[0.12em] text-white/30">超时时长</div>
+                                                <div className="text-xs font-mono text-red-300">{ship.overtimeDuration}</div>
+                                              </div>
+                                              <div className="space-y-1">
+                                                <div className="text-[10px] uppercase tracking-[0.12em] text-white/30">船长 / 船宽</div>
+                                                <div className="text-xs font-mono text-white/75">{ship.details.length}m × {ship.details.width}m</div>
+                                              </div>
+                                              <div className="space-y-1">
+                                                <div className="text-[10px] uppercase tracking-[0.12em] text-white/30">最大吃水</div>
+                                                <div className="text-xs font-mono text-white/75">{ship.details.draft}m</div>
+                                              </div>
+                                              <div className="col-span-2 space-y-1">
+                                                <div className="text-[10px] uppercase tracking-[0.12em] text-white/30">目的地</div>
+                                                <div className="flex items-center gap-2 text-xs">
+                                                  <MapPin size={10} className="text-white/30" />
+                                                  <span className="font-bold text-red-300">{ship.details.destination}</span>
                                                 </div>
                                               </div>
-                                              <div className="col-span-2 pt-1 border-t border-white/5 flex justify-between items-center">
-                                                <div className="flex items-center gap-1">
-                                                  <MapPin size={8} className="text-white/30" />
-                                                  <span className="text-[7px] text-white/30 uppercase">目的地:</span>
-                                                  <span className="text-[8px] text-red-300 font-bold">{ship.details.destination}</span>
+                                              <div className="col-span-2 space-y-1">
+                                                <div className="text-[10px] uppercase tracking-[0.12em] text-white/30">载货信息</div>
+                                                <div className="text-xs text-white/75">
+                                                  <span className="mr-2 rounded bg-red-500/10 px-1.5 py-0.5 text-[10px] text-red-300">实时监测</span>
+                                                  {ship.details.cargo}
                                                 </div>
-                                                <button className="px-2 py-0.5 bg-red-500/20 hover:bg-red-500/30 text-red-400 text-[6px] font-black uppercase tracking-widest rounded transition-colors">
-                                                  发送提醒
-                                                </button>
                                               </div>
                                             </div>
                                           </motion.div>
@@ -6950,7 +7099,7 @@ export default function App() {
                               </div>
                             )}
 
-                            <div className="pt-1 flex justify-center">
+                            <div className="flex justify-center pt-0.5 pb-0.5">
                               <button 
                                 onClick={(e) => {
                                   e.stopPropagation();
@@ -6958,9 +7107,9 @@ export default function App() {
                                   setSelectedExpiringShip(null);
                                   setSelectedOvertimeShip(null);
                                 }}
-                                className="flex items-center gap-1 text-[7px] font-black uppercase tracking-[0.2em] text-sky-500/60 hover:text-sky-400 transition-colors"
+                                className="flex items-center gap-1 text-[10px] font-black leading-none uppercase tracking-[0.2em] text-sky-500/60 transition-colors hover:text-sky-400"
                               >
-                                收起详情 <ChevronDown size={6} className="rotate-180" />
+                                收起详情 <ChevronDown size={10} className="rotate-180" />
                               </button>
                             </div>
                           </div>
