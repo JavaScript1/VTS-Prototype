@@ -949,7 +949,7 @@ const getRiskPlaybackSession = (item: typeof MOCK_RISK_STATS[number]) => {
   const dialogue = [
     {
       sender: item.name,
-      content: `${item.name} 报告，当前位置 ${item.snapshot.location}，当前风险为「${item.risk}」。`,
+      content: `${item.name} 报告，发生区域 ${item.snapshot.location}，当前风险为「${item.risk}」。`,
       time: item.time.split(' ')[1] ?? item.time,
     },
     {
@@ -977,7 +977,7 @@ const getRiskPlaybackSession = (item: typeof MOCK_RISK_STATS[number]) => {
       time: item.time,
       label: item.risk,
       type: 'risk',
-      desc: `${item.name} 于 ${item.time} 触发「${item.risk}」风险预警，当前位置 ${item.snapshot.location}。`,
+      desc: `${item.name} 于 ${item.time} 触发「${item.risk}」风险预警，发生区域 ${item.snapshot.location}。`,
       timeline: item.timeline.map((entry) => ({
         ...entry,
         desc: entry.event,
@@ -2637,7 +2637,7 @@ const AdminPanel = ({
                 )}
               </h2>
               <div className="text-xs text-white/30 font-mono">
-                Admin / {activeMenu}
+                后台管理 / {activeMenu}
               </div>
             </div>
           )}
@@ -3138,11 +3138,6 @@ const AdminPanel = ({
                 </div>
 
                 <div className="flex items-center gap-4">
-                  <div className="h-8 w-px bg-white/10" />
-                  <div className="flex items-center gap-2 px-3 py-1.5 bg-emerald-500/10 border border-emerald-500/20 rounded-lg">
-                    <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                    <span className="text-[10px] font-black text-emerald-400 uppercase tracking-widest">系统引擎在线</span>
-                  </div>
                 </div>
               </div>
 
@@ -3157,24 +3152,21 @@ const AdminPanel = ({
                       className="space-y-6"
                     >
                       {/* 统计概览 */}
-                      <div className="grid grid-cols-4 gap-4">
+                      <div className="grid grid-cols-2 gap-4">
                         {[
-                          { label: '预警规则总数', value: warningRules.length, sub: '策略覆盖全辖区', icon: Shield, color: 'sky' },
+                          { label: '预警规则总数', value: warningRules.length, sub: '已覆盖全部辖区', icon: Shield, color: 'sky' },
                           { label: '当前激活规则', value: warningRules.filter(r => r.enabled).length, sub: '运行正常', icon: Check, color: 'emerald' },
-                          { label: '今日触发次数', value: '142', sub: '较昨日 +12%', icon: AlertTriangle, color: 'amber' },
-                          { label: '待处理告警', value: '8', sub: '需人工干预', icon: Clock, color: 'red' },
                         ].map((stat, idx) => (
-                          <div key={idx} className="bg-white/5 border border-white/10 rounded-2xl p-4 group hover:border-white/20 transition-all">
-                            <div className="flex items-center justify-between mb-3">
-                              <div className={`w-10 h-10 rounded-xl bg-${stat.color}-500/10 flex items-center justify-center text-${stat.color}-400 group-hover:scale-110 transition-transform`}>
-                                <stat.icon size={20} />
+                          <div key={idx} className="bg-white/5 border border-white/10 rounded-2xl p-3.5 group hover:border-white/20 transition-all">
+                            <div className="flex items-center justify-between mb-2.5">
+                              <div className={`w-9 h-9 rounded-xl bg-${stat.color}-500/10 flex items-center justify-center text-${stat.color}-400 group-hover:scale-110 transition-transform`}>
+                                <stat.icon size={18} />
                               </div>
-                              <span className="text-[10px] font-black text-white/20 uppercase tracking-widest">STAT_{idx + 1}</span>
+                              <h4 className="text-xl font-black text-white">{stat.value}</h4>
                             </div>
-                            <h4 className="text-2xl font-black text-white mb-1">{stat.value}</h4>
-                            <div className="flex items-center justify-between">
-                              <span className="text-[10px] font-bold text-white/30 uppercase tracking-wider">{stat.label}</span>
-                              <span className="text-[10px] font-bold text-emerald-400/60">{stat.sub}</span>
+                            <div className="flex items-center justify-between border-t border-white/5 pt-2">
+                              <span className="text-[9px] font-bold text-white/30 uppercase tracking-wider">{stat.label}</span>
+                              <span className="text-[9px] font-bold text-emerald-400/60">{stat.sub}</span>
                             </div>
                           </div>
                         ))}
@@ -3185,7 +3177,7 @@ const AdminPanel = ({
                         <div className="px-6 py-4 border-b border-white/5 flex items-center justify-between bg-white/[0.02]">
                           <div className="flex items-center gap-3">
                             <div className="w-1 h-4 bg-sky-500 rounded-full" />
-                            <h3 className="text-xs font-black text-white/90 uppercase tracking-widest">预警触发规则配置 (Alert Engine Policy)</h3>
+                            <h3 className="text-xs font-black text-white/90 uppercase tracking-widest">预警触发规则配置</h3>
                           </div>
                           <div className="flex items-center gap-3">
                             <div className="relative">
@@ -3196,11 +3188,7 @@ const AdminPanel = ({
                                 className="bg-white/5 border border-white/10 rounded-lg pl-9 pr-4 py-1.5 text-[11px] text-white focus:outline-none focus:border-sky-500/50 w-48 transition-all"
                               />
                             </div>
-                            <button className="px-4 py-1.5 bg-sky-500 hover:bg-sky-400 text-white text-[11px] font-black uppercase tracking-widest rounded-lg transition-all flex items-center gap-2">
-                              <Plus size={14} /> 新增策略
-                            </button>
-                          </div>
-                        </div>
+                          </div>                        </div>
                         
                         <div className="overflow-x-auto">
                           <table className="w-full text-left border-collapse">
@@ -3252,7 +3240,41 @@ const AdminPanel = ({
                                       </span>
                                     </td>
                                     <td className="px-6 py-4">
-                                      <span className="text-[11px] text-white/40">{areaSummary}</span>
+                                      <div className="flex flex-wrap gap-1.5 max-w-[240px]">
+                                        {areaNames.length > 0 ? (
+                                          <>
+                                            {areaNames.slice(0, 2).map((name, idx) => (
+                                              <span key={idx} className="px-2 py-0.5 bg-white/5 border border-white/10 rounded-md text-[10px] text-white/60 whitespace-nowrap">
+                                                {name}
+                                              </span>
+                                            ))}
+                                            {areaNames.length > 2 && (
+                                              <div className="relative group/tooltip">
+                                                <span 
+                                                  className="px-2 py-0.5 bg-sky-500/5 border border-sky-500/10 rounded-md text-[10px] text-sky-400 font-bold whitespace-nowrap cursor-help"
+                                                >
+                                                  +{areaNames.length - 2}
+                                                </span>
+                                                {/* 悬浮气泡框 */}
+                                                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 p-2 bg-[#0a1420] border border-white/10 rounded-xl shadow-2xl opacity-0 invisible group-hover/tooltip:opacity-100 group-hover/tooltip:visible transition-all z-50 pointer-events-none">
+                                                  <div className="text-[10px] font-bold text-white/30 uppercase tracking-widest mb-1.5 border-b border-white/5 pb-1">全部生效区域</div>
+                                                  <div className="flex flex-wrap gap-1">
+                                                    {areaNames.map((name, idx) => (
+                                                      <span key={idx} className="px-1.5 py-0.5 bg-white/5 rounded text-[9px] text-white/70">
+                                                        {name}
+                                                      </span>
+                                                    ))}
+                                                  </div>
+                                                  {/* 小三角 */}
+                                                  <div className="absolute top-full left-1/2 -translate-x-1/2 border-8 border-transparent border-t-[#0a1420] z-10" />
+                                                </div>
+                                              </div>
+                                            )}
+                                          </>
+                                        ) : (
+                                          <span className="text-[11px] text-white/20">未指定</span>
+                                        )}
+                                      </div>
                                     </td>
                                     <td className="px-6 py-4">
                                       <button 
@@ -3270,9 +3292,6 @@ const AdminPanel = ({
                                           aria-label={`配置${rule.name}`}
                                         >
                                           <Settings size={14} />
-                                        </button>
-                                        <button className="p-2 hover:bg-red-500/20 rounded-lg text-white/40 hover:text-red-400 transition-all">
-                                          <History size={14} />
                                         </button>
                                       </div>
                                     </td>
@@ -3292,16 +3311,39 @@ const AdminPanel = ({
                       exit={{ opacity: 0, x: -20 }}
                       className="space-y-6"
                     >
-                      {/* 风险列表工具栏 */}
+                      {/* 共享筛选工具栏 */}
                       <div className="flex items-center justify-between bg-[#0a101a] border border-white/5 p-4 rounded-2xl shadow-xl">
                         <div className="flex items-center gap-4">
                           <div className="flex items-center gap-2">
-                            <span className="text-[10px] font-bold text-white/30 uppercase tracking-widest whitespace-nowrap">处理状态</span>
+                            <span className="text-[10px] font-bold text-white/30 uppercase tracking-widest whitespace-nowrap">发生时间</span>
                             <div className="flex bg-white/5 rounded-lg p-0.5">
-                              {['全部', '待核实', '处置中', '已关闭'].map(s => (
-                                <button key={s} className={`px-3 py-1 text-[10px] font-bold rounded-md transition-all ${s === '全部' ? 'bg-sky-500 text-white' : 'text-white/40 hover:text-white/60'}`}>{s}</button>
+                              {['今天', '昨天', '自定义'].map(s => (
+                                <button 
+                                  key={s} 
+                                  onClick={() => setStatsTimeRange(s)}
+                                  className={`px-3 py-1 text-[10px] font-bold rounded-md transition-all ${statsTimeRange === s ? 'bg-sky-500 text-white' : 'text-white/40 hover:text-white/60'}`}
+                                >
+                                  {s}
+                                </button>
                               ))}
                             </div>
+                            {statsTimeRange === '自定义' && (
+                              <div className="flex items-center gap-2 ml-2 animate-in fade-in slide-in-from-left-2">
+                                <input 
+                                  type="datetime-local" 
+                                  value={customStartTime.replace(' ', 'T')}
+                                  onChange={(e) => setCustomStartTime(e.target.value.replace('T', ' '))}
+                                  className="bg-white/5 border border-white/10 rounded-lg py-1 px-2 text-[10px] font-mono text-white/80 focus:outline-none focus:border-sky-500/50 transition-colors"
+                                />
+                                <span className="text-white/20 text-[10px]">至</span>
+                                <input 
+                                  type="datetime-local" 
+                                  value={customEndTime.replace(' ', 'T')}
+                                  onChange={(e) => setCustomEndTime(e.target.value.replace('T', ' '))}
+                                  className="bg-white/5 border border-white/10 rounded-lg py-1 px-2 text-[10px] font-mono text-white/80 focus:outline-none focus:border-sky-500/50 transition-colors"
+                                />
+                              </div>
+                            )}
                           </div>
                           <div className="h-4 w-px bg-white/10" />
                           <div className="flex items-center gap-2">
@@ -3337,9 +3379,8 @@ const AdminPanel = ({
                                 <th className="px-6 py-4 text-[10px] font-black text-white/30 uppercase tracking-[0.2em]">触发时间</th>
                                 <th className="px-6 py-4 text-[10px] font-black text-white/30 uppercase tracking-[0.2em]">目标船舶</th>
                                 <th className="px-6 py-4 text-[10px] font-black text-white/30 uppercase tracking-[0.2em]">风险类型</th>
-                                <th className="px-6 py-4 text-[10px] font-black text-white/30 uppercase tracking-[0.2em]">风险分值</th>
-                                <th className="px-6 py-4 text-[10px] font-black text-white/30 uppercase tracking-[0.2em]">当前位置</th>
-                                <th className="px-6 py-4 text-[10px] font-black text-white/30 uppercase tracking-[0.2em]">状态</th>
+                                <th className="px-6 py-4 text-[10px] font-black text-white/30 uppercase tracking-[0.2em]">风险等级</th>
+                                <th className="px-6 py-4 text-[10px] font-black text-white/30 uppercase tracking-[0.2em]">发生区域</th>                                <th className="px-6 py-4 text-[10px] font-black text-white/30 uppercase tracking-[0.2em]">状态</th>
                                 <th className="px-6 py-4 text-[10px] font-black text-white/30 uppercase tracking-[0.2em] text-right">操作</th>
                               </tr>
                             </thead>
@@ -3365,10 +3406,14 @@ const AdminPanel = ({
                                   </td>
                                   <td className="px-6 py-4">
                                     <div className="flex items-center gap-3">
-                                      <div className="flex-1 h-1 w-16 bg-white/5 rounded-full overflow-hidden">
-                                        <div className={`h-full ${ship.riskScore > 80 ? 'bg-red-500' : 'bg-orange-500'}`} style={{ width: `${ship.riskScore}%` }} />
-                                      </div>
-                                      <span className={`text-[11px] font-mono font-bold ${ship.riskScore > 80 ? 'text-red-400' : 'text-orange-400'}`}>{ship.riskScore}</span>
+                                      <span className={`px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-widest border ${
+                                        ship.riskScore > 85 ? 'bg-red-500/10 text-red-400 border-red-500/20' :
+                                        ship.riskScore > 65 ? 'bg-orange-500/10 text-orange-400 border-orange-500/20' :
+                                        ship.riskScore > 40 ? 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20' :
+                                        'bg-sky-500/10 text-sky-400 border-sky-500/20'
+                                      }`}>
+                                        {ship.riskScore > 85 ? '紧急' : ship.riskScore > 65 ? '警报' : ship.riskScore > 40 ? '警告' : '注意'}
+                                      </span>
                                     </div>
                                   </td>
                                   <td className="px-6 py-4">
@@ -3426,10 +3471,77 @@ const AdminPanel = ({
                             <span className="text-[10px] font-black text-white/60 uppercase tracking-widest">数据更新时间: 2026-03-20 14:30:15</span>
                           </div>
                         </div>
-                        <div className="flex items-center gap-2">
-                          {['实时', '今日', '本周', '本月'].map(t => (
-                            <button key={t} className="px-4 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest bg-white/5 border border-white/10 text-white/40 hover:text-white transition-all">{t}</button>
-                          ))}
+                      </div>
+
+                      {/* 实时风险简报 */}
+                      <div className="grid grid-cols-2 gap-4 mb-6">
+                        {[
+                          { label: '今日触发次数', value: '142', sub: '较昨日 +12%', icon: AlertTriangle, color: 'amber' },
+                          { label: '待处理告警', value: '8', sub: '需人工干预', icon: Clock, color: 'red' },
+                        ].map((stat, idx) => (
+                          <div key={idx} className="bg-white/5 border border-white/10 rounded-2xl p-3.5 group hover:border-white/20 transition-all shadow-xl">
+                            <div className="flex items-center justify-between mb-2.5">
+                              <div className={`w-9 h-9 rounded-xl bg-${stat.color}-500/10 flex items-center justify-center text-${stat.color}-400 group-hover:scale-110 transition-transform`}>
+                                <stat.icon size={18} />
+                              </div>
+                              <h4 className="text-xl font-black text-white">{stat.value}</h4>
+                            </div>
+                            <div className="flex items-center justify-between border-t border-white/5 pt-2">
+                              <span className="text-[9px] font-bold text-white/30 uppercase tracking-wider">{stat.label}</span>
+                              <span className="text-[9px] font-bold text-emerald-400/60">{stat.sub}</span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+
+                      {/* 共享筛选工具栏 */}
+                      <div className="flex items-center justify-between bg-[#0a101a] border border-white/5 p-4 rounded-2xl shadow-xl mb-6">
+                        <div className="flex items-center gap-4">
+                          <div className="flex items-center gap-2">
+                            <span className="text-[10px] font-bold text-white/30 uppercase tracking-widest whitespace-nowrap">发生时间</span>
+                            <div className="flex bg-white/5 rounded-lg p-0.5">
+                              {['今天', '昨天', '自定义'].map(s => (
+                                <button 
+                                  key={s} 
+                                  onClick={() => setStatsTimeRange(s)}
+                                  className={`px-3 py-1 text-[10px] font-bold rounded-md transition-all ${statsTimeRange === s ? 'bg-sky-500 text-white' : 'text-white/40 hover:text-white/60'}`}
+                                >
+                                  {s}
+                                </button>
+                              ))}
+                            </div>
+                            {statsTimeRange === '自定义' && (
+                              <div className="flex items-center gap-2 ml-2 animate-in fade-in slide-in-from-left-2">
+                                <input 
+                                  type="datetime-local" 
+                                  value={customStartTime.replace(' ', 'T')}
+                                  onChange={(e) => setCustomStartTime(e.target.value.replace('T', ' '))}
+                                  className="bg-white/5 border border-white/10 rounded-lg py-1 px-2 text-[10px] font-mono text-white/80 focus:outline-none focus:border-sky-500/50 transition-colors"
+                                />
+                                <span className="text-white/20 text-[10px]">至</span>
+                                <input 
+                                  type="datetime-local" 
+                                  value={customEndTime.replace(' ', 'T')}
+                                  onChange={(e) => setCustomEndTime(e.target.value.replace('T', ' '))}
+                                  className="bg-white/5 border border-white/10 rounded-lg py-1 px-2 text-[10px] font-mono text-white/80 focus:outline-none focus:border-sky-500/50 transition-colors"
+                                />
+                              </div>
+                            )}
+                          </div>
+                          <div className="h-4 w-px bg-white/10" />
+                          <div className="flex items-center gap-2">
+                            <span className="text-[10px] font-bold text-white/30 uppercase tracking-widest whitespace-nowrap">风险等级</span>
+                            <div className="flex bg-white/5 rounded-lg p-0.5">
+                              {['全部', '紧急', '警报', '警告', '注意'].map(l => (
+                                <button key={l} className={`px-3 py-1 text-[10px] font-bold rounded-md transition-all ${l === '全部' ? 'bg-white/10 text-white' : 'text-white/40 hover:text-white/60'}`}>{l}</button>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <button className="px-4 py-1.5 bg-sky-500/10 hover:bg-sky-500/20 border border-sky-500/20 text-sky-400 text-[11px] font-black uppercase tracking-widest rounded-lg transition-all flex items-center gap-2">
+                            <FileText size={14} /> 导出报表
+                          </button>
                         </div>
                       </div>
 
@@ -3442,7 +3554,7 @@ const AdminPanel = ({
                             <div className="relative z-10 flex items-center justify-between">
                               <div className="space-y-6">
                                 <div>
-                                  <p className="text-[10px] font-black text-white/30 uppercase tracking-[0.3em] mb-2">Overall Risk Index</p>
+                                  <p className="text-[10px] font-black text-white/30 uppercase tracking-[0.3em] mb-2">综合风险指数</p>
                                   <h2 className="text-5xl font-black text-white tracking-tighter">72.5</h2>
                                   <div className="flex items-center gap-2 mt-2">
                                     <div className="px-2 py-0.5 rounded bg-red-500/10 border border-red-500/20 text-red-400 text-[9px] font-black uppercase tracking-widest">风险等级: 中高</div>
@@ -3489,7 +3601,7 @@ const AdminPanel = ({
                             <div className="flex items-center justify-between mb-8">
                               <div className="flex items-center gap-3">
                                 <div className="w-1 h-4 bg-sky-500 rounded-full" />
-                                <h4 className="text-xs font-black text-white/90 uppercase tracking-widest">24小时预警趋势 (24h Alert Trend)</h4>
+                                <h4 className="text-xs font-black text-white/90 uppercase tracking-widest">24小时预警趋势</h4>
                               </div>
                               <div className="flex items-center gap-4">
                                 <div className="flex items-center gap-2">
@@ -3532,7 +3644,7 @@ const AdminPanel = ({
                         <div className="col-span-4 space-y-6">
                           {/* 风险类型分布 */}
                           <div className="bg-[#0a101a] border border-white/5 rounded-3xl p-6">
-                            <h4 className="text-xs font-black text-white/90 uppercase tracking-widest mb-6">风险维度分布 (Risk Types)</h4>
+                            <h4 className="text-xs font-black text-white/90 uppercase tracking-widest">风险维度分布</h4>
                             <div className="space-y-5">
                               {[
                                 { label: '超速航行', count: 42, color: 'sky' },
@@ -3560,7 +3672,7 @@ const AdminPanel = ({
 
                           {/* 高风险区域排行 */}
                           <div className="bg-[#0a101a] border border-white/5 rounded-3xl p-6">
-                            <h4 className="text-xs font-black text-white/90 uppercase tracking-widest mb-6">高频风险区域 (Hot Areas)</h4>
+                            <h4 className="text-xs font-black text-white/90 uppercase tracking-widest">高频风险区域</h4>
                             <div className="space-y-4">
                               {[
                                 { name: '吴淞口警戒区', val: 124, trend: 'up' },
@@ -3591,7 +3703,7 @@ const AdminPanel = ({
                         <div className="px-6 py-4 border-b border-white/5 flex items-center justify-between">
                           <div className="flex items-center gap-3">
                             <div className="w-1 h-4 bg-red-500 rounded-full" />
-                            <h3 className="text-xs font-black text-white/90 uppercase tracking-widest">高风险关注名单 (Vessel Watchlist)</h3>
+                            <h3 className="text-xs font-black text-white/90 uppercase tracking-widest">高风险关注名单</h3>
                           </div>
                           <button className="text-[10px] font-black text-sky-400 uppercase tracking-widest hover:text-sky-300 transition-colors">查看全部</button>
                         </div>
@@ -3602,8 +3714,7 @@ const AdminPanel = ({
                                 <th className="px-6 py-4 text-[10px] font-black text-white/30 uppercase tracking-widest">船舶名称</th>
                                 <th className="px-6 py-4 text-[10px] font-black text-white/30 uppercase tracking-widest">MMSI</th>
                                 <th className="px-6 py-4 text-[10px] font-black text-white/30 uppercase tracking-widest">风险类型</th>
-                                <th className="px-6 py-4 text-[10px] font-black text-white/30 uppercase tracking-widest">当前位置</th>
-                                <th className="px-6 py-4 text-[10px] font-black text-white/30 uppercase tracking-widest">风险分值</th>
+                                <th className="px-6 py-4 text-[10px] font-black text-white/30 uppercase tracking-widest">发生区域</th>                                <th className="px-6 py-4 text-[10px] font-black text-white/30 uppercase tracking-widest">风险等级</th>
                                 <th className="px-6 py-4 text-[10px] font-black text-white/30 uppercase tracking-widest text-right">快速操作</th>
                               </tr>
                             </thead>
@@ -3627,10 +3738,14 @@ const AdminPanel = ({
                                   </td>
                                   <td className="px-6 py-4">
                                     <div className="flex items-center gap-3">
-                                      <div className="flex-1 h-1.5 w-16 bg-white/5 rounded-full overflow-hidden">
-                                        <div className="h-full bg-red-500" style={{ width: `${ship.riskScore}%` }} />
-                                      </div>
-                                      <span className="text-[11px] font-mono font-bold text-red-400">{ship.riskScore}</span>
+                                      <span className={`px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-widest border ${
+                                        ship.riskScore > 85 ? 'bg-red-500/10 text-red-400 border-red-500/20' :
+                                        ship.riskScore > 65 ? 'bg-orange-500/10 text-orange-400 border-orange-500/20' :
+                                        ship.riskScore > 40 ? 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20' :
+                                        'bg-sky-500/10 text-sky-400 border-sky-500/20'
+                                      }`}>
+                                        {ship.riskScore > 85 ? '紧急' : ship.riskScore > 65 ? '警报' : ship.riskScore > 40 ? '警告' : '注意'}
+                                      </span>
                                     </div>
                                   </td>
                                   <td className="px-6 py-4 text-right">
@@ -4830,8 +4945,7 @@ const AdminPanel = ({
                       </div>
                       <div>
                         <h3 className="text-sm font-black text-white uppercase tracking-wider">历史回放定位</h3>
-                        <p className="text-[10px] text-white/40 font-bold uppercase tracking-widest">Playback Mode</p>
-                      </div>
+                        <p className="text-[10px] text-white/40 font-bold uppercase tracking-widest">历史数据回溯模式</p>                      </div>
                     </div>
                     <button 
                       onClick={() => setPlaybackData(null)}

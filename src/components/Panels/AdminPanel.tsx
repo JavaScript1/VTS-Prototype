@@ -667,7 +667,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
                     <div className="flex items-center justify-between mb-10">
                       <div>
                         <h4 className="text-lg font-black text-white uppercase tracking-tight">流量与预警趋势分析</h4>
-                        <p className="text-[10px] text-white/30 font-bold uppercase tracking-widest mt-1">Traffic & Alert Trend Analysis (24h)</p>
+                        <p className="text-[10px] text-white/30 font-bold uppercase tracking-widest mt-1">24小时全辖区流量及预警态势</p>
                       </div>
                       <div className="flex items-center gap-2 bg-white/5 p-1 rounded-xl">
                         {['24H', '7D', '30D'].map(t => (
@@ -987,8 +987,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
                       </div>
                       <div>
                         <h3 className="text-sm font-black text-white uppercase tracking-wider">历史回放定位</h3>
-                        <p className="text-[10px] text-white/40 font-bold uppercase tracking-widest">Playback Mode</p>
-                      </div>
+                        <p className="text-[10px] text-white/40 font-bold uppercase tracking-widest">历史数据回溯模式</p>                      </div>
                     </div>
                     <button 
                       onClick={() => setPlaybackData(null)}
