@@ -11,7 +11,7 @@ const safeSetLocalStorage = (key: string, value: string) => {
   try {
     localStorage.setItem(key, value);
   } catch {
-    // Ignore storage write failures so map interactions do not break the UI.
+    // 忽略存储写入失败，避免地图交互因此影响界面可用性。
   }
 };
 

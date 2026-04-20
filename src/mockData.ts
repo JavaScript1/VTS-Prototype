@@ -1,105 +1,16 @@
-export type Coordinates = [number, number];
+/**
+ * @license
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
-export interface MockArea {
-  id: string;
-  name: string;
-  time: string;
-  type: string;
-  status: string;
-  fields: Record<string, string>;
-  rules?: string;
-}
-
-export type MockAreaMap = Record<string, MockArea[]>;
-
-export interface RiskTimelineEvent {
-  time: string;
-  event: string;
-  type: 'info' | 'warning' | 'risk';
-}
-
-export interface RiskSnapshot {
-  image: string;
-  location: string;
-  actualSpeed: number;
-  speedLimit: number;
-}
-
-export interface MockRiskStat {
-  id: string;
-  name: string;
-  mmsi: string;
-  type: string;
-  length: number;
-  width: number;
-  cargo: string;
-  draft: number;
-  risk: string;
-  speed: number;
-  heading: number;
-  wind: string;
-  wave: string;
-  visibility: string;
-  time: string;
-  coords: Coordinates;
-  snapshot: RiskSnapshot;
-  timeline: RiskTimelineEvent[];
-  callsign?: string;
-  destination?: string;
-  riskScore?: number;
-}
-
-export interface MockIntentStat {
-  id: string;
-  name: string;
-  mmsi: string;
-  type: string;
-  intent: string;
-  confidence: number;
-  time: string;
-  status: string;
-  cargo: string;
-}
-
-export interface VesselDialogueEntry {
-  sender: string;
-  content: string;
-  time: string;
-}
-
-export interface VesselDynamicEvent {
-  time: string;
-  type: string;
-  label: string;
-  desc: string;
-  status: string;
-  coords?: Coordinates;
-  dialogue?: VesselDialogueEntry[];
-}
-
-export interface MockVesselDynamic {
-  id: string;
-  name: string;
-  mmsi: string;
-  type: string;
-  origin: string;
-  status: string;
-  startTime: string;
-  endTime: string;
-  destination: string;
-  events: VesselDynamicEvent[];
-}
-
-export interface PlaybackSessionLike {
-  vessel: {
-    name: string;
-  };
-  event: {
-    coords: Coordinates;
-    time: string;
-    label: string;
-  };
-}
+import {
+  type Coordinates,
+  type MockArea,
+  type MockAreaMap,
+  type MockRiskStat,
+  type MockIntentStat,
+  type MockVesselDynamic
+} from './types';
 
 export const AREA_CATEGORIES = ['值班区域', '作业与停泊设施', '航道航行设施', '水域管控'] as const;
 

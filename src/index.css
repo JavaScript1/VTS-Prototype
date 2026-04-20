@@ -1,6 +1,12 @@
 @import "tailwindcss";
 @import "leaflet/dist/leaflet.css";
 
+@layer base {
+  button, [role="button"], .cursor-pointer {
+    cursor: pointer !important;
+  }
+}
+
 .leaflet-container {
   width: 100%;
   height: 100%;

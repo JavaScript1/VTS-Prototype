@@ -5,7 +5,7 @@ import {defineConfig} from 'vite';
 
 export default defineConfig(() => {
   return {
-    // Use relative asset paths so the build can be deployed under arbitrary subdirectories.
+    // 使用相对资源路径，便于构建产物部署到任意子目录。
     base: './',
     plugins: [react(), tailwindcss()],
     resolve: {
@@ -14,7 +14,7 @@ export default defineConfig(() => {
       },
     },
     server: {
-      // AI Studio used this flag to stabilize local editing; it is not required for Vercel.
+      // AI Studio 曾用这个开关稳定本地编辑，在 Vercel 环境中不是必需项。
       hmr: process.env.DISABLE_HMR !== 'true',
     },
   };

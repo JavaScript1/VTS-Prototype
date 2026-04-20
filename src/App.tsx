@@ -65,19 +65,85 @@ import {
 import { MapContainer, TileLayer, Marker, CircleMarker, useMapEvents, Polygon, Polyline, Rectangle, useMap, Popup } from 'react-leaflet';
 import L from 'leaflet';
 import {
+  type SidebarTab,
+  type VHFMessage,
+  type Alert,
+  type ShipPosition,
+  type ShipSearchResult,
+  type VhfShipInfo,
+  type VhfSessionSummary,
+  type HomeShipTrackPoint,
+  type HomeShipBusinessInfo,
+  type HomeShipCargoInfo,
+  type HomeShipDynamicEvent,
+  type HomeShipDetail,
+  type IntentStep,
+  type IntentTimelineEvent,
+  type IntentRisk,
+  type IntentSituation,
+  type IntentRecommendation,
+  type IntentItem,
+  type MockAreaMap,
+} from './types';
+import {
   AREA_CATEGORIES,
   AREA_TYPE_MAPPING,
   MOCK_AREAS,
   MOCK_INTENT_STATS,
   MOCK_RISK_STATS,
   MOCK_VESSEL_DYNAMICS,
-  type MockAreaMap,
 } from './mockData';
 import {
   groupVhfMessages,
   type ConversationCard,
   type VhfMessage as AggregatedVhfMessage,
 } from './utils/vhfConversation';
+
+const MarqueeText = ({ text, isHovered, className }: { text: string; isHovered: boolean; className?: string }) => {
+  const containerRef = React.useRef<HTMLDivElement>(null);
+  const textRef = React.useRef<HTMLSpanElement>(null);
+  const [shouldScroll, setShouldScroll] = useState(false);
+  const [scrollDistance, setScrollDistance] = useState(0);
+
+  useEffect(() => {
+    if (isHovered && containerRef.current && textRef.current) {
+      const containerWidth = containerRef.current.offsetWidth;
+      const textWidth = textRef.current.offsetWidth;
+      if (textWidth > containerWidth) {
+        setShouldScroll(true);
+        setScrollDistance(textWidth - containerWidth);
+      }
+    } else {
+      setShouldScroll(false);
+    }
+  }, [isHovered, text]);
+
+  // 使用更慢的固定速度 (像素/秒)
+  const speed = 20; 
+  const duration = shouldScroll ? scrollDistance / speed : 0;
+
+  return (
+    <div ref={containerRef} className="min-w-0 flex-1 overflow-hidden relative flex items-center">
+      <motion.div
+        animate={shouldScroll ? {
+          x: -scrollDistance,
+        } : { x: 0 }}
+        transition={shouldScroll ? {
+          duration: Math.max(duration, 1),
+          repeat: Infinity,
+          repeatType: "loop",
+          ease: "linear",
+          repeatDelay: 1.5
+        } : { duration: 0.3 }}
+        className="whitespace-nowrap flex items-center"
+      >
+        <span ref={textRef} className={className}>
+          {text}
+        </span>
+      </motion.div>
+    </div>
+  );
+};
 
 const VTS_CHART_TILE_URL = 'https://test.shipdt.com/vts/chart/{z}/{x}/{y}.png';
 const VTS_CHART_TILE_ATTRIBUTION = '&copy; ShipDT';
@@ -257,7 +323,7 @@ const formatRemainingDuration = (expiryTime: string, currentTime: Date): string 
   if (!expiryDate) return '剩余时间待确认';
 
   const diffMs = expiryDate.getTime() - currentTime.getTime();
-  if (diffMs <= 0) return '已到期';
+  if (diffMs <= 0) return '剩余时间 00:00';
 
   const totalMinutes = Math.floor(diffMs / (1000 * 60));
   const days = Math.floor(totalMinutes / (24 * 60));
@@ -265,14 +331,14 @@ const formatRemainingDuration = (expiryTime: string, currentTime: Date): string 
   const minutes = totalMinutes % 60;
 
   if (days > 0) {
-    return `剩余 ${days}天${hours}小时`;
+    return `剩余时间 ${days}天${hours}小时`;
   }
 
   if (hours > 0) {
-    return `剩余 ${hours}小时${minutes}分钟`;
+    return `剩余时间 ${hours}小时${minutes}分钟`;
   }
 
-  return `剩余 ${minutes}分钟`;
+  return `剩余时间 ${minutes}分钟`;
 };
 
 const formatAnchorageRemainingDuration = (expiryTime: string, currentTime: Date) =>
@@ -286,37 +352,56 @@ const getAnchorageExpiryMeta = (expiryTime: string) => {
   };
 };
 
-const parseAnchorageOvertimeMinutes = (value: string) => {
-  const hoursMatch = value.match(/(\d+)h/i);
-  const minutesMatch = value.match(/(\d+)m/i);
-  const hours = hoursMatch ? Number.parseInt(hoursMatch[1], 10) : 0;
-  const minutes = minutesMatch ? Number.parseInt(minutesMatch[1], 10) : 0;
-  return (hours * 60) + minutes;
-};
+const ANCHORAGE_DURATION_BUCKETS = [
+  { label: '小于1天', minDays: 0, maxDays: 1 },
+  { label: '1-3天', minDays: 1, maxDays: 3 },
+  { label: '3-5天', minDays: 3, maxDays: 5 },
+  { label: '5-10天', minDays: 5, maxDays: 10 },
+  { label: '大于10天', minDays: 10, maxDays: Number.POSITIVE_INFINITY },
+] as const;
 
-const getAnchorageOvertimeBuckets = (
-  ships: Array<{ overtimeDuration: string }> | undefined,
-) => {
-  const buckets = {
-    over24h: 0,
-    between12And24h: 0,
-    under12h: 0,
-  };
+const getAnchorageDurationStats = (anchorageId: string, occupied: number) => {
+  const safeOccupied = Math.max(occupied, 0);
+  if (safeOccupied === 0) {
+    return ANCHORAGE_DURATION_BUCKETS.map((bucket) => ({
+      type: bucket.label,
+      count: 0,
+    }));
+  }
 
-  ships?.forEach((ship) => {
-    const totalMinutes = parseAnchorageOvertimeMinutes(ship.overtimeDuration);
-    if (totalMinutes >= 24 * 60) {
-      buckets.over24h += 1;
-      return;
+  const weights = ANCHORAGE_DURATION_BUCKETS.map((bucket, index) => ({
+    type: bucket.label,
+    weight: (hashString(`${anchorageId}-${bucket.label}-${index}`) % 100) + 1,
+  }));
+  const totalWeight = weights.reduce((sum, item) => sum + item.weight, 0);
+
+  const distributed = weights.map((item) => ({
+    type: item.type,
+    rawCount: (item.weight / totalWeight) * safeOccupied,
+  }));
+
+  const baseStats = distributed.map((item) => ({
+    type: item.type,
+    count: Math.floor(item.rawCount),
+  }));
+
+  let remaining = safeOccupied - baseStats.reduce((sum, item) => sum + item.count, 0);
+
+  if (remaining > 0) {
+    const remainders = distributed
+      .map((item, index) => ({
+        index,
+        remainder: item.rawCount - Math.floor(item.rawCount),
+      }))
+      .sort((left, right) => right.remainder - left.remainder);
+
+    for (let i = 0; i < remainders.length && remaining > 0; i += 1) {
+      baseStats[remainders[i].index].count += 1;
+      remaining -= 1;
     }
-    if (totalMinutes >= 12 * 60) {
-      buckets.between12And24h += 1;
-      return;
-    }
-    buckets.under12h += 1;
-  });
+  }
 
-  return buckets;
+  return baseStats;
 };
 
 const hashWarningAreaSeed = (value: string) =>
@@ -632,70 +717,6 @@ const createHomeMapBadgeIcon = ({ label, kind }: Pick<HomeMapOverlayBadge, 'labe
     iconAnchor: [18, 36],
   });
 
-// --- 类型定义 ---
-
-type SidebarTab = 'ship' | 'vhf' | 'intent' | 'warning' | 'anchorage';
-
-interface VHFMessage {
-  id: string;
-  sessionId: string;
-  sessionIntent?: string;
-  sessionType?: 'intent' | 'alert';
-  sender: string;
-  content: string;
-  time: string;
-  date: string;
-  duration: string;
-  isVTS: boolean;
-}
-
-interface Alert {
-  id: string;
-  ship: string;
-  shipType: string;
-  mmsi: string;
-  callsign?: string;
-  destination: string;
-  cargo: string;
-  riskScore: number;
-  length: string;
-  width: string;
-  draft: string;
-  speed: string;
-  type: string;
-  summary: string;
-  time: string;
-  coords: [number, number];
-  level: 'emergency' | 'alarm' | 'warning' | 'caution';
-  timeline: {
-    time: string;
-    event: string;
-    type: 'info' | 'warning' | 'risk';
-  }[];
-}
-
-interface ShipPosition {
-  id: string;
-  lat: number;
-  lng: number;
-  heading: number;
-  name: string;
-  mmsi: string;
-  type: string;
-  speed: number;
-  destination: string;
-  status: 'normal' | 'warning' | 'caution';
-}
-
-interface ShipSearchResult {
-  id: string;
-  name: string;
-  mmsi: string;
-  type: string;
-  destination: string;
-  status: ShipPosition['status'];
-}
-
 // --- 模拟数据 ---
 
 const MOCK_VHF_MESSAGES: VHFMessage[] = [
@@ -727,13 +748,13 @@ const MOCK_ANCHORAGES = [
       { type: '油船', count: 4 }
     ],
     expiringShips: [
-      { id: 'es1', name: '远洋 123', englishName: 'Ocean Pioneer 123', mmsi: '413000001', type: '货轮', expiryTime: '2026-04-15 18:00', details: { length: 190, width: 32, draft: 11.2, cargo: '铁矿石', destination: '上海', agent: '中远海运' } },
-      { id: 'es2', name: '海丰 77', englishName: 'Hai Feng 77', mmsi: '413000002', type: '集装箱船', expiryTime: '2026-04-15 21:30', details: { length: 145, width: 24, draft: 8.5, cargo: '日用品', destination: '宁波', agent: '海丰国际' } },
-      { id: 'es3', name: '振华 15', englishName: 'Zhen Hua 15', mmsi: '413000003', type: '工程船', expiryTime: '2026-04-16 09:00', details: { length: 220, width: 45, draft: 9.8, cargo: '重型设备', destination: '舟山', agent: '振华重工' } }
+      { id: 'es1', name: '远洋 123', englishName: 'Ocean Pioneer 123', mmsi: '413000001', type: '货轮', expiryTime: '2026-04-15 18:00', details: { length: 190, width: 32, draft: 11.2, cargo: '铁矿石', destination: '上海', agent: '中远海运', callSign: 'BARD1', flag: '中国', anchorTime: '2026-04-13 10:00', lastPort: '舟山', nextPort: '上海', anchorPurpose: '待泊' } },
+      { id: 'es2', name: '海丰 77', englishName: 'Hai Feng 77', mmsi: '413000002', type: '集装箱船', expiryTime: '2026-04-15 21:30', details: { length: 145, width: 24, draft: 8.5, cargo: '日用品', destination: '宁波', agent: '海丰国际', callSign: 'VRGT5', flag: '中国香港', anchorTime: '2026-04-13 14:00', lastPort: '上海', nextPort: '宁波', anchorPurpose: '装卸' } },
+      { id: 'es3', name: '振华 15', englishName: 'Zhen Hua 15', mmsi: '413000003', type: '工程船', expiryTime: '2026-04-16 09:00', details: { length: 220, width: 45, draft: 9.8, cargo: '重型设备', destination: '舟山', agent: '振华重工', callSign: 'BHKS3', flag: '中国', anchorTime: '2026-04-14 08:30', lastPort: '长兴', nextPort: '舟山', anchorPurpose: '待命' } }
     ],
     overtimeShips: [
-      { id: 'ot1', name: '华东 18', englishName: 'Hua Dong 18', mmsi: '413000101', type: '散货船', overtimeDuration: '超时 2h15m', details: { length: 170, width: 29, draft: 9.1, cargo: '钢材', destination: '张家港', agent: '华东航运' } },
-      { id: 'ot2', name: '中海 203', englishName: 'COSCO 203', mmsi: '413000102', type: '油船', overtimeDuration: '超时 1h05m', details: { length: 210, width: 35, draft: 12.4, cargo: '成品油', destination: '洋山', agent: '中海油' } }
+      { id: 'ot1', name: '华东 18', englishName: 'Hua Dong 18', mmsi: '413000101', type: '散货船', expiryTime: '2026-04-14 13:45', overtimeDuration: '超时 2h15m', details: { length: 170, width: 29, draft: 9.1, cargo: '钢材', destination: '张家港', agent: '华东航运', callSign: 'BZXC1', flag: '中国', anchorTime: '2026-04-12 16:00', lastPort: '泰州', nextPort: '张家港', anchorPurpose: '待港' } },
+      { id: 'ot2', name: '中海 203', englishName: 'COSCO 203', mmsi: '413000102', type: '油船', expiryTime: '2026-04-14 14:55', overtimeDuration: '超时 1h05m', details: { length: 210, width: 35, draft: 12.4, cargo: '成品油', destination: '洋山', agent: '中海油', callSign: 'BUIO2', flag: '中国', anchorTime: '2026-04-12 12:00', lastPort: '南京', nextPort: '洋山', anchorPurpose: '受油' } }
     ]
   },
   { 
@@ -750,11 +771,11 @@ const MOCK_ANCHORAGES = [
       { type: '工程船', count: 3 }
     ],
     expiringShips: [
-      { id: 'es4', name: '中海 99', englishName: 'COSCO 99', mmsi: '413000004', type: '油轮', expiryTime: '2026-04-15 17:15', details: { length: 250, width: 48, draft: 14.5, cargo: '原油', destination: '大连', agent: '中海油' } },
-      { id: 'es5', name: '顺风 6', englishName: 'Shun Feng 6', mmsi: '413000005', type: '散货船', expiryTime: '2026-04-16 10:45', details: { length: 110, width: 18, draft: 6.2, cargo: '煤炭', destination: '天津', agent: '顺风航运' } }
+      { id: 'es4', name: '中海 99', englishName: 'COSCO 99', mmsi: '413000004', type: '油轮', expiryTime: '2026-04-15 17:15', details: { length: 250, width: 48, draft: 14.5, cargo: '原油', destination: '大连', agent: '中海油', callSign: 'BUIO9', flag: '中国', anchorTime: '2026-04-13 11:15', lastPort: '宁波', nextPort: '大连', anchorPurpose: '过境' } },
+      { id: 'es5', name: '顺风 6', englishName: 'Shun Feng 6', mmsi: '413000005', type: '散货船', expiryTime: '2026-04-16 10:45', details: { length: 110, width: 18, draft: 6.2, cargo: '煤炭', destination: '天津', agent: '顺风航运', callSign: 'BSFG6', flag: '中国', anchorTime: '2026-04-14 06:45', lastPort: '常熟', nextPort: '天津', anchorPurpose: '避风' } }
     ],
     overtimeShips: [
-      { id: 'ot3', name: '盛港 12', englishName: 'Sheng Gang 12', mmsi: '413000103', type: '工程船', overtimeDuration: '超时 3h40m', details: { length: 160, width: 30, draft: 7.2, cargo: '设备', destination: '南通', agent: '盛港海工' } }
+      { id: 'ot3', name: '盛港 12', englishName: 'Sheng Gang 12', mmsi: '413000103', type: '工程船', expiryTime: '2026-04-14 12:20', overtimeDuration: '超时 3h40m', details: { length: 160, width: 30, draft: 7.2, cargo: '设备', destination: '南通', agent: '盛港海工', callSign: 'BSGH2', flag: '中国', anchorTime: '2026-04-12 14:00', lastPort: '上海', nextPort: '南通', anchorPurpose: '作业' } }
     ]
   },
   { 
@@ -771,7 +792,7 @@ const MOCK_ANCHORAGES = [
       { type: '其他', count: 3 }
     ],
     expiringShips: [
-      { id: 'es6', name: '东方 55', englishName: 'Dong Fang 55', mmsi: '413000055', type: '客船', expiryTime: '2026-04-16 18:00', details: { length: 120, width: 20, draft: 5.5, cargo: '乘客', destination: '青岛', agent: '东方海外' } }
+      { id: 'es6', name: '东方 55', englishName: 'Dong Fang 55', mmsi: '413000055', type: '客船', expiryTime: '2026-04-16 18:00', details: { length: 120, width: 20, draft: 5.5, cargo: '乘客', destination: '青岛', agent: '东方海外', callSign: 'BDOO5', flag: '中国', anchorTime: '2026-04-14 18:00', lastPort: '上海', nextPort: '青岛', anchorPurpose: '游览' } }
     ],
     overtimeShips: []
   },
@@ -789,12 +810,12 @@ const MOCK_ANCHORAGES = [
       { type: '集装箱船', count: 6 }
     ],
     expiringShips: [
-      { id: 'es7', name: '远洋 99', englishName: 'Ocean Pioneer 99', mmsi: '413000099', type: '散货船', expiryTime: '2026-04-16 20:30', details: { length: 185, width: 32, draft: 10.5, cargo: '煤炭', destination: '广州', agent: '中远海运' } }
+      { id: 'es7', name: '远洋 99', englishName: 'Ocean Pioneer 99', mmsi: '413000099', type: '散货船', expiryTime: '2026-04-16 20:30', details: { length: 185, width: 32, draft: 10.5, cargo: '煤炭', destination: '广州', agent: '中远海运', callSign: 'BYYP9', flag: '中国', anchorTime: '2026-04-14 20:30', lastPort: '温州', nextPort: '广州', anchorPurpose: '避风' } }
     ],
     overtimeShips: [
-      { id: 'ot4', name: '远海 72', englishName: 'Yuan Hai 72', mmsi: '413000104', type: '散货船', overtimeDuration: '超时 4h20m', details: { length: 198, width: 33, draft: 10.8, cargo: '矿砂', destination: '北仑', agent: '远海航运' } },
-      { id: 'ot5', name: '海景 88', englishName: 'Hai Jing 88', mmsi: '413000105', type: '油船', overtimeDuration: '超时 2h05m', details: { length: 230, width: 38, draft: 12.9, cargo: '原油', destination: '南沙', agent: '海景能源' } },
-      { id: 'ot6', name: '华舰 36', englishName: 'Hua Jian 36', mmsi: '413000106', type: '工程船', overtimeDuration: '超时 5h10m', details: { length: 175, width: 28, draft: 8.1, cargo: '施工设备', destination: '舟山', agent: '华舰工程' } }
+      { id: 'ot4', name: '远海 72', englishName: 'Yuan Hai 72', mmsi: '413000104', type: '散货船', expiryTime: '2026-04-14 11:40', overtimeDuration: '超时 4h20m', details: { length: 198, width: 33, draft: 10.8, cargo: '矿砂', destination: '北仑', agent: '远海航运', callSign: 'BYHH7', flag: '中国', anchorTime: '2026-04-12 10:00', lastPort: '连云港', nextPort: '北仑', anchorPurpose: '待港' } },
+      { id: 'ot5', name: '海景 88', englishName: 'Hai Jing 88', mmsi: '413000105', type: '油船', expiryTime: '2026-04-14 13:55', overtimeDuration: '超时 2h05m', details: { length: 230, width: 38, draft: 12.9, cargo: '原油', destination: '南沙', agent: '海景能源', callSign: 'BHJJ8', flag: '中国', anchorTime: '2026-04-12 14:00', lastPort: '南京', nextPort: '南沙', anchorPurpose: '受油' } },
+      { id: 'ot6', name: '华舰 36', englishName: 'Hua Jian 36', mmsi: '413000106', type: '工程船', expiryTime: '2026-04-14 10:50', overtimeDuration: '超时 5h10m', details: { length: 175, width: 28, draft: 8.1, cargo: '施工设备', destination: '舟山', agent: '华舰工程', callSign: 'BHJJ3', flag: '中国', anchorTime: '2026-04-12 08:00', lastPort: '上海', nextPort: '舟山', anchorPurpose: '作业' } }
     ]
   },
 ];
@@ -1132,37 +1153,8 @@ const normalizeLegacyVhfMessage = (message: VHFMessage): AggregatedVhfMessage =>
 });
 
 const getConversationCardTimeLabel = (card: ConversationCard) => {
-  const start = card.messages[0]?.time?.split(' ').pop() || card.time || '';
-  const end = card.messages[card.messages.length - 1]?.time?.split(' ').pop() || start;
-
   return start && end && start !== end ? `${start} - ${end}` : start || end;
 };
-
-interface VhfShipInfo {
-  name: string;
-  shipType?: string;
-  mmsi?: string;
-  destination?: string;
-  speed?: string;
-  length?: string;
-  width?: string;
-  draft?: string;
-  cargoType?: string;
-}
-
-interface VhfSessionSummary {
-  sessionId: string;
-  shipName: string;
-  operatorName: string;
-  intent: string;
-  sessionType: 'intent' | 'alert';
-  messages: VHFMessage[];
-  cards: ConversationCard[];
-  shipInfo?: VhfShipInfo;
-  startedAt: number;
-  latestAt: number;
-  latestTime: string;
-}
 
 const normalizeVhfShipName = (value: string) => value.replace(/[\s_-]+/g, '').toLowerCase();
 
@@ -1180,77 +1172,6 @@ const mergeVhfShipInfo = (
   draft: next.draft ?? current?.draft,
   cargoType: next.cargoType ?? current?.cargoType,
 });
-
-interface HomeShipTrackPoint {
-  id: string;
-  label: string;
-  time: string;
-  coords: [number, number];
-  note: string;
-  kind: 'history' | 'current';
-}
-
-interface HomeShipBusinessInfo {
-  plannedBerth: string;
-  movement: string;
-  plannedTime: string;
-  previousPort: string;
-  nextPort: string;
-  applicant: string;
-  operator: string;
-  teu: string;
-  dischargeVolume: string;
-  eta: string;
-  departureTime: string;
-}
-
-interface HomeShipCargoInfo {
-  cargoName: string;
-  cargoAmount: string;
-  localHazardAmount: string;
-  actualHazardAmount: string;
-}
-
-interface HomeShipDynamicEvent {
-  id: string;
-  time: string;
-  text: string;
-  trackPointId: string | null;
-}
-
-interface HomeShipDetail {
-  id: string;
-  name: string;
-  displayName: string;
-  mmsi: string;
-  type: string;
-  status: ShipPosition['status'];
-  destination: string;
-  speed: number;
-  heading: number;
-  lat: number;
-  lng: number;
-  length: string;
-  width: string;
-  draft: string;
-  cargo: string;
-  callsign: string;
-  imo: string;
-  grossTonnage: string;
-  statusBanner: string;
-  route: {
-    past: string;
-    current: string;
-    destination: string;
-  };
-  intentSummary: string;
-  vhfSummary: string;
-  riskSummary: string;
-  businessInfo: HomeShipBusinessInfo;
-  cargoInfo: HomeShipCargoInfo;
-  dynamicEvents: HomeShipDynamicEvent[];
-  track: HomeShipTrackPoint[];
-}
 
 const createHomeShipTrack = (
   ship: ShipPosition,
@@ -1331,68 +1252,6 @@ const createHomeShipDynamicEvents = ({
 
   return [...fromTrack, ...fromTimeline].slice(0, 4);
 };
-
-interface IntentStep {
-  label: string;
-  status: 'completed' | 'active' | 'pending';
-  action: string;
-}
-
-interface IntentTimelineEvent {
-  time: string;
-  tag: string;
-  content: string;
-  status: 'active' | 'completed' | 'initial';
-}
-
-interface IntentRisk {
-  level: '高' | '中' | '低';
-  text: string;
-  action: string;
-  counterparty?: string;
-  location?: string;
-  timeToEncounter?: string;
-}
-
-interface IntentSituation {
-  sog: string;
-  hdg: string;
-  cpa: string;
-  tcpa: string;
-  xtd: string;
-  rot: string;
-  trend: string;
-}
-
-interface IntentRecommendation {
-  action: string;
-  priority: '立即' | '优先' | '关注';
-}
-
-interface IntentItem {
-  ship: string;
-  shipType: string;
-  cargoType: string;
-  length: string;
-  width: string;
-  draft: string;
-  speed: string;
-  past: string;
-  current: string;
-  destination: string;
-  confidence: number;
-  time: string;
-  occurrenceTime: string;
-  details: string;
-  intentSummary: string;
-  intentConfidence: number;
-  intentEta: string;
-  risks: IntentRisk[];
-  situation: IntentSituation;
-  recommendation: IntentRecommendation;
-  path: IntentStep[];
-  timeline: IntentTimelineEvent[];
-}
 
 const INTENT_DATA: IntentItem[] = [
   {
@@ -1794,6 +1653,13 @@ const ANCHORAGE_TYPE_CHART_COLORS = [
   '#8e9aac',
 ];
 
+const getAnchorageAvailabilityRatio = (occupied: number, capacity: number) => {
+  const safeCapacity = Math.max(capacity, 0);
+  const safeOccupied = Math.min(Math.max(occupied, 0), safeCapacity);
+  const remaining = Math.max(safeCapacity - safeOccupied, 0);
+  return safeCapacity > 0 ? remaining / safeCapacity : 0;
+};
+
 // --- 组件 ---
 
 const SidebarPanel = ({ 
@@ -1856,7 +1722,7 @@ const SidebarPanel = ({
           <AnimatePresence>
             {isSearchExpanded && (
               <>
-                <div className="fixed inset-0 z-40" onClick={() => setIsSearchExpanded(false)} />
+                <div className="fixed inset-0 z-40 cursor-pointer" onClick={() => setIsSearchExpanded(false)} />
                 <motion.div
                   initial={{ opacity: 0, scale: 0.95, y: -10 }}
                   animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -5428,9 +5294,11 @@ export default function App() {
   const [selectedIntent, setSelectedIntent] = useState<number | null>(null);
   const [selectedAlert, setSelectedAlert] = useState<string | null>(null);
   const [selectedAnchorage, setSelectedAnchorage] = useState<string | null>(null);
+  const [hoveredShipType, setHoveredShipType] = useState<string | null>(null);
+  const [hoveredDurationType, setHoveredDurationType] = useState<string | null>(null);
   const [selectedExpiringShip, setSelectedExpiringShip] = useState<string | null>(null);
   const [selectedOvertimeShip, setSelectedOvertimeShip] = useState<string | null>(null);
-  const [anchorageTypeViewMode, setAnchorageTypeViewMode] = useState<'chart' | 'tags'>('tags');
+  const [anchorageTypeViewMode, setAnchorageTypeViewMode] = useState<'chart' | 'tags'>('chart');
   const [intents, setIntents] = useState<IntentItem[]>(INTENT_DATA);
   const [intentFilter, setIntentFilter] = useState('全部');
   const [editingIntentIndex, setEditingIntentIndex] = useState<number | null>(null);
@@ -5489,8 +5357,26 @@ export default function App() {
     });
 
     return lookup;
-  }, []);
-  const vhfSessions = useMemo<VhfSessionSummary[]>(() => {
+    }, []);
+
+    // 监听锚地饼状图悬停，自动滚动右侧列表
+    useEffect(() => {
+    if (hoveredShipType && selectedAnchorage) {
+      const container = document.getElementById(`anchorage-legend-${selectedAnchorage}`);
+      const item = document.getElementById(`legend-item-${selectedAnchorage}-${hoveredShipType}`);
+      if (container && item) {
+        const containerRect = container.getBoundingClientRect();
+        const itemRect = item.getBoundingClientRect();
+
+        // 如果不在视口内，则滚动
+        if (itemRect.top < containerRect.top || itemRect.bottom > containerRect.bottom) {
+          item.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+      }
+    }
+    }, [hoveredShipType, selectedAnchorage]);
+
+    const vhfSessions = useMemo<VhfSessionSummary[]>(() => {
     const groupedSessions = new Map<string, VHFMessage[]>();
 
     vhfMessages.forEach((message) => {
@@ -5948,11 +5834,10 @@ export default function App() {
                 <AnimatePresence>
                   {showUserMenu && (
                     <>
-                      <div 
-                        className="fixed inset-0 z-40" 
-                        onClick={() => setShowUserMenu(false)} 
-                      />
-                      <motion.div
+                      <div
+                        className="fixed inset-0 z-40 cursor-pointer"
+                        onClick={() => setShowUserMenu(false)}
+                      />                      <motion.div
                         initial={{ opacity: 0, y: 10, scale: 0.95 }}
                         animate={{ opacity: 1, y: 0, scale: 1 }}
                         exit={{ opacity: 0, y: 10, scale: 0.95 }}
@@ -5998,11 +5883,10 @@ export default function App() {
       <main className={`flex-1 flex overflow-hidden relative ${sidebarPosition === 'right' ? 'flex-row-reverse' : 'flex-row'}`}>
         
         {/* 统一侧边栏 */}
-        <SidebarPanel 
+        <SidebarPanel
           activeTab={activeTab}
           onTabChange={setActiveTab}
-          isOpen={sidebarOpen}
-          onToggle={() => setSidebarOpen(!sidebarOpen)}
+          isOpen={sidebarOpen}          onToggle={() => setSidebarOpen(!sidebarOpen)}
           position={sidebarPosition}
           showBars={showBars}
           onToggleBars={() => setShowBars(!showBars)}
@@ -6415,9 +6299,9 @@ export default function App() {
                                 e.stopPropagation();
                                 setSelectedIntent(null);
                               }}
-                              className="flex items-center gap-1 text-[7px] font-black uppercase tracking-[0.2em] text-sky-500/60 hover:text-sky-400 transition-colors"
+                              className="flex items-center gap-1.5 text-[9px] font-black uppercase tracking-[0.2em] text-sky-500/60 hover:text-sky-400 transition-colors"
                             >
-                              收起详情 <ChevronDown size={6} className="rotate-180" />
+                              收起详情 <ChevronDown size={8} className="rotate-180" />
                             </button>
                           </div>
                         </div>
@@ -6634,9 +6518,9 @@ export default function App() {
                                   e.stopPropagation();
                                   setSelectedAlert(null);
                                 }}
-                                className="flex items-center gap-1 text-[7px] font-black uppercase tracking-[0.2em] text-sky-500/60 hover:text-sky-400 transition-colors"
+                                className="flex items-center gap-1.5 text-[9px] font-black uppercase tracking-[0.2em] text-sky-500/60 hover:text-sky-400 transition-colors"
                               >
-                                收起详情 <ChevronDown size={6} className="rotate-180" />
+                                收起详情 <ChevronDown size={8} className="rotate-180" />
                               </button>
                             </div>
                           </div>
@@ -6657,8 +6541,13 @@ export default function App() {
                   const typeStats = getAnchorageTypeStats(item.id).slice(0, 10);
                   const chartStats = typeStats.slice(0, 8);
                   const chartTotal = chartStats.reduce((sum, ship) => sum + ship.count, 0);
-                  const chartGradient = chartStats.length
-                    ? `conic-gradient(${chartStats.map((ship, idx) => {
+                  const durationStats = getAnchorageDurationStats(item.id, item.occupied);
+                  const durationChartStats = durationStats.slice(0, 5);
+                  const durationChartTotal = durationChartStats.reduce((sum, bucket) => sum + bucket.count, 0);
+                  const availabilityRatio = getAnchorageAvailabilityRatio(item.occupied, item.capacity);
+                  const availabilityPercent = Math.round(availabilityRatio * 100);
+
+                  const chartGradient = chartStats.length                    ? `conic-gradient(${chartStats.map((ship, idx) => {
                         const start = chartStats.slice(0, idx).reduce((sum, current) => sum + current.count, 0);
                         const end = start + ship.count;
                         const startPct = (start / chartTotal) * 100;
@@ -6666,22 +6555,32 @@ export default function App() {
                         return `${ANCHORAGE_TYPE_CHART_COLORS[idx % ANCHORAGE_TYPE_CHART_COLORS.length]} ${startPct}% ${endPct}%`;
                       }).join(', ')})`
                     : 'conic-gradient(#223043 0% 100%)';
-                  const overtimeBuckets = getAnchorageOvertimeBuckets(item.overtimeShips);
+                  const durationChartGradient = durationChartStats.length
+                    ? `conic-gradient(${durationChartStats.map((bucket, idx) => {
+                        const start = durationChartStats.slice(0, idx).reduce((sum, current) => sum + current.count, 0);
+                        const end = start + bucket.count;
+                        const startPct = durationChartTotal > 0 ? (start / durationChartTotal) * 100 : 0;
+                        const endPct = durationChartTotal > 0 ? (end / durationChartTotal) * 100 : 0;
+                        return `${ANCHORAGE_TYPE_CHART_COLORS[idx % ANCHORAGE_TYPE_CHART_COLORS.length]} ${startPct}% ${endPct}%`;
+                      }).join(', ')})`
+                    : 'conic-gradient(#223043 0% 100%)';
                   return (
                     <motion.div 
                       key={item.id}
                       layout
-                      onClick={() => {
-                        const next = selectedAnchorage === item.id ? null : item.id;
-                        setSelectedAnchorage(next);
-                        setSelectedExpiringShip(next ? item.expiringShips?.[0]?.id ?? null : null);
-                        setSelectedOvertimeShip(null);
-                      }}
-                      className={`overflow-hidden rounded-xl border border-white/5 bg-[#0F1115] shadow-2xl transition-all cursor-pointer group ${
+                      className={`overflow-hidden rounded-xl border border-white/5 bg-[#0F1115] shadow-2xl transition-all group ${
                         selectedAnchorage === item.id ? 'border-white/10' : 'hover:border-white/10'
                       }`}
                     >
-                      <div className="border-b border-white/5 px-3 py-2.5 transition-all">
+                      <div 
+                        onClick={() => {
+                          const next = selectedAnchorage === item.id ? null : item.id;
+                          setSelectedAnchorage(next);
+                          setSelectedExpiringShip(next ? item.expiringShips?.[0]?.id ?? null : null);
+                          setSelectedOvertimeShip(null);
+                        }}
+                        className="border-b border-white/5 px-3 py-2.5 transition-all cursor-pointer hover:bg-white/[0.02]"
+                      >
                         <div className="flex items-center justify-between gap-2 transition-all">
                           <div className="flex min-w-0 flex-1 items-center gap-2 transition-all">
                             <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-[#1D3D26] transition-all">
@@ -6689,6 +6588,17 @@ export default function App() {
                             </div>
                             <div className="min-w-0 flex-1">
                               <div className="truncate text-xs font-bold leading-none tracking-tight text-white transition-all">{item.name}</div>
+                              <div className="mt-1.5 flex items-center gap-2">
+                                <div className="h-[3px] w-[54px] overflow-hidden rounded-full bg-white/10">
+                                  <div
+                                    className="h-full rounded-full bg-[#4DFF88]"
+                                    style={{ width: `${Math.max(availabilityPercent, availabilityPercent > 0 ? 8 : 0)}%` }}
+                                  />
+                                </div>
+                                <div className="shrink-0 text-[9px] font-bold leading-none text-white/65">
+                                  {availabilityPercent}%
+                                </div>
+                              </div>
                             </div>
                           </div>
                           <div className="flex shrink-0 items-center gap-1.5 transition-all">
@@ -6718,22 +6628,8 @@ export default function App() {
                             <div className="space-y-3 px-3 py-2.5">
                             <div className="space-y-2.5">
                               <div className="flex items-center justify-between">
-                                <div className="text-[10px] font-bold uppercase tracking-wider text-gray-500">船舶类型统计</div>
+                                <div className="text-[10px] font-bold uppercase tracking-wider text-gray-500">船舶类型分布</div>
                                 <div className="flex rounded-lg border border-white/5 bg-[#1A1D23] p-0.5">
-                                  <button
-                                    type="button"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      setAnchorageTypeViewMode('tags');
-                                    }}
-                                    className={`flex h-6 w-6 items-center justify-center rounded-md transition-colors ${
-                                      anchorageTypeViewMode === 'tags'
-                                        ? 'bg-[#252A33] text-[#4DABFF]'
-                                        : 'text-gray-500 hover:text-gray-300'
-                                    }`}
-                                  >
-                                    <LayoutGrid size={11} />
-                                  </button>
                                   <button
                                     type="button"
                                     onClick={(e) => {
@@ -6748,149 +6644,305 @@ export default function App() {
                                   >
                                     <BarChart3 size={11} />
                                   </button>
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setAnchorageTypeViewMode('tags');
+                                    }}
+                                    className={`flex h-6 w-6 items-center justify-center rounded-md transition-colors ${
+                                      anchorageTypeViewMode === 'tags'
+                                        ? 'bg-[#252A33] text-[#4DABFF]'
+                                        : 'text-gray-500 hover:text-gray-300'
+                                    }`}
+                                  >
+                                    <LayoutGrid size={11} />
+                                  </button>
                                 </div>
                               </div>
-                              {anchorageTypeViewMode === 'tags' ? (
-                                <div className="flex flex-wrap gap-1.5">
+                              {anchorageTypeViewMode === 'chart' ? (
+                                <div className="relative flex h-[128px] gap-4 items-center rounded-xl border border-white/5 bg-[#1A1D23]/50 p-3 overflow-hidden">
+                                  <div className="relative flex h-[88px] w-[88px] shrink-0 items-center justify-center">
+                                    <div className="pointer-events-none absolute inset-0 z-10 flex flex-col items-center justify-center">
+                                      <AnimatePresence mode="wait">
+                                        <motion.div
+                                          key={hoveredShipType || 'total'}
+                                          initial={{ opacity: 0, scale: 0.8 }}
+                                          animate={{ opacity: 1, scale: 1 }}
+                                          exit={{ opacity: 0, scale: 0.8 }}
+                                          className="flex flex-col items-center justify-center w-[50px]"
+                                        >
+                                          {hoveredShipType && (
+                                            <span 
+                                              className="text-[#4DABFF]/60 font-medium truncate w-full text-center leading-tight mb-0.5"
+                                              style={{ 
+                                                fontSize: hoveredShipType.length > 5 ? '6px' : '8px'
+                                              }}
+                                            >
+                                              {hoveredShipType}
+                                            </span>
+                                          )}
+                                          <span className="text-[8px] font-bold text-[#4DABFF] leading-tight">
+                                            {hoveredShipType 
+                                              ? `${chartStats.find(s => s.type === hoveredShipType)?.count ?? 0}艘`
+                                              : `${chartTotal}艘`}
+                                          </span>
+                                        </motion.div>
+                                      </AnimatePresence>
+                                    </div>
+                                    <motion.div
+                                      initial={{ scale: 0.8, opacity: 0, rotate: -90 }}
+                                      animate={{ scale: 1, opacity: 1, rotate: 0 }}
+                                      whileHover={{ scale: 1.05 }}
+                                      onMouseMove={(e) => {
+                                        const rect = e.currentTarget.getBoundingClientRect();
+                                        const x = e.clientX - rect.left - rect.width / 2;
+                                        const y = e.clientY - rect.top - rect.height / 2;
+                                        const angle = (Math.atan2(y, x) * 180 / Math.PI + 450) % 360;
+                                        
+                                        let currentAngle = 0;
+                                        for (const ship of chartStats) {
+                                          const sweep = (ship.count / chartTotal) * 360;
+                                          if (angle >= currentAngle && angle < currentAngle + sweep) {
+                                            setHoveredShipType(ship.type);
+                                            return;
+                                          }
+                                          currentAngle += sweep;
+                                        }
+                                      }}
+                                      onMouseLeave={() => setHoveredShipType(null)}
+                                      className="relative flex h-[88px] w-[88px] items-center justify-center rounded-full shadow-[0_0_20px_rgba(77,171,255,0.1)] cursor-pointer"
+                                      style={{ 
+                                        background: hoveredShipType 
+                                          ? `conic-gradient(${chartStats.map((ship, idx) => {
+                                              const start = chartStats.slice(0, idx).reduce((sum, current) => sum + current.count, 0);
+                                              const end = start + ship.count;
+                                              const startPct = (start / chartTotal) * 100;
+                                              const endPct = (end / chartTotal) * 100;
+                                              const isHovered = hoveredShipType === ship.type;
+                                              const color = ANCHORAGE_TYPE_CHART_COLORS[idx % ANCHORAGE_TYPE_CHART_COLORS.length];
+                                              return `${isHovered ? color : `${color}66`} ${startPct}% ${endPct}%`;
+                                            }).join(', ')})`
+                                          : chartGradient 
+                                      }}
+                                    >
+                                      <div className="flex h-[56px] w-[56px] flex-col items-center justify-center rounded-full bg-[#1A1D23] shadow-inner" />
+                                    </motion.div>
+                                  </div>
+                                  <div className="grid flex-1 h-[88px] grid-cols-1 gap-y-1 overflow-y-auto overflow-x-hidden pr-1 custom-scrollbar scroll-smooth" id={`anchorage-legend-${item.id}`}>
+                                      {chartStats.map((ship, idx) => {
+                                        const ratio = chartTotal > 0 ? Math.round((ship.count / chartTotal) * 100) : 0;
+                                        return (
+                                          <motion.div
+                                            key={`${ship.type}-${idx}-chart`}
+                                            id={`legend-item-${item.id}-${ship.type}`}
+                                            initial={{ x: 10, opacity: 0 }}
+                                            animate={{ x: 0, opacity: 1 }}
+                                            transition={{ delay: idx * 0.05 }}
+                                            onMouseEnter={() => setHoveredShipType(ship.type)}
+                                            onMouseLeave={() => setHoveredShipType(null)}
+                                            className={`flex items-center gap-2 rounded-md px-1 py-0.5 transition-all hover:bg-white/5 cursor-pointer ${
+                                              hoveredShipType === ship.type ? 'bg-white/5' : ''
+                                            }`}
+                                          >
+                                            <span
+                                              className="h-1.5 w-1.5 shrink-0 rounded-full"
+                                              style={{ 
+                                                backgroundColor: ANCHORAGE_TYPE_CHART_COLORS[idx % ANCHORAGE_TYPE_CHART_COLORS.length],
+                                                boxShadow: hoveredShipType === ship.type ? `0 0 8px ${ANCHORAGE_TYPE_CHART_COLORS[idx % ANCHORAGE_TYPE_CHART_COLORS.length]}` : 'none'
+                                              }}
+                                            />
+                                            <MarqueeText 
+                                              text={ship.type} 
+                                              isHovered={hoveredShipType === ship.type} 
+                                              className="text-[9px] leading-none text-gray-400" 
+                                            />
+                                            <span className="text-[9px] font-bold text-[#4DABFF]">{ratio}%</span>
+                                            <span className="text-[9px] text-gray-600 ml-1">{ship.count}艘</span>
+                                          </motion.div>
+                                        );
+                                      })}
+                                    </div>
+                                </div>
+                              ) : (
+                                <div className="flex flex-wrap gap-1.5 overflow-x-hidden">
                                   {typeStats.map((ship, idx) => (
-                                    <div
+                                    <motion.div
                                       key={`${ship.type}-${idx}`}
+                                      initial={{ opacity: 0, scale: 0.9 }}
+                                      animate={{ opacity: 1, scale: 1 }}
+                                      transition={{ delay: idx * 0.03 }}
                                       className="flex items-center gap-1 rounded-full border border-white/5 bg-[#1A1D23] px-2 py-1 text-[10px] leading-none text-gray-300"
                                     >
                                       <Ship size={11} className="text-[#4DABFF]" />
                                       <span>{ship.type}</span>
                                       <span className="font-bold text-[#4DABFF]">{ship.count}艘</span>
-                                    </div>
+                                    </motion.div>
                                   ))}
-                                </div>
-                              ) : (
-                                <div className="relative flex gap-3 rounded-xl border border-white/5 bg-[#1A1D23]/50 p-2.5">
-                                  <div className="relative h-48 w-[45%] shrink-0">
-                                    <div className="pointer-events-none absolute inset-0 z-10 flex flex-col items-center justify-center">
-                                      <span className="max-w-[60px] truncate text-center text-[10px] font-medium text-gray-500">
-                                        {chartStats[chartStats.length - 1]?.type ?? chartStats[0]?.type ?? '船型'}
-                                      </span>
-                                      <span className="text-xs font-bold text-[#4DABFF]">
-                                        {chartTotal}艘
-                                      </span>
-                                    </div>
-                                    <div className="flex h-full items-center justify-center">
-                                      <div
-                                        className="relative flex h-[88px] w-[88px] items-center justify-center rounded-full"
-                                        style={{ background: chartGradient }}
-                                      >
-                                        <div className="flex h-[56px] w-[56px] flex-col items-center justify-center rounded-full bg-[#1A1D23]">
-                                          <span className="text-[10px] font-bold leading-none text-[#4DABFF]/80">船舶</span>
-                                          <span className="mt-1 text-xs font-bold leading-none text-[#4DABFF]">{chartTotal}艘</span>
-                                        </div>
-                                      </div>
-                                    </div>
-                                  </div>
-                                  <div className="flex-1 space-y-1 overflow-y-auto pr-1">
-                                      {chartStats.map((ship, idx) => {
-                                        const ratio = chartTotal > 0 ? Math.round((ship.count / chartTotal) * 100) : 0;
-                                        return (
-                                          <div
-                                            key={`${ship.type}-${idx}-chart`}
-                                            className="flex items-center gap-2 rounded-md px-1.5 py-1 transition-all hover:bg-white/5"
-                                          >
-                                            <span
-                                              className="h-1.5 w-1.5 shrink-0 rounded-full"
-                                              style={{ backgroundColor: ANCHORAGE_TYPE_CHART_COLORS[idx % ANCHORAGE_TYPE_CHART_COLORS.length] }}
-                                            />
-                                            <span className="min-w-0 flex-1 truncate text-[10px] leading-none text-gray-400">{ship.type}</span>
-                                            <span className="w-6 text-right text-[10px] leading-none text-gray-600">{ratio}%</span>
-                                            <span className="w-4 text-right text-[10px] font-bold leading-none text-[#4DABFF]">{ship.count}</span>
-                                          </div>
-                                        );
-                                      })}
-                                    </div>
                                 </div>
                               )}
                             </div>
 
-                            <div className="space-y-2.5">
-                              <div className="text-[10px] font-bold uppercase tracking-wider text-gray-500">超时统计</div>
-                              <div className="flex flex-wrap gap-2">
-                                <div className="flex items-center gap-1 rounded-full border border-white/5 bg-[#1A1D23] px-2 py-1 text-[10px] leading-none text-gray-300">
-                                  <AlertTriangle size={11} className="text-[#FF4D4D]" />
-                                  <span>超时 24h+</span>
-                                  <span className="font-bold text-[#FF4D4D]">{overtimeBuckets.over24h}艘</span>
-                                </div>
-                                <div className="flex items-center gap-1 rounded-full border border-white/5 bg-[#1A1D23] px-2 py-1 text-[10px] leading-none text-gray-300">
-                                  <AlertTriangle size={11} className="text-[#FF4D4D]" />
-                                  <span>超时 12-24h</span>
-                                  <span className="font-bold text-[#FF4D4D]">{overtimeBuckets.between12And24h}艘</span>
-                                </div>
-                                <div className="flex items-center gap-1 rounded-full border border-white/5 bg-[#1A1D23] px-2 py-1 text-[10px] leading-none text-gray-300">
-                                  <AlertTriangle size={11} className="text-[#FF4D4D]" />
-                                  <span>超时 0-12h</span>
-                                  <span className="font-bold text-[#FF4D4D]">{overtimeBuckets.under12h}艘</span>
+                            <div className="space-y-3">
+                              <div className="flex items-center justify-between">
+                                <div className="text-[10px] font-bold uppercase tracking-wider text-gray-500">船舶锚泊分布</div>
+                              </div>
+                              <div className="space-y-2 rounded-xl border border-white/5 bg-[#1A1D23]/50 p-3 overflow-x-hidden shadow-[inset_0_0_20px_rgba(0,0,0,0.2)]">
+                                <div className="flex gap-4 items-center">
+                                  {/* 饼状图 - 作为聚合结论展示 */}
+                                  <div className="relative flex h-[88px] w-[88px] shrink-0 items-center justify-center">                                    <div className="pointer-events-none absolute inset-0 z-10 flex flex-col items-center justify-center">
+                                      <AnimatePresence mode="wait">
+                                        <motion.div
+                                          key={hoveredDurationType || 'total'}
+                                          initial={{ opacity: 0, scale: 0.8 }}
+                                          animate={{ opacity: 1, scale: 1 }}
+                                          exit={{ opacity: 0, scale: 0.8 }}
+                                          className="flex flex-col items-center justify-center w-[50px]"
+                                        >
+                                          {hoveredDurationType && (
+                                            <span 
+                                              className="text-[#4DABFF]/60 font-medium truncate w-full text-center leading-tight mb-0.5"
+                                              style={{ 
+                                                fontSize: hoveredDurationType.length > 5 ? '6px' : '8px'
+                                              }}
+                                            >
+                                              {hoveredDurationType}
+                                            </span>
+                                          )}
+                                          <span className="text-[8px] font-bold text-[#4DABFF] leading-tight">
+                                            {hoveredDurationType 
+                                              ? `${durationChartStats.find(b => b.type === hoveredDurationType)?.count ?? 0}艘`
+                                              : `${durationChartTotal}艘`}
+                                          </span>
+                                        </motion.div>
+                                      </AnimatePresence>
+                                    </div>
+                                    <motion.div
+                                      initial={{ scale: 0.8, opacity: 0, rotate: -90 }}
+                                      animate={{ scale: 1, opacity: 1, rotate: 0 }}
+                                      whileHover={{ scale: 1.05 }}
+                                      onMouseMove={(e) => {
+                                        const rect = e.currentTarget.getBoundingClientRect();
+                                        const x = e.clientX - rect.left - rect.width / 2;
+                                        const y = e.clientY - rect.top - rect.height / 2;
+                                        const angle = (Math.atan2(y, x) * 180 / Math.PI + 450) % 360;
+                                        
+                                        let currentAngle = 0;
+                                        for (const bucket of durationChartStats) {
+                                          const sweep = (bucket.count / durationChartTotal) * 360;
+                                          if (angle >= currentAngle && angle < currentAngle + sweep) {
+                                            setHoveredDurationType(bucket.type);
+                                            return;
+                                          }
+                                          currentAngle += sweep;
+                                        }
+                                      }}
+                                      onMouseLeave={() => setHoveredDurationType(null)}
+                                      className="relative flex h-[88px] w-[88px] items-center justify-center rounded-full shadow-[0_0_15px_rgba(77,171,255,0.1)] cursor-pointer"
+                                      style={{ 
+                                        background: hoveredDurationType 
+                                          ? `conic-gradient(${durationChartStats.map((bucket, idx) => {
+                                              const start = durationChartStats.slice(0, idx).reduce((sum, current) => sum + current.count, 0);
+                                              const end = start + bucket.count;
+                                              const startPct = durationChartTotal > 0 ? (start / durationChartTotal) * 100 : 0;
+                                              const endPct = durationChartTotal > 0 ? (end / durationChartTotal) * 100 : 0;
+                                              const isHovered = hoveredDurationType === bucket.type;
+                                              const color = ANCHORAGE_TYPE_CHART_COLORS[idx % ANCHORAGE_TYPE_CHART_COLORS.length];
+                                              return `${isHovered ? color : `${color}66`} ${startPct}% ${endPct}%`;
+                                            }).join(', ')})`
+                                          : durationChartGradient 
+                                      }}
+                                    >
+                                      <div className="flex h-[56px] w-[56px] items-center justify-center rounded-full bg-[#1A1D23] shadow-inner" />
+                                    </motion.div>
+                                  </div>
+
+                                  <div className="grid flex-1 grid-cols-1 gap-y-1">
+                                    {durationChartStats.map((bucket, idx) => {
+                                      const ratio = durationChartTotal > 0 ? Math.round((bucket.count / durationChartTotal) * 100) : 0;
+                                      return (
+                                        <motion.div
+                                          key={`${bucket.type}-${idx}-legend`}
+                                          onMouseEnter={() => setHoveredDurationType(bucket.type)}
+                                          onMouseLeave={() => setHoveredDurationType(null)}
+                                          className={`flex items-center gap-2 rounded-md px-1 py-0.5 transition-all hover:bg-white/5 cursor-pointer ${
+                                            hoveredDurationType === bucket.type ? 'bg-white/5' : ''
+                                          }`}
+                                        >
+                                          <span
+                                            className="h-1.5 w-1.5 shrink-0 rounded-full"
+                                            style={{ 
+                                              backgroundColor: ANCHORAGE_TYPE_CHART_COLORS[idx % ANCHORAGE_TYPE_CHART_COLORS.length],
+                                              boxShadow: hoveredDurationType === bucket.type ? `0 0 8px ${ANCHORAGE_TYPE_CHART_COLORS[idx % ANCHORAGE_TYPE_CHART_COLORS.length]}` : 'none'
+                                            }}
+                                          />
+                                          <span className="min-w-0 flex-1 truncate text-[9px] leading-none text-gray-400">{bucket.type}</span>
+                                          <span className="text-[9px] font-bold text-[#4DABFF]">{ratio}%</span>
+                                          <span className="text-[9px] text-gray-600 ml-1">{bucket.count}艘</span>
+                                        </motion.div>
+                                      );
+                                    })}
+                                  </div>
                                 </div>
                               </div>
                             </div>
 
                             {item.expiringCount > 0 && (
-                              <div className="space-y-2 border-t border-white/5 pt-2.5">
-                                <div className="flex items-center justify-between">
-                                  <div className="flex items-center gap-1.5">
-                                    <Clock size={9} className="text-orange-400" />
-                                    <span className="text-[10px] font-bold leading-none text-[#f7a52c]">
-                                      {item.expiringCount} 艘船舶锚泊临期
-                                    </span>
-                                  </div>
-                                  <div className="text-[10px] font-bold leading-none text-white/18">
-                                    限时 48H
-                                  </div>
-                                </div>
+                               <div className="space-y-1.5 border-t border-white/5 pt-2">
+                                 <div className="flex items-center justify-between">
+                                   <div className="flex items-center gap-1.5">
+                                     <Clock size={9} className="text-[#4DABFF]" />
+                                     <span className="text-[10px] font-bold leading-none text-[#f7a52c]">
+                                       {item.expiringCount} 艘船舶锚泊临期
+                                     </span>
+                                   </div>
+                                   <div className="text-[9px] font-bold leading-none text-[#4DABFF]">
+                                     限时 48H
+                                   </div>
+                                 </div>
 
-                                <div className="space-y-1.5">
-                                  {item.expiringShips?.map((ship) => {
-                                    const remainingDuration = formatRemainingDuration(ship.expiryTime, currentTime);
+                                 <div className="space-y-1">
+                                   {item.expiringShips?.map((ship) => {                                    const remainingDuration = formatRemainingDuration(ship.expiryTime, currentTime);
                                     const expiryMeta = getAnchorageExpiryMeta(ship.expiryTime);
                                     const isExpanded = selectedExpiringShip === ship.id;
 
                                     return (
                                       <div key={ship.id} className="group/ship">
-                                        <div className={`rounded-xl border transition-all ${isExpanded ? 'border-[#5c4a2f] bg-[#252A33] p-2.5' : 'border-white/6 bg-[#1A1D23] px-2.5 py-2.5 hover:border-[#FF9F43]/30'}`}>
-                                          <div className="flex items-start gap-2.5">
+                                        <div className={`rounded-lg border transition-all ${isExpanded ? 'border-[#5c4a2f] bg-[#252A33] p-2' : 'border-white/6 bg-[#1A1D23] px-2 py-1.5 hover:border-[#FF9F43]/30'}`}>
+                                          <div className="flex items-center gap-2">
                                             <div 
                                               onClick={(e) => {
                                                 e.stopPropagation();
                                                 setSelectedExpiringShip(isExpanded ? null : ship.id);
                                               }}
-                                              className="flex flex-1 cursor-pointer items-start gap-2.5"
+                                              className="flex flex-1 cursor-pointer items-center gap-2"
                                             >
-                                              <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#252A33]">
-                                                <Ship size={15} className="text-white/40" />
+                                              <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-[#252A33]">
+                                                <Ship size={14} className="text-white/40" />
                                               </div>
                                               <div className="min-w-0">
-                                                <div className="text-[11px] font-black leading-none text-white/92">
+                                                <div className="text-[10px] font-bold leading-none text-white/92">
                                                   {ship.name}
                                                   {ship.englishName ? (
-                                                    <span className="ml-1 text-[10px] font-semibold text-white/45">{ship.englishName}</span>
+                                                    <span className="ml-1 text-[8px] font-semibold text-white/45">{ship.englishName}</span>
                                                   ) : null}
                                                 </div>
-                                                <div className="mt-1 text-[10px] leading-none text-white/28">到期: {expiryMeta.date} {expiryMeta.time}</div>
-                                                <div className={`mt-1 text-[10px] font-black leading-none ${
-                                                  remainingDuration === '已到期' ? 'text-[#ff6269]' : 'text-[#f7a52c]'
-                                                }`}>
+                                                <div className="mt-1 text-[9px] leading-none text-white/28">到期: {expiryMeta.date} {expiryMeta.time}</div>
+                                                <div className="mt-1 text-[9px] font-medium leading-none text-[#f7a52c]">
                                                   {formatAnchorageRemainingDuration(ship.expiryTime, currentTime)}
-                                                </div>
-                                              </div>
-                                            </div>
-                                            <div className={`flex flex-col gap-1 transition-opacity ${isExpanded ? 'opacity-100' : 'opacity-0 group-hover/ship:opacity-100'}`}>
+                                                </div>                                              </div>
+                                            </div>                                            <div className={`flex flex-col gap-1 transition-opacity ${isExpanded ? 'opacity-100' : 'opacity-0 group-hover/ship:opacity-100'}`}>
                                               <button
                                                 type="button"
                                                 onClick={(e) => e.stopPropagation()}
-                                                className="rounded-md bg-[#30343d] px-2 py-1 text-[10px] font-black leading-none text-white/45 transition-colors hover:text-white/80"
+                                                className="rounded-md bg-[#30343d] px-1.5 py-0.5 text-[9px] font-black leading-none text-white/45 transition-colors hover:text-white/80"
                                               >
                                                 忽略
                                               </button>
                                               <button
                                                 type="button"
                                                 onClick={(e) => e.stopPropagation()}
-                                                className="rounded-md bg-[#3D2616] px-2 py-1 text-[10px] font-black leading-none text-[#FF9F43] transition-colors hover:bg-[#4D321D]"
+                                                className="rounded-md bg-[#3D2616] px-1.5 py-0.5 text-[9px] font-black leading-none text-[#FF9F43] transition-colors hover:bg-[#4D321D]"
                                               >
                                                 提醒
                                               </button>
@@ -6901,67 +6953,77 @@ export default function App() {
                                                 e.stopPropagation();
                                                 setSelectedExpiringShip(isExpanded ? null : ship.id);
                                               }}
-                                              className="rounded-lg p-1 text-white/20 transition-colors hover:bg-white/5"
+                                              className="rounded-lg p-0.5 text-white/20 transition-colors hover:bg-white/5"
                                             >
                                               <ChevronRight size={10} className={`transition-transform ${isExpanded ? 'rotate-90 text-white/55' : ''}`} />
                                             </button>
                                           </div>
-                                        </div>
 
-                                        <AnimatePresence>
-                                          {isExpanded && (
-                                            <motion.div
-                                              initial={{ height: 0, opacity: 0 }}
-                                              animate={{ height: 'auto', opacity: 1 }}
-                                              exit={{ height: 0, opacity: 0 }}
-                                              className="overflow-hidden"
-                                            >
-                                              <div className="mt-2 grid grid-cols-2 gap-x-3 gap-y-2.5 rounded-xl border border-[#394150] bg-[#2c313a] p-2.5">
-                                                <div className="space-y-1">
-                                                  <div className="text-[10px] uppercase tracking-[0.12em] text-white/30">MMSI</div>
-                                                  <div className="text-xs font-mono text-white/75">{ship.mmsi}</div>
-                                                </div>
-                                                <div className="space-y-1">
-                                                  <div className="text-[10px] uppercase tracking-[0.12em] text-white/30">船舶类型</div>
-                                                  <div className="flex items-center gap-2 text-xs text-white/75">
-                                                    <span>{ship.type}</span>
-                                                    <span className="rounded bg-green-500/10 px-1 py-0.5 text-[10px] text-green-400">锚泊</span>
+                                          <AnimatePresence>
+                                            {isExpanded && (
+                                              <motion.div
+                                                initial={{ height: 0, opacity: 0 }}
+                                                animate={{ height: 'auto', opacity: 1 }}
+                                                exit={{ height: 0, opacity: 0 }}
+                                                className="overflow-hidden"
+                                              >
+                                                <div className="mt-1.5 grid grid-cols-3 gap-x-2 gap-y-1 border-t border-white/5 pt-1.5">
+                                                  <div className="space-y-0.5">
+                                                    <div className="text-[8px] uppercase tracking-widest text-white/30">MMSI</div>
+                                                    <div className="text-[9px] font-mono text-white/75">{ship.mmsi}</div>
+                                                  </div>
+                                                  <div className="space-y-0.5">
+                                                    <div className="text-[8px] uppercase tracking-widest text-white/30">呼号</div>
+                                                    <div className="text-[9px] font-mono text-white/75">{ship.details.callSign}</div>
+                                                  </div>
+                                                  <div className="space-y-0.5">
+                                                    <div className="text-[8px] uppercase tracking-widest text-white/30">船籍</div>
+                                                    <div className="text-[9px] text-white/75">{ship.details.flag}</div>
+                                                  </div>
+                                                  
+                                                  <div className="space-y-0.5">
+                                                    <div className="text-[8px] uppercase tracking-widest text-white/30">最大吃水</div>
+                                                    <div className="text-[9px] text-white/75">{ship.details.draft}m</div>
+                                                  </div>
+                                                  <div className="space-y-0.5">
+                                                    <div className="text-[8px] uppercase tracking-widest text-white/30">长/宽</div>
+                                                    <div className="text-[9px] text-white/75">{ship.details.length}/{ship.details.width}m</div>
+                                                  </div>
+                                                  <div className="space-y-0.5">
+                                                    <div className="text-[8px] uppercase tracking-widest text-white/30">代理</div>
+                                                    <div className="text-[9px] text-white/75 truncate">{ship.details.agent}</div>
+                                                  </div>
+
+                                                  <div className="col-span-2 space-y-0.5">
+                                                    <div className="text-[8px] uppercase tracking-widest text-white/30">锚泊时间</div>
+                                                    <div className="text-[9px] text-white/75">{ship.details.anchorTime}</div>
+                                                  </div>
+                                                  <div className="space-y-0.5">
+                                                    <div className="text-[8px] uppercase tracking-widest text-white/30">锚泊目的</div>
+                                                    <div className="text-[9px] text-white/75">{ship.details.anchorPurpose}</div>
+                                                  </div>
+
+                                                  <div className="col-span-2 space-y-0.5">
+                                                    <div className="text-[8px] uppercase tracking-widest text-white/30">航程 (上一港/下一港)</div>
+                                                    <div className="text-[9px] text-white/75">{ship.details.lastPort} → {ship.details.nextPort}</div>
+                                                  </div>
+                                                  <div className="space-y-0.5">
+                                                    <div className="text-[8px] uppercase tracking-widest text-white/30">货物信息</div>
+                                                    <div className="text-[9px] text-white/75 truncate">{ship.details.cargo}</div>
+                                                  </div>
+
+                                                  <div className="col-span-3 space-y-0.5">
+                                                    <div className="text-[8px] uppercase tracking-widest text-white/30">到期时间</div>
+                                                    <div className="flex items-center gap-1.5 text-[9px]">
+                                                      <Clock size={8} className="text-orange-400" />
+                                                      <span className="font-mono text-orange-400">{ship.expiryTime}</span>
+                                                    </div>
                                                   </div>
                                                 </div>
-                                                <div className="space-y-1">
-                                                  <div className="text-[10px] uppercase tracking-[0.12em] text-white/30">代理</div>
-                                                  <div className="text-xs text-white/75">{ship.details.agent}</div>
-                                                </div>
-                                                <div className="space-y-1">
-                                                  <div className="text-[10px] uppercase tracking-[0.12em] text-white/30">最大吃水</div>
-                                                  <div className="text-xs font-mono text-sky-300">{ship.details.draft}m</div>
-                                                </div>
-                                                <div className="space-y-1">
-                                                  <div className="text-[10px] uppercase tracking-[0.12em] text-white/30">船长 / 船宽</div>
-                                                  <div className="text-xs font-mono text-white/75">{ship.details.length}m × {ship.details.width}m</div>
-                                                </div>
-                                                <div className="space-y-1">
-                                                  <div className="text-[10px] uppercase tracking-[0.12em] text-white/30">到期时间</div>
-                                                  <div className="text-xs font-mono text-white/75">{ship.expiryTime}</div>
-                                                </div>
-                                                <div className="col-span-2 space-y-1">
-                                                  <div className="text-[10px] uppercase tracking-[0.12em] text-white/30">目的地</div>
-                                                  <div className="flex items-center gap-2 text-xs">
-                                                    <MapPin size={10} className="text-white/30" />
-                                                    <span className="font-bold text-sky-400">{ship.details.destination}</span>
-                                                  </div>
-                                                </div>
-                                                <div className="col-span-2 space-y-1">
-                                                  <div className="text-[10px] uppercase tracking-[0.12em] text-white/30">载货信息</div>
-                                                  <div className="text-xs text-white/75">
-                                                    <span className="mr-2 rounded bg-orange-500/10 px-1.5 py-0.5 text-[10px] text-orange-300">临期船舶</span>
-                                                    {ship.details.cargo}
-                                                  </div>
-                                                </div>
-                                              </div>
-                                            </motion.div>
-                                          )}
-                                        </AnimatePresence>
+                                              </motion.div>
+                                            )}
+                                          </AnimatePresence>
+                                        </div>
                                       </div>
                                     );
                                   })}
@@ -6970,146 +7032,157 @@ export default function App() {
                             )}
 
                             {item.overtimeCount > 0 && (
-                              <div className="space-y-2 border-t border-white/5 pt-2.5">
-                                <div className="flex items-center justify-between">
-                                  <div className="flex items-center gap-1.5">
-                                    <AlertTriangle size={9} className="text-red-400" />
-                                    <span className="text-[10px] font-bold leading-none text-[#ff6269]">
-                                      {item.overtimeCount} 艘船舶锚泊超时
-                                    </span>
-                                  </div>
-                                  <div className="text-[9px] font-bold leading-none text-white/18">
-                                    实时监测
-                                  </div>
-                                </div>
+                               <div className="space-y-1.5 border-t border-white/5 pt-2">
+                                 <div className="flex items-center justify-between">
+                                   <div className="flex items-center gap-1.5">
+                                     <Clock size={9} className="text-[#4DABFF]" />
+                                     <span className="text-[10px] font-bold leading-none text-[#ff4d4d]">
+                                       {item.overtimeCount} 艘船舶锚泊超时
+                                     </span>
+                                   </div>
+                                   <div className="text-[9px] font-bold leading-none text-[#4DABFF]">
+                                     实时监测
+                                   </div>
+                                 </div>
+                                <div className="space-y-1">
+                                  {item.overtimeShips?.map((ship) => {
+                                    const isExpanded = selectedOvertimeShip === ship.id;
+                                    return (
+                                      <div key={ship.id} className="group/ship">
+                                        <div className={`rounded-lg border transition-all ${isExpanded ? 'border-[#5a2a32] bg-[#252A33] p-2' : 'border-white/6 bg-[#1A1D23] px-2 py-1.5 hover:border-[#FF4D4D]/30'}`}>
+                                          <div className="flex items-center gap-2">
+                                            <div 
+                                              onClick={(e) => {
+                                                e.stopPropagation();
+                                                setSelectedOvertimeShip(isExpanded ? null : ship.id);
+                                              }}
+                                              className="flex flex-1 cursor-pointer items-center gap-2"
+                                            >
+                                              <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-[#252A33]">
+                                                <Clock size={14} className="text-white/40" />
+                                              </div>
+                                              <div>
+                                                <div className="text-[10px] font-bold leading-none text-white/92">
+                                                  {ship.name}
+                                                  {ship.englishName ? (
+                                                    <span className="ml-1 text-[8px] font-semibold text-white/45">{ship.englishName}</span>
+                                                  ) : null}
+                                                </div>
+                                                <div className="mt-1 text-[9px] leading-none text-white/28">到期: {getAnchorageExpiryMeta(ship.expiryTime).date} {getAnchorageExpiryMeta(ship.expiryTime).time}</div>
+                                                <div className="mt-1 text-[9px] font-medium leading-none text-[#ff6269]">
+                                                  {ship.overtimeDuration}
+                                                </div>
+                                              </div>
+                                            </div>
+                                            <div className={`flex flex-col gap-1 transition-opacity ${isExpanded ? 'opacity-100' : 'opacity-0 group-hover/ship:opacity-100'}`}>
+                                              <button
+                                                type="button"
+                                                onClick={(e) => e.stopPropagation()}
+                                                className="rounded-md bg-[#30343d] px-1.5 py-0.5 text-[9px] font-black leading-none text-white/45 transition-colors hover:text-white/80"
+                                              >
+                                                忽略
+                                              </button>
+                                              <button
+                                                type="button"
+                                                onClick={(e) => e.stopPropagation()}
+                                                className="rounded-md bg-[#3D1D1D] px-1.5 py-0.5 text-[9px] font-black leading-none text-[#FF4D4D] transition-colors hover:bg-[#4D2222]"
+                                              >
+                                                驱离
+                                              </button>
+                                            </div>
+                                            <button
+                                              type="button"
+                                              onClick={(e) => {
+                                                e.stopPropagation();
+                                                setSelectedOvertimeShip(isExpanded ? null : ship.id);
+                                              }}
+                                              className="rounded-lg p-0.5 text-white/20 transition-colors hover:bg-white/5"
+                                            >
+                                              <ChevronRight size={10} className={`transition-transform ${isExpanded ? 'rotate-90 text-white/55' : ''}`} />
+                                            </button>
+                                          </div>
 
-                                <div className="space-y-1.5">
-                                  {item.overtimeShips?.map((ship) => (
-                                    <div key={ship.id} className="group/ship">
-                                      <div className={`rounded-xl border transition-all ${selectedOvertimeShip === ship.id ? 'border-[#5a2a32] bg-[#252A33] p-2.5' : 'border-white/6 bg-[#1A1D23] px-2.5 py-2.5 hover:border-[#FF4D4D]/30'}`}>
-                                        <div className="flex items-start gap-2.5">
-                                          <div 
-                                            onClick={(e) => {
-                                              e.stopPropagation();
-                                              setSelectedOvertimeShip(selectedOvertimeShip === ship.id ? null : ship.id);
-                                            }}
-                                            className="flex flex-1 cursor-pointer items-start gap-2.5"
-                                          >
-                                            <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#252A33]">
-                                              <Clock size={15} className="text-white/40" />
-                                            </div>
-                                            <div>
-                                              <div className="text-[11px] font-black leading-none text-white/92">
-                                                {ship.name}
-                                                {ship.englishName ? (
-                                                  <span className="ml-1 text-[10px] font-semibold text-white/45">{ship.englishName}</span>
-                                                ) : null}
-                                              </div>
-                                              <div className="mt-1 text-[10px] font-black leading-none text-[#ff6269]">
-                                                {ship.overtimeDuration.replace('超时 ', '超时 ')}
-                                              </div>
-                                            </div>
-                                          </div>
-                                          <div className={`flex flex-col gap-1 transition-opacity ${selectedOvertimeShip === ship.id ? 'opacity-100' : 'opacity-0 group-hover/ship:opacity-100'}`}>
-                                            <button
-                                              type="button"
-                                              onClick={(e) => e.stopPropagation()}
-                                              className="rounded-md bg-[#30343d] px-2 py-1 text-[10px] font-black leading-none text-white/45 transition-colors hover:text-white/80"
-                                            >
-                                              忽略
-                                            </button>
-                                            <button
-                                              type="button"
-                                              onClick={(e) => e.stopPropagation()}
-                                              className="rounded-md bg-[#3D1D1D] px-2 py-1 text-[10px] font-black leading-none text-[#FF4D4D] transition-colors hover:bg-[#4D2525]"
-                                            >
-                                              提醒
-                                            </button>
-                                          </div>
-                                          <button
-                                            type="button"
-                                            onClick={(e) => {
-                                              e.stopPropagation();
-                                              setSelectedOvertimeShip(selectedOvertimeShip === ship.id ? null : ship.id);
-                                            }}
-                                            className="rounded-lg p-1 text-white/20 transition-colors hover:bg-white/5"
-                                          >
-                                            <ChevronRight size={10} className={`transition-transform ${selectedOvertimeShip === ship.id ? 'rotate-90 text-white/55' : ''}`} />
-                                          </button>
+                                          <AnimatePresence>
+                                            {isExpanded && (
+                                              <motion.div
+                                                initial={{ height: 0, opacity: 0 }}
+                                                animate={{ height: 'auto', opacity: 1 }}
+                                                exit={{ height: 0, opacity: 0 }}
+                                                className="overflow-hidden"
+                                              >
+                                                <div className="mt-1.5 grid grid-cols-3 gap-x-2 gap-y-1 border-t border-white/5 pt-1.5">
+                                                  <div className="space-y-0.5">
+                                                    <div className="text-[8px] uppercase tracking-widest text-white/30">MMSI</div>
+                                                    <div className="text-[9px] font-mono text-white/75">{ship.mmsi}</div>
+                                                  </div>
+                                                  <div className="space-y-0.5">
+                                                    <div className="text-[8px] uppercase tracking-widest text-white/30">呼号</div>
+                                                    <div className="text-[9px] font-mono text-white/75">{ship.details.callSign}</div>
+                                                  </div>
+                                                  <div className="space-y-0.5">
+                                                    <div className="text-[8px] uppercase tracking-widest text-white/30">船籍</div>
+                                                    <div className="text-[9px] text-white/75">{ship.details.flag}</div>
+                                                  </div>
+                                                  
+                                                  <div className="space-y-0.5">
+                                                    <div className="text-[8px] uppercase tracking-widest text-white/30">最大吃水</div>
+                                                    <div className="text-[9px] text-white/75">{ship.details.draft}m</div>
+                                                  </div>
+                                                  <div className="space-y-0.5">
+                                                    <div className="text-[8px] uppercase tracking-widest text-white/30">长/宽</div>
+                                                    <div className="text-[9px] text-white/75">{ship.details.length}/{ship.details.width}m</div>
+                                                  </div>
+                                                  <div className="space-y-0.5">
+                                                    <div className="text-[8px] uppercase tracking-widest text-white/30">代理</div>
+                                                    <div className="text-[9px] text-white/75 truncate">{ship.details.agent}</div>
+                                                  </div>
+
+                                                  <div className="col-span-2 space-y-0.5">
+                                                    <div className="text-[8px] uppercase tracking-widest text-white/30">锚泊时间</div>
+                                                    <div className="text-[9px] text-white/75">{ship.details.anchorTime}</div>
+                                                  </div>
+                                                  <div className="space-y-0.5">
+                                                    <div className="text-[8px] uppercase tracking-widest text-white/30">锚泊目的</div>
+                                                    <div className="text-[9px] text-white/75">{ship.details.anchorPurpose}</div>
+                                                  </div>
+
+                                                  <div className="col-span-2 space-y-0.5">
+                                                    <div className="text-[8px] uppercase tracking-widest text-white/30">航程 (上一港/下一港)</div>
+                                                    <div className="text-[9px] text-white/75">{ship.details.lastPort} → {ship.details.nextPort}</div>
+                                                  </div>
+                                                  <div className="space-y-0.5">
+                                                    <div className="text-[8px] uppercase tracking-widest text-white/30">货物信息</div>
+                                                    <div className="text-[9px] text-white/75 truncate">{ship.details.cargo}</div>
+                                                  </div>
+
+                                                  <div className="col-span-3 space-y-0.5">
+                                                    <div className="text-[8px] uppercase tracking-widest text-white/30">状态</div>
+                                                    <div className="flex items-center gap-1.5 text-[9px]">
+                                                      <Clock size={8} className="text-red-400" />
+                                                      <span className="font-bold text-red-400">{ship.overtimeDuration}</span>
+                                                    </div>
+                                                  </div>
+                                                </div>
+                                              </motion.div>
+                                            )}
+                                          </AnimatePresence>
                                         </div>
                                       </div>
-
-                                      <AnimatePresence>
-                                        {selectedOvertimeShip === ship.id && (
-                                          <motion.div
-                                            initial={{ height: 0, opacity: 0 }}
-                                            animate={{ height: 'auto', opacity: 1 }}
-                                            exit={{ height: 0, opacity: 0 }}
-                                            className="overflow-hidden"
-                                          >
-                                              <div className="mt-2 grid grid-cols-2 gap-x-3 gap-y-2.5 rounded-xl border border-[#392a31] bg-[#221b20] p-2.5">
-                                              <div className="space-y-1">
-                                                <div className="text-[10px] uppercase tracking-[0.12em] text-white/30">MMSI</div>
-                                                <div className="text-xs font-mono text-white/75">{ship.mmsi}</div>
-                                              </div>
-                                              <div className="space-y-1">
-                                                <div className="text-[10px] uppercase tracking-[0.12em] text-white/30">船舶类型</div>
-                                                <div className="flex items-center gap-2 text-xs text-white/75">
-                                                  <span>{ship.type}</span>
-                                                  <span className="rounded bg-red-500/10 px-1 py-0.5 text-[10px] text-red-300">超时</span>
-                                                </div>
-                                              </div>
-                                              <div className="space-y-1">
-                                                <div className="text-[10px] uppercase tracking-[0.12em] text-white/30">代理</div>
-                                                <div className="text-xs text-white/75">{ship.details.agent}</div>
-                                              </div>
-                                              <div className="space-y-1">
-                                                <div className="text-[10px] uppercase tracking-[0.12em] text-white/30">超时时长</div>
-                                                <div className="text-xs font-mono text-red-300">{ship.overtimeDuration}</div>
-                                              </div>
-                                              <div className="space-y-1">
-                                                <div className="text-[10px] uppercase tracking-[0.12em] text-white/30">船长 / 船宽</div>
-                                                <div className="text-xs font-mono text-white/75">{ship.details.length}m × {ship.details.width}m</div>
-                                              </div>
-                                              <div className="space-y-1">
-                                                <div className="text-[10px] uppercase tracking-[0.12em] text-white/30">最大吃水</div>
-                                                <div className="text-xs font-mono text-white/75">{ship.details.draft}m</div>
-                                              </div>
-                                              <div className="col-span-2 space-y-1">
-                                                <div className="text-[10px] uppercase tracking-[0.12em] text-white/30">目的地</div>
-                                                <div className="flex items-center gap-2 text-xs">
-                                                  <MapPin size={10} className="text-white/30" />
-                                                  <span className="font-bold text-red-300">{ship.details.destination}</span>
-                                                </div>
-                                              </div>
-                                              <div className="col-span-2 space-y-1">
-                                                <div className="text-[10px] uppercase tracking-[0.12em] text-white/30">载货信息</div>
-                                                <div className="text-xs text-white/75">
-                                                  <span className="mr-2 rounded bg-red-500/10 px-1.5 py-0.5 text-[10px] text-red-300">实时监测</span>
-                                                  {ship.details.cargo}
-                                                </div>
-                                              </div>
-                                            </div>
-                                          </motion.div>
-                                        )}
-                                      </AnimatePresence>
-                                    </div>
-                                  ))}
+                                    );
+                                  })}
                                 </div>
                               </div>
                             )}
 
-                            <div className="flex justify-center pt-0.5 pb-0.5">
+                            <div className="flex justify-center pt-2 pb-2">
                               <button 
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   setSelectedAnchorage(null);
-                                  setSelectedExpiringShip(null);
-                                  setSelectedOvertimeShip(null);
                                 }}
-                                className="flex items-center gap-1 text-[10px] font-black leading-none uppercase tracking-[0.2em] text-sky-500/60 transition-colors hover:text-sky-400"
+                                className="flex items-center gap-1.5 text-[9px] font-black uppercase tracking-[0.2em] text-sky-500/60 hover:text-sky-400 transition-colors"
                               >
-                                收起详情 <ChevronDown size={10} className="rotate-180" />
+                                收起详情 <ChevronDown size={8} className="rotate-180" />
                               </button>
                             </div>
                           </div>

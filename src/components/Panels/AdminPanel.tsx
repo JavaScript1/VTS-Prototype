@@ -782,7 +782,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
           )}
         </div>
 
-        {/* VHF 详情 Modal */}
+        {/* VHF 详情弹窗 */}
         <AnimatePresence>
           {showVhfDetails && selectedVhfSnippet && (
             <div className="fixed inset-0 z-[8000] flex items-center justify-center p-8">
