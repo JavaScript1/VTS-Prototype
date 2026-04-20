@@ -3377,8 +3377,8 @@ const AdminPanel = ({
                                 ]}
                                 cx="40%"
                                 cy="50%"
-                                innerRadius={35}
-                                outerRadius={55}
+                                innerRadius={45}
+                                outerRadius={75}
                                 paddingAngle={5}
                                 dataKey="value"
                               >
@@ -3389,15 +3389,15 @@ const AdminPanel = ({
                                 ))}
                               </Pie>
                               <Tooltip 
-                                contentStyle={{ backgroundColor: '#0a0a0a', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', fontSize: '10px' }}
+                                contentStyle={{ backgroundColor: '#0a0a0a', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', fontSize: '12px' }}
                               />
                               <Legend 
                                 verticalAlign="middle" 
                                 align="right" 
                                 layout="vertical"
                                 iconType="circle"
-                                iconSize={6}
-                                wrapperStyle={{ fontSize: '9px', color: 'rgba(255,255,255,0.4)', paddingLeft: '5px' }}
+                                iconSize={10}
+                                wrapperStyle={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)', paddingLeft: '5px' }}
                               />
                             </PieChart>
                           </ResponsiveContainer>
@@ -3430,13 +3430,13 @@ const AdminPanel = ({
                                 type="category" 
                                 axisLine={false} 
                                 tickLine={false}
-                                tick={{ fill: 'rgba(255,255,255,0.4)', fontSize: 9 }}
+                                tick={{ fill: 'rgba(255,255,255,0.4)', fontSize: 10 }}
                               />
                               <Tooltip 
                                 cursor={{ fill: 'rgba(255,255,255,0.05)' }}
-                                contentStyle={{ backgroundColor: '#0a0a0a', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', fontSize: '10px' }}
+                                contentStyle={{ backgroundColor: '#0a0a0a', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', fontSize: '11px' }}
                               />
-                              <Bar dataKey="count" fill="#38bdf8" radius={[0, 4, 4, 0]} barSize={12} opacity={0.8} />
+                              <Bar dataKey="count" fill="#38bdf8" radius={[0, 4, 4, 0]} barSize={16} opacity={0.8} />
                             </BarChart>
                           </ResponsiveContainer>
                         </div>
@@ -3473,21 +3473,21 @@ const AdminPanel = ({
                                 dataKey="time" 
                                 axisLine={false}
                                 tickLine={false}
-                                tick={{ fill: 'rgba(255,255,255,0.3)', fontSize: 9 }}
+                                tick={{ fill: 'rgba(255,255,255,0.3)', fontSize: 11 }}
                               />
                               <YAxis 
                                 axisLine={false}
                                 tickLine={false}
-                                tick={{ fill: 'rgba(255,255,255,0.3)', fontSize: 9 }}
+                                tick={{ fill: 'rgba(255,255,255,0.3)', fontSize: 11 }}
                               />
                               <Tooltip 
-                                contentStyle={{ backgroundColor: '#0a0a0a', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', fontSize: '10px' }}
+                                contentStyle={{ backgroundColor: '#0a0a0a', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', fontSize: '12px' }}
                               />
                               <Area 
                                 type="monotone" 
                                 dataKey="count" 
                                 stroke="#38bdf8" 
-                                strokeWidth={2}
+                                strokeWidth={3}
                                 fillOpacity={1} 
                                 fill="url(#colorRiskTime)" 
                               />
@@ -3518,14 +3518,14 @@ const AdminPanel = ({
                                 dataKey="level" 
                                 axisLine={false} 
                                 tickLine={false}
-                                tick={{ fill: 'rgba(255,255,255,0.4)', fontSize: 9 }}
+                                tick={{ fill: 'rgba(255,255,255,0.4)', fontSize: 11 }}
                               />
-                              <YAxis axisLine={false} tickLine={false} tick={{ fill: 'rgba(255,255,255,0.3)', fontSize: 9 }} />
+                              <YAxis axisLine={false} tickLine={false} tick={{ fill: 'rgba(255,255,255,0.3)', fontSize: 11 }} />
                               <Tooltip 
                                 cursor={{ fill: 'rgba(255,255,255,0.05)' }}
-                                contentStyle={{ backgroundColor: '#0a0a0a', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', fontSize: '10px' }}
+                                contentStyle={{ backgroundColor: '#0a0a0a', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', fontSize: '12px' }}
                               />
-                              <Bar dataKey="count" radius={[4, 4, 0, 0]} barSize={20}>
+                              <Bar dataKey="count" radius={[4, 4, 0, 0]} barSize={32}>
                                 {[
                                   { level: '紧急', count: 8, color: '#f87171' },
                                   { level: '警报', count: 15, color: '#fb923c' },
@@ -3560,20 +3560,20 @@ const AdminPanel = ({
                               margin={{ left: 20, right: 30, top: 0, bottom: 0 }}
                             >
                               <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" horizontal={true} vertical={false} />
-                              <XAxis type="number" axisLine={false} tickLine={false} tick={{ fill: 'rgba(255,255,255,0.3)', fontSize: 9 }} />
+                              <XAxis type="number" axisLine={false} tickLine={false} tick={{ fill: 'rgba(255,255,255,0.3)', fontSize: 10 }} />
                               <YAxis 
                                 dataKey="area" 
                                 type="category" 
                                 axisLine={false} 
                                 tickLine={false}
-                                width={80}
-                                tick={{ fill: 'rgba(255,255,255,0.4)', fontSize: 9 }}
+                                width={100}
+                                tick={{ fill: 'rgba(255,255,255,0.4)', fontSize: 10 }}
                               />
                               <Tooltip 
                                 cursor={{ fill: 'rgba(255,255,255,0.05)' }}
-                                contentStyle={{ backgroundColor: '#0a0a0a', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', fontSize: '10px' }}
+                                contentStyle={{ backgroundColor: '#0a0a0a', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', fontSize: '11px' }}
                               />
-                              <Bar dataKey="count" fill="#38bdf8" radius={[0, 4, 4, 0]} barSize={12} opacity={0.8} />
+                              <Bar dataKey="count" fill="#38bdf8" radius={[0, 4, 4, 0]} barSize={16} opacity={0.8} />
                             </BarChart>
                           </ResponsiveContainer>
                         </div>
@@ -4495,13 +4495,13 @@ const AdminPanel = ({
                             dataKey="time" 
                             axisLine={false}
                             tickLine={false}
-                            tick={{ fill: 'rgba(255,255,255,0.3)', fontSize: 10 }}
+                            tick={{ fill: 'rgba(255,255,255,0.3)', fontSize: 12 }}
                             dy={10}
                           />
                           <YAxis 
                             axisLine={false}
                             tickLine={false}
-                            tick={{ fill: 'rgba(255,255,255,0.3)', fontSize: 10 }}
+                            tick={{ fill: 'rgba(255,255,255,0.3)', fontSize: 12 }}
                           />
                           <Tooltip 
                             contentStyle={{ 
@@ -4516,7 +4516,7 @@ const AdminPanel = ({
                             type="monotone" 
                             dataKey="count" 
                             stroke="#0ea5e9" 
-                            strokeWidth={2}
+                            strokeWidth={3}
                             fillOpacity={1} 
                             fill="url(#colorCount)" 
                             name="对话次数"

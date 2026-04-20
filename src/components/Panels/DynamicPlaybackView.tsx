@@ -15,9 +15,13 @@ import { MapContainer, TileLayer, Polygon, Popup, Marker, Polyline, CircleMarker
 import L from 'leaflet';
 import {
   MOCK_AREAS,
-  type MockArea,
-  type PlaybackSessionLike,
 } from '../../mockData';
+import { type MockArea } from '../../types';
+
+export interface PlaybackSessionLike {
+  vessel: any;
+  event: any;
+}
 
 const VTS_CHART_TILE_URL = 'https://test.shipdt.com/vts/chart/{z}/{x}/{y}.png';
 const VTS_CHART_TILE_ATTRIBUTION = '&copy; ShipDT';
