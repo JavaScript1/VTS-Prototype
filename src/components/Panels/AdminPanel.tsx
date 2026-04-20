@@ -18,6 +18,7 @@ import {
   ChevronRight,
   History,
   Clock,
+  FileText,
   MessageSquare,
   Play,
   Search,
@@ -628,155 +629,185 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
           )}
 
           {activeMenu === '业务统计' && (
-            <div className="space-y-6">
-              <div className="flex items-center justify-between">
-                <div className="flex gap-2">
-                  {['船舶风险统计', '意图统计', '值班统计'].map(tab => (
-                    <button
-                      key={tab}
-                      onClick={() => setActiveStatsTab(tab)}
-                      className={`px-6 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${
-                        activeStatsTab === tab 
-                          ? 'bg-sky-500 text-white shadow-lg shadow-sky-500/20' 
-                          : 'bg-white/5 text-white/40 hover:bg-white/10 hover:text-white border border-white/5'
-                      }`}
-                    >
-                      {tab}
-                    </button>
-                  ))}
-                </div>
-                <div className="flex items-center gap-4">
-                  <div className="flex items-center gap-2 bg-white/5 border border-white/10 rounded-xl px-3 py-1.5">
-                    <Clock size={14} className="text-white/40" />
-                    <select 
-                      value={statsTimeRange}
-                      onChange={(e) => setStatsTimeRange(e.target.value)}
-                      className="bg-transparent text-[10px] font-black text-white uppercase tracking-widest focus:outline-none"
-                    >
-                      <option className="bg-[#111]">今天</option>
-                      <option className="bg-[#111]">最近7天</option>
-                      <option className="bg-[#111]">最近30天</option>
-                    </select>
-                  </div>
-                  <div className="flex items-center gap-2 bg-white/5 border border-white/10 rounded-xl px-3 py-1.5">
-                    <MapIcon size={14} className="text-white/40" />
-                    <select 
-                      value={statsArea}
-                      onChange={(e) => setStatsArea(e.target.value)}
-                      className="bg-transparent text-[10px] font-black text-white uppercase tracking-widest focus:outline-none"
-                    >
-                      <option className="bg-[#111]">全部区域</option>
-                      <option className="bg-[#111]">吴淞口</option>
-                      <option className="bg-[#111]">圆圆沙</option>
-                      <option className="bg-[#111]">南槽</option>
-                    </select>
-                  </div>
-                </div>
-              </div>
-
+            <div className="space-y-8">
+              {/* 顶部统计卡片 */}
               <div className="grid grid-cols-4 gap-6">
                 {[
-                  { label: '总预警数', value: '1,428', change: '+12.5%', icon: Shield, color: 'sky' },
-                  { label: '高风险目标', value: '42', change: '-5.2%', icon: AlertTriangle, color: 'red' },
-                  { label: '意图识别数', value: '8,592', change: '+24.1%', icon: Activity, color: 'emerald' },
-                  { label: '值班处理率', value: '98.5%', change: '+0.2%', icon: Check, color: 'indigo' },
+                  { label: '本月预警总量', value: '1,428', change: '+12.5%', icon: Shield, color: 'sky', trend: 'up' },
+                  { label: '高风险目标数', value: '42', change: '-5.2%', icon: AlertTriangle, color: 'red', trend: 'down' },
+                  { label: '意图识别准确率', value: '94.8%', change: '+2.1%', icon: Activity, color: 'emerald', trend: 'up' },
+                  { label: '值班闭环率', value: '98.5%', change: '+0.2%', icon: Check, color: 'indigo', trend: 'up' },
                 ].map((stat, idx) => (
-                  <div key={idx} className="bg-[#0a101a] border border-white/5 rounded-3xl p-6">
+                  <motion.div 
+                    key={idx}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: idx * 0.1 }}
+                    className="bg-[#0a101a] border border-white/5 rounded-[32px] p-6 group hover:border-white/10 transition-all shadow-2xl"
+                  >
                     <div className="flex items-center justify-between mb-4">
-                      <div className={`p-3 rounded-2xl bg-${stat.color}-500/10 text-${stat.color}-500`}>
-                        <stat.icon size={20} />
+                      <div className={`w-12 h-12 rounded-2xl bg-${stat.color}-500/10 flex items-center justify-center text-${stat.color}-400 group-hover:scale-110 transition-transform`}>
+                        <stat.icon size={24} />
                       </div>
-                      <span className={`text-[10px] font-black ${stat.change.startsWith('+') ? 'text-emerald-400' : 'text-red-400'}`}>
-                        {stat.change}
-                      </span>
+                      <div className={`flex items-center gap-1 px-2 py-1 rounded-lg ${stat.trend === 'up' ? 'bg-emerald-500/10 text-emerald-400' : 'bg-red-500/10 text-red-400'}`}>
+                        <span className="text-[10px] font-black">{stat.change}</span>
+                      </div>
                     </div>
                     <p className="text-[10px] font-black text-white/30 uppercase tracking-[0.2em] mb-1">{stat.label}</p>
-                    <h4 className="text-2xl font-black text-white tracking-tight">{stat.value}</h4>
-                  </div>
+                    <h4 className="text-3xl font-black text-white tracking-tighter">{stat.value}</h4>
+                  </motion.div>
                 ))}
               </div>
 
-              <div className="grid grid-cols-2 gap-6">
-                <div className="bg-[#0a101a] border border-white/5 rounded-3xl p-8">
-                  <div className="flex items-center justify-between mb-8">
-                    <h4 className="text-sm font-black text-white uppercase tracking-widest">趋势分析</h4>
-                    <div className="flex items-center gap-4">
-                      <div className="flex items-center gap-2">
-                        <div className="w-2 h-2 rounded-full bg-sky-500" />
-                        <span className="text-[10px] font-bold text-white/40 uppercase">本期</span>
+              {/* 中间图表区域 */}
+              <div className="grid grid-cols-12 gap-6">
+                <div className="col-span-8 bg-[#0a101a] border border-white/5 rounded-[40px] p-8 shadow-2xl relative overflow-hidden">
+                  <div className="absolute top-0 right-0 w-96 h-96 bg-sky-500/5 blur-[120px] rounded-full -translate-y-1/2 translate-x-1/2" />
+                  <div className="relative z-10">
+                    <div className="flex items-center justify-between mb-10">
+                      <div>
+                        <h4 className="text-lg font-black text-white uppercase tracking-tight">流量与预警趋势分析</h4>
+                        <p className="text-[10px] text-white/30 font-bold uppercase tracking-widest mt-1">Traffic & Alert Trend Analysis (24h)</p>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <div className="w-2 h-2 rounded-full bg-white/10" />
-                        <span className="text-[10px] font-bold text-white/40 uppercase">上期</span>
+                      <div className="flex items-center gap-2 bg-white/5 p-1 rounded-xl">
+                        {['24H', '7D', '30D'].map(t => (
+                          <button key={t} className={`px-4 py-1.5 rounded-lg text-[10px] font-black transition-all ${t === '24H' ? 'bg-sky-500 text-white shadow-lg' : 'text-white/40 hover:text-white'}`}>{t}</button>
+                        ))}
                       </div>
                     </div>
-                  </div>
-                  <div className="h-64">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <AreaChart data={[
-                        { name: '00:00', value: 400, prev: 300 },
-                        { name: '04:00', value: 300, prev: 400 },
-                        { name: '08:00', value: 900, prev: 600 },
-                        { name: '12:00', value: 1200, prev: 800 },
-                        { name: '16:00', value: 1500, prev: 1100 },
-                        { name: '20:00', value: 1100, prev: 900 },
-                        { name: '23:59', value: 600, prev: 500 },
-                      ]}>
-                        <defs>
-                          <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="5%" stopColor="#0ea5e9" stopOpacity={0.3}/>
-                            <stop offset="95%" stopColor="#0ea5e9" stopOpacity={0}/>
-                          </linearGradient>
-                        </defs>
-                        <CartesianGrid strokeDasharray="3 3" stroke="#ffffff05" vertical={false} />
-                        <XAxis 
-                          dataKey="name" 
-                          axisLine={false} 
-                          tickLine={false} 
-                          tick={{ fill: '#ffffff20', fontSize: 10, fontWeight: 'bold' }} 
-                        />
-                        <YAxis 
-                          axisLine={false} 
-                          tickLine={false} 
-                          tick={{ fill: '#ffffff20', fontSize: 10, fontWeight: 'bold' }} 
-                        />
-                        <Tooltip 
-                          contentStyle={{ backgroundColor: '#0a101a', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px' }}
-                          itemStyle={{ fontSize: '12px', fontWeight: 'bold' }}
-                        />
-                        <Area type="monotone" dataKey="value" stroke="#0ea5e9" strokeWidth={3} fillOpacity={1} fill="url(#colorValue)" />
-                        <Area type="monotone" dataKey="prev" stroke="#ffffff10" strokeWidth={2} fill="transparent" strokeDasharray="5 5" />
-                      </AreaChart>
-                    </ResponsiveContainer>
+                    
+                    <div className="h-80">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <AreaChart data={[
+                          { name: '00:00', flow: 400, alert: 120 },
+                          { name: '04:00', flow: 300, alert: 80 },
+                          { name: '08:00', flow: 900, alert: 450 },
+                          { name: '12:00', flow: 1200, alert: 820 },
+                          { name: '16:00', flow: 1500, alert: 650 },
+                          { name: '20:00', flow: 1100, alert: 340 },
+                          { name: '23:59', flow: 600, alert: 150 },
+                        ]}>
+                          <defs>
+                            <linearGradient id="colorFlow" x1="0" y1="0" x2="0" y2="1">
+                              <stop offset="5%" stopColor="#0ea5e9" stopOpacity={0.3}/>
+                              <stop offset="95%" stopColor="#0ea5e9" stopOpacity={0}/>
+                            </linearGradient>
+                            <linearGradient id="colorAlert" x1="0" y1="0" x2="0" y2="1">
+                              <stop offset="5%" stopColor="#f43f5e" stopOpacity={0.2}/>
+                              <stop offset="95%" stopColor="#f43f5e" stopOpacity={0}/>
+                            </linearGradient>
+                          </defs>
+                          <CartesianGrid strokeDasharray="3 3" stroke="#ffffff05" vertical={false} />
+                          <XAxis 
+                            dataKey="name" 
+                            axisLine={false} 
+                            tickLine={false} 
+                            tick={{ fill: '#ffffff20', fontSize: 11, fontWeight: 'bold' }} 
+                          />
+                          <YAxis 
+                            axisLine={false} 
+                            tickLine={false} 
+                            tick={{ fill: '#ffffff20', fontSize: 11, fontWeight: 'bold' }} 
+                          />
+                          <Tooltip 
+                            contentStyle={{ backgroundColor: '#0a101a', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '16px', backdropFilter: 'blur(12px)' }}
+                            itemStyle={{ fontSize: '12px', fontWeight: 'black', textTransform: 'uppercase' }}
+                          />
+                          <Area type="monotone" dataKey="flow" stroke="#0ea5e9" strokeWidth={4} fillOpacity={1} fill="url(#colorFlow)" />
+                          <Area type="monotone" dataKey="alert" stroke="#f43f5e" strokeWidth={3} fillOpacity={1} fill="url(#colorAlert)" strokeDasharray="10 5" />
+                        </AreaChart>
+                      </ResponsiveContainer>
+                    </div>
                   </div>
                 </div>
 
-                <div className="bg-[#0a101a] border border-white/5 rounded-3xl p-8">
-                  <h4 className="text-sm font-black text-white uppercase tracking-widest mb-8">风险类型分布</h4>
-                  <div className="space-y-6">
+                <div className="col-span-4 bg-[#0a101a] border border-white/5 rounded-[40px] p-8 shadow-2xl">
+                  <h4 className="text-sm font-black text-white uppercase tracking-widest mb-10">风险维度构成</h4>
+                  <div className="space-y-8">
                     {[
                       { label: '超速航行', count: 428, color: 'sky' },
                       { label: '偏离航道', count: 312, color: 'emerald' },
                       { label: '非法锚泊', count: 185, color: 'amber' },
                       { label: '碰撞风险', count: 94, color: 'red' },
-                      { label: '其他', count: 45, color: 'indigo' },
+                      { label: '异常停泊', count: 45, color: 'indigo' },
                     ].map((item, idx) => (
-                      <div key={idx} className="space-y-2">
-                        <div className="flex items-center justify-between text-[10px] font-black uppercase tracking-widest">
-                          <span className="text-white/60">{item.label}</span>
+                      <div key={idx} className="space-y-3">
+                        <div className="flex items-center justify-between text-[11px] font-black uppercase tracking-widest">
+                          <span className="text-white/40">{item.label}</span>
                           <span className="text-white">{item.count}</span>
                         </div>
-                        <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
+                        <div className="h-2 w-full bg-white/5 rounded-full overflow-hidden">
                           <motion.div 
                             initial={{ width: 0 }}
                             animate={{ width: `${(item.count / 428) * 100}%` }}
-                            className={`h-full bg-${item.color}-500 rounded-full`}
+                            transition={{ duration: 1, delay: idx * 0.1 }}
+                            className={`h-full bg-${item.color}-500 rounded-full shadow-[0_0_12px_rgba(var(--${item.color}-rgb),0.4)]`}
                           />
                         </div>
                       </div>
                     ))}
                   </div>
+                  
+                  <div className="mt-12 pt-8 border-t border-white/5">
+                    <div className="flex items-center gap-4 text-white/30">
+                      <div className="flex flex-col">
+                        <span className="text-[10px] font-black uppercase tracking-widest">本月环比</span>
+                        <span className="text-lg font-black text-emerald-400">+14.2%</span>
+                      </div>
+                      <div className="h-8 w-px bg-white/10" />
+                      <div className="flex flex-col">
+                        <span className="text-[10px] font-black uppercase tracking-widest">预测下月</span>
+                        <span className="text-lg font-black text-sky-400">稳中有降</span>
+                      </div>
+                    </div>
+                  </div>
                 </div>
+              </div>
+              
+              {/* 底部详细列表 */}
+              <div className="bg-[#0a101a] border border-white/5 rounded-[40px] overflow-hidden shadow-2xl">
+                <div className="px-8 py-6 border-b border-white/5 flex items-center justify-between bg-white/[0.01]">
+                  <div className="flex items-center gap-3">
+                    <div className="w-1.5 h-6 bg-sky-500 rounded-full" />
+                    <h4 className="text-sm font-black text-white uppercase tracking-widest">各区域值班效能统计</h4>
+                  </div>
+                  <button className="flex items-center gap-2 px-4 py-2 bg-white/5 border border-white/10 rounded-xl text-[10px] font-black text-white/60 uppercase tracking-widest hover:text-white transition-all">
+                    <FileText size={14} /> 导出报表
+                  </button>
+                </div>
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="bg-white/5">
+                      <th className="px-8 py-5 text-[10px] font-black text-white/20 uppercase tracking-widest">管理区域</th>
+                      <th className="px-8 py-5 text-[10px] font-black text-white/20 uppercase tracking-widest">处理总数</th>
+                      <th className="px-8 py-5 text-[10px] font-black text-white/20 uppercase tracking-widest">平均响应</th>
+                      <th className="px-8 py-5 text-[10px] font-black text-white/20 uppercase tracking-widest">闭环率</th>
+                      <th className="px-8 py-5 text-[10px] font-black text-white/20 uppercase tracking-widest">风险降低率</th>
+                      <th className="px-8 py-5 text-[10px] font-black text-white/20 uppercase tracking-widest text-right">评分</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-white/5">
+                    {[
+                      { area: '吴淞口警戒区', total: 842, response: '1.2m', closure: '99.2%', risk: '+15.4%', score: 98 },
+                      { area: '圆圆沙 12号浮', total: 654, response: '1.5m', closure: '98.5%', risk: '+12.1%', score: 95 },
+                      { area: '南槽 A2 泊位', total: 432, response: '1.8m', closure: '97.8%', risk: '+8.4%', score: 92 },
+                      { area: '长江口深水航道', total: 321, response: '2.4m', closure: '96.2%', risk: '+5.7%', score: 88 },
+                    ].map((row, idx) => (
+                      <tr key={idx} className="group hover:bg-white/[0.02] transition-colors">
+                        <td className="px-8 py-5">
+                          <span className="text-xs font-bold text-white/90">{row.area}</span>
+                        </td>
+                        <td className="px-8 py-5 text-xs font-mono text-white/60">{row.total}</td>
+                        <td className="px-8 py-5 text-xs font-mono text-sky-400">{row.response}</td>
+                        <td className="px-8 py-5 text-xs font-mono text-emerald-400">{row.closure}</td>
+                        <td className="px-8 py-5 text-xs font-mono text-emerald-400">{row.risk}</td>
+                        <td className="px-8 py-5 text-right">
+                          <span className="text-xs font-black text-white px-3 py-1 rounded-lg bg-white/5 border border-white/10">{row.score}</span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             </div>
           )}

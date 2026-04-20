@@ -24,6 +24,7 @@ import {
   Clock,
   Filter,
   LocateFixed,
+  List,
   LogOut,
   Layout,
   Users,
@@ -1008,7 +1009,7 @@ type WarningRule = {
   category: string;
   trigger: string;
   enabled: boolean;
-  severity: '高' | '中' | '低';
+  severity: '注意' | '警告' | '警报' | '紧急';
   responseLevel: '自动提醒' | '值班确认' | '联动处置';
   description: string;
   effectiveAreaIds: string[];
@@ -1021,7 +1022,7 @@ const INITIAL_WARNING_RULES: WarningRule[] = [
     category: '单船行为风险',
     trigger: '敏感区域进出',
     enabled: true,
-    severity: '高',
+    severity: '紧急',
     responseLevel: '联动处置',
     description: '当船舶进入禁航区、警戒封控区等限制水域时触发高等级预警。',
     effectiveAreaIds: ['1', '13', '15'],
@@ -1032,7 +1033,7 @@ const INITIAL_WARNING_RULES: WarningRule[] = [
     category: '单船行为风险',
     trigger: '敏感区域进出',
     enabled: true,
-    severity: '高',
+    severity: '警报',
     responseLevel: '值班确认',
     description: '在禁锚区内识别出减速、驻留、抛锚等行为时触发。',
     effectiveAreaIds: ['9', '14'],
@@ -1043,7 +1044,7 @@ const INITIAL_WARNING_RULES: WarningRule[] = [
     category: '单船行为风险',
     trigger: '异常行为',
     enabled: false,
-    severity: '中',
+    severity: '警告',
     responseLevel: '值班确认',
     description: '对锚泊船位移、漂移速度异常等特征进行识别。',
     effectiveAreaIds: ['9', '14'],
@@ -1054,7 +1055,7 @@ const INITIAL_WARNING_RULES: WarningRule[] = [
     category: '单船事件',
     trigger: '单船事件',
     enabled: false,
-    severity: '中',
+    severity: '警告',
     responseLevel: '自动提醒',
     description: '对非授权锚泊水域内的异常停船、抛锚行为进行提醒。',
     effectiveAreaIds: ['2', '12'],
@@ -1065,7 +1066,7 @@ const INITIAL_WARNING_RULES: WarningRule[] = [
     category: '单船行为风险',
     trigger: '异常行为',
     enabled: false,
-    severity: '中',
+    severity: '警告',
     responseLevel: '值班确认',
     description: '船舶航向、航迹偏离航道中心线超过阈值时触发。',
     effectiveAreaIds: ['10', '11'],
@@ -1076,7 +1077,7 @@ const INITIAL_WARNING_RULES: WarningRule[] = [
     category: '单船行为风险',
     trigger: '异常行为',
     enabled: false,
-    severity: '中',
+    severity: '警告',
     responseLevel: '自动提醒',
     description: '监测船舶在非指定掉头区域内进行大幅转向或掉头操作。',
     effectiveAreaIds: ['10', '12'],
@@ -1087,7 +1088,7 @@ const INITIAL_WARNING_RULES: WarningRule[] = [
     category: '单船行为风险',
     trigger: '异常行为',
     enabled: false,
-    severity: '高',
+    severity: '警报',
     responseLevel: '联动处置',
     description: '识别船舶沿航道逆向行驶的高风险动态。',
     effectiveAreaIds: ['10', '11', '12'],
@@ -1098,7 +1099,7 @@ const INITIAL_WARNING_RULES: WarningRule[] = [
     category: '单船行为风险',
     trigger: '异常行为',
     enabled: true,
-    severity: '中',
+    severity: '警告',
     responseLevel: '自动提醒',
     description: '对超出航道限速阈值的行为进行持续监测与提醒。',
     effectiveAreaIds: ['10', '11', '12'],
@@ -1109,7 +1110,7 @@ const INITIAL_WARNING_RULES: WarningRule[] = [
     category: '单船行为风险',
     trigger: '异常行为',
     enabled: false,
-    severity: '高',
+    severity: '紧急',
     responseLevel: '联动处置',
     description: '结合水深、吃水与航速变化识别可能的搁浅事件。',
     effectiveAreaIds: ['13', '15'],
@@ -1120,7 +1121,7 @@ const INITIAL_WARNING_RULES: WarningRule[] = [
     category: '单船行为风险',
     trigger: '异常行为',
     enabled: true,
-    severity: '中',
+    severity: '警告',
     responseLevel: '值班确认',
     description: '对重点保护、施工、演练等指定区域的进入行为进行监测。',
     effectiveAreaIds: ['13', '14', '8'],
@@ -1131,7 +1132,7 @@ const INITIAL_WARNING_RULES: WarningRule[] = [
     category: '单船行为风险',
     trigger: '异常行为',
     enabled: true,
-    severity: '低',
+    severity: '注意',
     responseLevel: '自动提醒',
     description: '对航道内长时间低速或停滞状态进行识别。',
     effectiveAreaIds: ['10', '11'],
@@ -1142,7 +1143,7 @@ const INITIAL_WARNING_RULES: WarningRule[] = [
     category: '多船行为风险',
     trigger: '异常行为',
     enabled: false,
-    severity: '高',
+    severity: '紧急',
     responseLevel: '联动处置',
     description: '结合 CPA、TCPA 与多船会遇态势识别碰撞风险。',
     effectiveAreaIds: ['1', '10', '11', '13'],
@@ -1304,15 +1305,15 @@ const INTENT_DATA: IntentItem[] = [
     intentEta: '预计 8 分钟后进入报告线',
     risks: [
       {
-        level: '高',
+        level: '紧急',
         text: 'CPA 0.18nm：与“海丰77”会遇',
         action: '保持右侧通过',
         counterparty: '海丰77',
         location: '吴淞口主航道交汇点',
         timeToEncounter: '约 6 分钟后',
       },
-      { level: '中', text: '航道偏移 +86m：已偏离推荐航迹', action: '回归中心线' },
-      { level: '中', text: '前方交通密集：2 分钟内进入交汇水域', action: '避免加速' },
+      { level: '警告', text: '航道偏移 +86m：已偏离推荐航迹', action: '回归中心线' },
+      { level: '警告', text: '前方交通密集：2 分钟内进入交汇水域', action: '避免加速' },
     ],
     situation: {
       sog: '9.8kn',
@@ -1365,15 +1366,15 @@ const INTENT_DATA: IntentItem[] = [
     intentEta: '预计 12 分钟后进入靠泊引导区',
     risks: [
       {
-        level: '高',
+        level: '警报',
         text: 'CPA 0.22nm：与“远洋99”存在交叉会遇',
         action: '保持右舷避让',
         counterparty: '远洋99',
         location: '南槽入口交叉口',
         timeToEncounter: '约 5 分钟后',
       },
-      { level: '中', text: '航速 15.8kn：高于当前建议进港航速', action: '减速至 12kn' },
-      { level: '中', text: '前方密度升高：南槽入口船流叠加', action: '保持纵向间距' },
+      { level: '警告', text: '航速 15.8kn：高于当前建议进港航速', action: '减速至 12kn' },
+      { level: '警告', text: '前方密度升高：南槽入口船流叠加', action: '保持纵向间距' },
     ],
     situation: {
       sog: '15.8kn',
@@ -1420,15 +1421,15 @@ const INTENT_DATA: IntentItem[] = [
     intentEta: '预计 6 分钟后完成解缆离泊',
     risks: [
       {
-        level: '中',
+        level: '警告',
         text: '港池机动空间有限：拖轮作业窗口较短',
         action: '保持低速离泊',
         counterparty: '沪港拖08',
         location: '外高桥港池出口',
         timeToEncounter: '约 9 分钟后',
       },
-      { level: '中', text: '艏向调整中：旋回余度不足', action: '优先校正船首方向' },
-      { level: '低', text: '后方交通可控：无紧迫追越船', action: '按计划离泊' },
+      { level: '警告', text: '艏向调整中：旋回余度不足', action: '优先校正船首方向' },
+      { level: '注意', text: '后方交通可控：无紧迫追越船', action: '按计划离泊' },
     ],
     situation: {
       sog: '4.2kn',
@@ -1474,15 +1475,15 @@ const INTENT_DATA: IntentItem[] = [
     intentEta: '预计 5 分钟后完成抛锚动作',
     risks: [
       {
-        level: '中',
+        level: '警告',
         text: '锚地内相邻船距收缩：左舷船间距不足',
         action: '限制横移',
         counterparty: '海巡21',
         location: '10号锚地西侧入锚点',
         timeToEncounter: '约 11 分钟后',
       },
-      { level: '中', text: '航速 2.5kn：抛锚前减速不足', action: '继续降至 1kn 以下' },
-      { level: '低', text: '风流可控：当前不影响锚泊', action: '维持艏向稳定' },
+      { level: '警告', text: '航速 2.5kn：抛锚前减速不足', action: '继续降至 1kn 以下' },
+      { level: '注意', text: '风流可控：当前不影响锚泊', action: '维持艏向稳定' },
     ],
     situation: {
       sog: '2.5kn',
@@ -1528,15 +1529,15 @@ const INTENT_DATA: IntentItem[] = [
     intentEta: '预计 4 分钟后进入主航道中心带',
     risks: [
       {
-        level: '高',
+        level: '紧急',
         text: '主航道直航船接近：TCPA 03:10',
         action: '延后穿越窗口',
         counterparty: '新海安',
         location: '3号浮北侧会遇点',
         timeToEncounter: '约 3 分钟后',
       },
-      { level: '中', text: '横穿角度偏大：穿越时间被拉长', action: '调整为快速直穿' },
-      { level: '中', text: '周边交通密集：拖带作业机动受限', action: '提前通报周边船舶' },
+      { level: '警告', text: '横穿角度偏大：穿越时间被拉长', action: '调整为快速直穿' },
+      { level: '警告', text: '周边交通密集：拖带作业机动受限', action: '提前通报周边船舶' },
     ],
     situation: {
       sog: '8.5kn',
@@ -1582,15 +1583,15 @@ const INTENT_DATA: IntentItem[] = [
     intentEta: '预计 7 分钟后进入黄浦江口门',
     risks: [
       {
-        level: '中',
+        level: '警告',
         text: '交通流汇聚：吴淞口入口双向船流叠加',
         action: '保持现航向待机',
         counterparty: '蓝波',
         location: '吴淞口警戒线南侧',
         timeToEncounter: '约 8 分钟后',
       },
-      { level: '中', text: '航道偏移 +42m：接近航道右侧边界', action: '回归推荐航迹' },
-      { level: '低', text: 'CPA 0.41nm：当前会遇风险可控', action: '持续观察' },
+      { level: '警告', text: '航道偏移 +42m：接近航道右侧边界', action: '回归推荐航迹' },
+      { level: '注意', text: 'CPA 0.41nm：当前会遇风险可控', action: '持续观察' },
     ],
     situation: {
       sog: '9.2kn',
@@ -1625,7 +1626,7 @@ const getCompactIntentLine = (item: IntentItem) =>
 
 const getCompactRiskLines = (item: IntentItem) => {
   const collisionRisk = item.risks[0];
-  const tone = collisionRisk.level === '高' ? 'high' : 'medium';
+  const tone = collisionRisk.level === '紧急' || collisionRisk.level === '警报' ? 'high' : 'medium';
 
   return [
     {
@@ -2056,14 +2057,6 @@ const AdminPanel = ({
     ) as MockAreaMap,
   );
   const [warningRules, setWarningRules] = useState(() => INITIAL_WARNING_RULES.map((rule) => ({ ...rule })));
-  const [selectedWarningRuleId, setSelectedWarningRuleId] = useState<string>('wr-4');
-  const [isWarningConfigOpen, setIsWarningConfigOpen] = useState(false);
-  const [selectedWarningAreaCategory, setSelectedWarningAreaCategory] = useState<string>(AREA_CATEGORIES[0]);
-  const [selectedRiskConfigAreaType, setSelectedRiskConfigAreaType] = useState<RiskConfigAreaType>('全部');
-  const [warningAreaSearchQuery, setWarningAreaSearchQuery] = useState('');
-  const [selectedWarningAreaTypes, setSelectedWarningAreaTypes] = useState<string[]>([]);
-  const [isWarningAreaBoxSelectEnabled, setIsWarningAreaBoxSelectEnabled] = useState(false);
-  const [expandedWarningAreaCategories, setExpandedWarningAreaCategories] = useState<string[]>(() => [...AREA_CATEGORIES]);
   const [areaSearchQuery, setAreaSearchQuery] = useState('');
   const [areaTypeFilter, setAreaTypeFilter] = useState('全部类型');
   const [areaPageSize, setAreaPageSize] = useState(10);
@@ -2088,109 +2081,6 @@ const AdminPanel = ({
         allWarningAreas.map((area) => [area.id, area] as const),
       ),
     [allWarningAreas],
-  );
-  const selectedWarningAreaGroup = useMemo(
-    () => warningAreaGroups.find(({ category }) => category === selectedWarningAreaCategory) ?? warningAreaGroups[0] ?? null,
-    [selectedWarningAreaCategory, warningAreaGroups],
-  );
-  const warningAreaTypeOptions = useMemo(
-    () => (selectedWarningAreaGroup ? [...new Set(selectedWarningAreaGroup.areas.map((area) => area.type))] : []),
-    [selectedWarningAreaGroup],
-  );
-  const deferredWarningAreaSearchQuery = useDeferredValue(warningAreaSearchQuery);
-  const deferredSelectedWarningAreaTypes = useDeferredValue(selectedWarningAreaTypes);
-  const filteredWarningAreas = useMemo(() => {
-    if (!selectedWarningAreaGroup) return [];
-    const keyword = deferredWarningAreaSearchQuery.trim().toLowerCase();
-    return selectedWarningAreaGroup.areas.filter((area) => {
-      const matchesType =
-        deferredSelectedWarningAreaTypes.length === 0 ||
-        deferredSelectedWarningAreaTypes.includes(area.type);
-      const matchesKeyword =
-        !keyword ||
-        area.name.toLowerCase().includes(keyword) ||
-        area.type.toLowerCase().includes(keyword);
-      return matchesType && matchesKeyword;
-    });
-  }, [deferredSelectedWarningAreaTypes, deferredWarningAreaSearchQuery, selectedWarningAreaGroup]);
-  const deferredFilteredWarningAreas = useDeferredValue(filteredWarningAreas);
-  const selectedWarningRule = useMemo(
-    () => warningRules.find((rule) => rule.id === selectedWarningRuleId) ?? warningRules[0] ?? null,
-    [selectedWarningRuleId, warningRules],
-  );
-  const selectedWarningAreaIds = selectedWarningRule?.effectiveAreaIds ?? [];
-  const selectedWarningAreaPreview = useMemo(
-    () =>
-      selectedWarningAreaIds
-        .slice(0, 8)
-        .map((areaId) => warningAreaLookup.get(areaId))
-        .filter(Boolean),
-    [selectedWarningAreaIds, warningAreaLookup],
-  );
-  const selectedWarningAreaHiddenCount = Math.max(0, selectedWarningAreaIds.length - selectedWarningAreaPreview.length);
-  const selectedWarningAreaTypeSummary = useMemo(() => {
-    const typeCounts = new Map<string, number>();
-    selectedWarningAreaIds.forEach((areaId) => {
-      const area = warningAreaLookup.get(areaId);
-      if (!area) return;
-      typeCounts.set(area.type, (typeCounts.get(area.type) || 0) + 1);
-    });
-    return Array.from(typeCounts.entries())
-      .map(([type, count]) => ({ type, count }))
-      .sort((left, right) => right.count - left.count);
-  }, [selectedWarningAreaIds, warningAreaLookup]);
-  const selectedWarningAreaGroupSelectedCount = useMemo(() => {
-    if (!selectedWarningAreaGroup) return 0;
-    return selectedWarningAreaGroup.areas.filter((area) => selectedWarningAreaIds.includes(area.id)).length;
-  }, [selectedWarningAreaGroup, selectedWarningAreaIds]);
-  const warningAreaTypeStats = useMemo(
-    () =>
-      warningAreaTypeOptions.map((type) => {
-        const areas = selectedWarningAreaGroup?.areas.filter((area) => area.type === type) ?? [];
-        return {
-          type,
-          count: areas.length,
-          selectedCount: areas.filter((area) => selectedWarningAreaIds.includes(area.id)).length,
-        };
-      }),
-    [selectedWarningAreaGroup, selectedWarningAreaIds, warningAreaTypeOptions],
-  );
-  const riskConfigAreaTypeStats = useMemo(() => {
-    const options: RiskConfigAreaType[] = ['全部', '航道', '锚地', '泊位'];
-    return options.map((option) => {
-      const relatedAreas =
-        option === '全部'
-          ? allWarningAreas
-          : allWarningAreas.filter((area) => getRiskConfigAreaType(area) === option);
-      return {
-        key: option,
-        label: option === '全部' ? '全部区域' : option,
-        count: relatedAreas.length,
-        selectedCount:
-          option === '全部'
-            ? selectedWarningAreaIds.length
-            : relatedAreas.filter((area) => selectedWarningAreaIds.includes(area.id)).length,
-      };
-    });
-  }, [allWarningAreas, selectedWarningAreaIds]);
-  const warningAreaIndexLookup = useMemo(
-    () =>
-      new Map(
-        (selectedWarningAreaGroup?.areas ?? []).map((area, index) => [area.id, index] as const),
-      ),
-    [selectedWarningAreaGroup],
-  );
-  const warningMapFeatures = useMemo(
-    () =>
-      deferredFilteredWarningAreas.map((area, index) =>
-        createWarningAreaFeature(
-          area,
-          selectedWarningAreaCategory,
-          warningAreaIndexLookup.get(area.id) ?? index,
-          selectedWarningAreaGroup?.areas.length ?? deferredFilteredWarningAreas.length,
-        ),
-      ),
-    [deferredFilteredWarningAreas, selectedWarningAreaCategory, selectedWarningAreaGroup, warningAreaIndexLookup],
   );
   const activeAreaList = useMemo(() => areaConfig[activeSubTab] || [], [activeSubTab, areaConfig]);
   const activeAreaTypeOptions = useMemo(
@@ -2225,6 +2115,93 @@ const AdminPanel = ({
     }
     return [1, 'ellipsis-start', areaCurrentPage - 1, areaCurrentPage, areaCurrentPage + 1, 'ellipsis-end', areaTotalPages];
   }, [areaCurrentPage, areaTotalPages]);
+  const [isWarningConfigOpen, setIsWarningConfigOpen] = useState(false);
+  const [selectedWarningRuleId, setSelectedWarningRuleId] = useState(INITIAL_WARNING_RULES[0]?.id || '');
+  const [warningAreaSearchQuery, setWarningAreaSearchQuery] = useState('');
+  const deferredWarningAreaSearchQuery = useDeferredValue(warningAreaSearchQuery);
+  const [selectedWarningAreaCategory, setSelectedWarningAreaCategory] = useState<string>(AREA_CATEGORIES[0]);
+  const [selectedWarningAreaTypes, setSelectedWarningAreaTypes] = useState<string[]>([]);
+  const [expandedWarningAreaCategories, setExpandedWarningAreaCategories] = useState<string[]>([AREA_CATEGORIES[0]]);
+  const [isWarningAreaBoxSelectEnabled, setIsWarningAreaBoxSelectEnabled] = useState(false);
+  const [selectedRiskConfigAreaType, setSelectedRiskConfigAreaType] = useState<RiskConfigAreaType>('全部');
+  const selectedWarningRule = useMemo(
+    () => warningRules.find((rule) => rule.id === selectedWarningRuleId) || warningRules[0] || null,
+    [selectedWarningRuleId, warningRules],
+  );
+  const selectedWarningAreaIds = selectedWarningRule?.effectiveAreaIds || [];
+  const selectedWarningAreaGroup = useMemo(
+    () => warningAreaGroups.find((group) => group.category === selectedWarningAreaCategory) || warningAreaGroups[0],
+    [selectedWarningAreaCategory, warningAreaGroups],
+  );
+  const warningAreaTypeOptions = useMemo(
+    () => [...new Set((selectedWarningAreaGroup?.areas || []).map((area) => area.type))],
+    [selectedWarningAreaGroup],
+  );
+  const filteredWarningAreas = useMemo(() => {
+    const keyword = deferredWarningAreaSearchQuery.trim().toLowerCase();
+
+    return (selectedWarningAreaGroup?.areas || []).filter((area) => {
+      const matchesKeyword =
+        !keyword ||
+        area.name.toLowerCase().includes(keyword) ||
+        area.type.toLowerCase().includes(keyword);
+      const matchesRiskType =
+        selectedRiskConfigAreaType === '全部' ||
+        getRiskConfigAreaType({ type: area.type, category: selectedWarningAreaGroup.category }) === selectedRiskConfigAreaType;
+      const matchesLayer = selectedWarningAreaTypes.length === 0 || selectedWarningAreaTypes.includes(area.type);
+
+      return matchesKeyword && matchesRiskType && matchesLayer;
+    });
+  }, [
+    deferredWarningAreaSearchQuery,
+    selectedRiskConfigAreaType,
+    selectedWarningAreaGroup,
+    selectedWarningAreaTypes,
+  ]);
+  const warningMapFeatures = useMemo(
+    () =>
+      filteredWarningAreas.map((area, index) =>
+        createWarningAreaFeature(area, selectedWarningAreaGroup.category, index, filteredWarningAreas.length),
+      ),
+    [filteredWarningAreas, selectedWarningAreaGroup],
+  );
+  const selectedWarningAreaGroupSelectedCount = useMemo(
+    () => (selectedWarningAreaGroup?.areas || []).filter((area) => selectedWarningAreaIds.includes(area.id)).length,
+    [selectedWarningAreaGroup, selectedWarningAreaIds],
+  );
+  const selectedWarningAreaPreview = useMemo(
+    () => allWarningAreas.filter((area) => selectedWarningAreaIds.includes(area.id)).slice(0, 8),
+    [allWarningAreas, selectedWarningAreaIds],
+  );
+  const selectedWarningAreaHiddenCount = Math.max(0, selectedWarningAreaIds.length - selectedWarningAreaPreview.length);
+  const selectedWarningAreaTypeSummary = useMemo(() => {
+    const counts = new Map<string, number>();
+    allWarningAreas.forEach((area) => {
+      if (!selectedWarningAreaIds.includes(area.id)) return;
+      counts.set(area.type, (counts.get(area.type) || 0) + 1);
+    });
+
+    return Array.from(counts, ([type, count]) => ({ type, count }));
+  }, [allWarningAreas, selectedWarningAreaIds]);
+  const riskConfigAreaTypeStats = useMemo(
+    () =>
+      (['全部', '航道', '锚地', '泊位'] as RiskConfigAreaType[]).map((key) => {
+        const areas =
+          key === '全部'
+            ? selectedWarningAreaGroup?.areas || []
+            : (selectedWarningAreaGroup?.areas || []).filter(
+                (area) => getRiskConfigAreaType({ type: area.type, category: selectedWarningAreaGroup.category }) === key,
+              );
+
+        return {
+          key,
+          label: key === '全部' ? '全部区域' : key,
+          count: areas.length,
+          selectedCount: areas.filter((area) => selectedWarningAreaIds.includes(area.id)).length,
+        };
+      }),
+    [selectedWarningAreaGroup, selectedWarningAreaIds],
+  );
 
   const menus = [
     { name: '个人信息', icon: User },
@@ -2327,97 +2304,91 @@ const AdminPanel = ({
   };
 
   const updateWarningRule = (ruleId: string, updater: (rule: WarningRule) => WarningRule) => {
+    setWarningRules((current) => current.map((rule) => (rule.id === ruleId ? updater(rule) : rule)));
+  };
+
+  const openWarningRuleConfig = (ruleId: string) => {
+    setSelectedWarningRuleId(ruleId);
+    setIsWarningConfigOpen(true);
+  };
+
+  const resetWarningRuleConfig = (ruleId: string) => {
+    const defaultRule = INITIAL_WARNING_RULES.find((rule) => rule.id === ruleId);
+    if (!defaultRule) return;
+    setWarningRules((current) => current.map((rule) => (rule.id === ruleId ? { ...defaultRule } : rule)));
+  };
+
+  const setWarningRuleAreaIds = (ruleId: string, areaIds: string[]) => {
     setWarningRules((current) =>
-      current.map((rule) => (rule.id === ruleId ? updater(rule) : rule)),
+      current.map((rule) =>
+        rule.id === ruleId
+          ? { ...rule, effectiveAreaIds: Array.from(new Set(areaIds)) }
+          : rule,
+      ),
     );
   };
 
   const toggleWarningRuleArea = (ruleId: string, areaId: string) => {
-    updateWarningRule(ruleId, (rule) => ({
-      ...rule,
-      effectiveAreaIds: rule.effectiveAreaIds.includes(areaId)
-        ? rule.effectiveAreaIds.filter((id) => id !== areaId)
-        : [...rule.effectiveAreaIds, areaId],
-    }));
+    const rule = warningRules.find((item) => item.id === ruleId);
+    if (!rule) return;
+    const nextAreaIds = rule.effectiveAreaIds.includes(areaId)
+      ? rule.effectiveAreaIds.filter((id) => id !== areaId)
+      : [...rule.effectiveAreaIds, areaId];
+    setWarningRuleAreaIds(ruleId, nextAreaIds);
   };
 
   const toggleWarningRuleAreaCategory = (ruleId: string, areaIds: string[]) => {
-    updateWarningRule(ruleId, (rule) => {
-      const hasAll = areaIds.every((id) => rule.effectiveAreaIds.includes(id));
-      const nextIds = hasAll
-        ? rule.effectiveAreaIds.filter((id) => !areaIds.includes(id))
-        : [...new Set([...rule.effectiveAreaIds, ...areaIds])];
-
-      return {
-        ...rule,
-        effectiveAreaIds: nextIds,
-      };
-    });
-  };
-
-  const invertWarningRuleAreas = (ruleId: string, areaIds: string[]) => {
-    updateWarningRule(ruleId, (rule) => {
-      const nextSelected = new Set(rule.effectiveAreaIds);
-      areaIds.forEach((areaId) => {
-        if (nextSelected.has(areaId)) {
-          nextSelected.delete(areaId);
-        } else {
-          nextSelected.add(areaId);
-        }
-      });
-      return {
-        ...rule,
-        effectiveAreaIds: Array.from(nextSelected),
-      };
-    });
+    const rule = warningRules.find((item) => item.id === ruleId);
+    if (!rule) return;
+    const allSelected = areaIds.length > 0 && areaIds.every((id) => rule.effectiveAreaIds.includes(id));
+    const nextAreaIds = allSelected
+      ? rule.effectiveAreaIds.filter((id) => !areaIds.includes(id))
+      : [...rule.effectiveAreaIds, ...areaIds];
+    setWarningRuleAreaIds(ruleId, nextAreaIds);
   };
 
   const clearWarningRuleAreas = (ruleId: string, areaIds?: string[]) => {
-    updateWarningRule(ruleId, (rule) => ({
-      ...rule,
-      effectiveAreaIds: areaIds?.length
-        ? rule.effectiveAreaIds.filter((id) => !areaIds.includes(id))
-        : [],
-    }));
+    const rule = warningRules.find((item) => item.id === ruleId);
+    if (!rule) return;
+    setWarningRuleAreaIds(
+      ruleId,
+      areaIds ? rule.effectiveAreaIds.filter((id) => !areaIds.includes(id)) : [],
+    );
   };
 
-  const handleToggleWarningAreaType = (type: string) => {
-    startTransition(() => {
-      setSelectedWarningAreaTypes((current) => {
-        if (current.includes(type)) {
-          return current.length === 1 ? current : current.filter((item) => item !== type);
-        }
-        return [...current, type];
-      });
+  const invertWarningRuleAreas = (ruleId: string, areaIds: string[]) => {
+    const rule = warningRules.find((item) => item.id === ruleId);
+    if (!rule) return;
+    const selected = new Set<string>(rule.effectiveAreaIds);
+    areaIds.forEach((id) => {
+      if (selected.has(id)) {
+        selected.delete(id);
+      } else {
+        selected.add(id);
+      }
     });
+    setWarningRuleAreaIds(ruleId, Array.from(selected));
   };
 
   const handleSelectRiskConfigAreaType = (type: RiskConfigAreaType) => {
-    const nextCategory =
-      type === '航道'
-        ? '航道航行设施'
-        : type === '锚地' || type === '泊位'
-          ? '作业与停泊设施'
-          : selectedWarningAreaCategory;
-    const targetGroup =
-      warningAreaGroups.find(({ category }) => category === nextCategory) ?? selectedWarningAreaGroup;
+    setSelectedRiskConfigAreaType(type);
+    if (type === '全部') {
+      setSelectedWarningAreaTypes(warningAreaTypeOptions);
+      return;
+    }
+    setSelectedWarningAreaTypes(
+      warningAreaTypeOptions.filter((areaType) =>
+        getRiskConfigAreaType({ type: areaType, category: selectedWarningAreaGroup.category }) === type,
+      ),
+    );
+  };
 
-    startTransition(() => {
-      setSelectedRiskConfigAreaType(type);
-      if (!targetGroup) return;
-
-      const nextTypes = [...new Set(
-        targetGroup.areas
-          .filter((area) => type === '全部' || getRiskConfigAreaType({ type: area.type, category: targetGroup.category }) === type)
-          .map((area) => area.type),
-      )];
-
-      setSelectedWarningAreaCategory(targetGroup.category);
-      setSelectedWarningAreaTypes(nextTypes.length > 0 ? nextTypes : warningAreaTypeOptions);
-      setExpandedWarningAreaCategories((current) =>
-        current.includes(targetGroup.category) ? current : [...current, targetGroup.category],
-      );
-    });
+  const handleToggleWarningAreaType = (type: string) => {
+    setSelectedWarningAreaTypes((current) =>
+      current.includes(type)
+        ? current.filter((item) => item !== type)
+        : [...current, type],
+    );
   };
 
   const toggleExpandedWarningAreaCategory = (category: string) => {
@@ -2430,20 +2401,10 @@ const AdminPanel = ({
 
   const handleSelectWarningAreasByBounds = (ruleId: string, bounds: L.LatLngBounds) => {
     const areaIds = warningMapFeatures
-      .filter((feature) => bounds.contains(feature.center))
+      .filter((feature) => bounds.contains(L.latLng(feature.center[0], feature.center[1])))
       .map((feature) => feature.id);
-
     if (areaIds.length === 0) return;
-    updateWarningRule(ruleId, (rule) => ({
-      ...rule,
-      effectiveAreaIds: Array.from(new Set([...rule.effectiveAreaIds, ...areaIds])),
-    }));
-  };
-
-  const resetWarningRuleConfig = (ruleId: string) => {
-    const fallback = INITIAL_WARNING_RULES.find((rule) => rule.id === ruleId);
-    if (!fallback) return;
-    updateWarningRule(ruleId, () => ({ ...fallback }));
+    toggleWarningRuleAreaCategory(ruleId, areaIds);
   };
 
   const handleToggleAreaStatus = (category: string, areaId: string) => {
@@ -2474,24 +2435,17 @@ const AdminPanel = ({
   }, [areaCurrentPage, areaTotalPages]);
 
   useEffect(() => {
-    if (!selectedWarningRule) return;
-
-    const categoryWithSelection = warningAreaGroups.find(({ areas }) =>
-      areas.some((area) => selectedWarningRule.effectiveAreaIds.includes(area.id)),
-    );
-
-    setSelectedWarningAreaCategory(categoryWithSelection?.category || AREA_CATEGORIES[0]);
-    setSelectedRiskConfigAreaType('全部');
-  }, [selectedWarningRule, warningAreaGroups]);
+    if (!warningAreaGroups.some((group) => group.category === selectedWarningAreaCategory)) {
+      setSelectedWarningAreaCategory(warningAreaGroups[0]?.category || AREA_CATEGORIES[0]);
+    }
+  }, [selectedWarningAreaCategory, warningAreaGroups]);
 
   useEffect(() => {
     setSelectedWarningAreaTypes((current) => {
-      const nextTypes = warningAreaTypeOptions;
-      const retainedTypes = current.filter((type) => nextTypes.includes(type));
-      return retainedTypes.length > 0 ? retainedTypes : nextTypes;
+      const available = current.filter((type) => warningAreaTypeOptions.includes(type));
+      return available.length > 0 ? available : warningAreaTypeOptions;
     });
-    setIsWarningAreaBoxSelectEnabled(false);
-  }, [selectedWarningAreaCategory, warningAreaTypeOptions]);
+  }, [warningAreaTypeOptions]);
 
   if (isEditing) {
     return (
@@ -3150,476 +3104,555 @@ const AdminPanel = ({
           )}
 
           {activeMenu === '预警管理' && (
-            <div className="h-full min-h-full bg-[#07111f] flex flex-col">
-              <div className="h-12 border-b border-white/10 bg-[#101925] px-4 flex items-center justify-between shrink-0">
-                <div className="flex items-center gap-3">
-                  <Layout size={14} className="text-white/70" />
-                  <div className="w-1 h-4 rounded-full bg-sky-400" />
-                  <span className="text-[15px] font-semibold text-white mr-4">预警管理</span>
+            <div className="h-full min-h-full bg-[#050a10] flex flex-col overflow-hidden">
+              {/* 顶部二级导航 */}
+              <div className="h-14 border-b border-white/5 bg-[#0a101a]/50 backdrop-blur-xl px-6 flex items-center justify-between shrink-0">
+                <div className="flex items-center gap-8">
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-xl bg-sky-500/10 flex items-center justify-center text-sky-400">
+                      <Shield size={18} />
+                    </div>
+                    <span className="text-sm font-black text-white tracking-widest uppercase">预警与风险管理</span>
+                  </div>
                   
-                  <div className="flex bg-white/5 rounded-lg p-0.5">
-                    {['实时预警', '风险统计'].map(tab => (
+                  <nav className="flex items-center gap-1 bg-white/5 p-1 rounded-xl">
+                    {[
+                      { id: '实时预警', label: '预警策略', icon: Settings },
+                      { id: '风险列表', label: '风险列表', icon: List },
+                      { id: '风险统计', label: '风险看板', icon: BarChart3 }
+                    ].map(tab => (
                       <button
-                        key={tab}
-                        onClick={() => setActiveWarningTab(tab)}
-                        className={`px-4 py-1 text-[11px] font-bold rounded-md transition-all whitespace-nowrap ${activeWarningTab === tab ? 'bg-sky-500 text-white shadow-lg shadow-sky-500/20' : 'text-white/40 hover:text-white/60'}`}
+                        key={tab.id}
+                        onClick={() => setActiveWarningTab(tab.id)}
+                        className={`px-4 py-1.5 rounded-lg text-[11px] font-bold transition-all flex items-center gap-2 ${
+                          activeWarningTab === tab.id 
+                            ? 'bg-sky-500 text-white shadow-lg shadow-sky-500/20' 
+                            : 'text-white/40 hover:text-white/60 hover:bg-white/5'
+                        }`}
                       >
-                        {tab}
+                        <tab.icon size={14} />
+                        {tab.label}
                       </button>
                     ))}
-                  </div>
+                  </nav>
                 </div>
-                <div className="flex items-center gap-4 text-white/70">
-                  <button className="hover:text-white transition-colors">
-                    <Search size={16} />
-                  </button>
-                  <button className="hover:text-white transition-colors">
-                    <Maximize2 size={15} />
-                  </button>
+
+                <div className="flex items-center gap-4">
+                  <div className="h-8 w-px bg-white/10" />
+                  <div className="flex items-center gap-2 px-3 py-1.5 bg-emerald-500/10 border border-emerald-500/20 rounded-lg">
+                    <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                    <span className="text-[10px] font-black text-emerald-400 uppercase tracking-widest">系统引擎在线</span>
+                  </div>
                 </div>
               </div>
 
-              <div className="flex-1 min-h-0 flex flex-col">
-                {activeWarningTab === '实时预警' ? (
-                  <>
-                    <div className="grid grid-cols-3 border-b border-white/10 bg-[#0d1724] shrink-0">
-                      <div className="px-4 py-3">
-                        <div className="text-[10px] font-bold text-white/35 uppercase tracking-widest">规则总数</div>
-                        <div className="mt-1 text-xl font-semibold text-white">{warningRules.length}</div>
+              <div className="flex-1 overflow-y-auto custom-scrollbar p-6">
+                <AnimatePresence mode="wait">
+                  {activeWarningTab === '实时预警' ? (
+                    <motion.div 
+                      key="warning-rules"
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -10 }}
+                      className="space-y-6"
+                    >
+                      {/* 统计概览 */}
+                      <div className="grid grid-cols-4 gap-4">
+                        {[
+                          { label: '预警规则总数', value: warningRules.length, sub: '策略覆盖全辖区', icon: Shield, color: 'sky' },
+                          { label: '当前激活规则', value: warningRules.filter(r => r.enabled).length, sub: '运行正常', icon: Check, color: 'emerald' },
+                          { label: '今日触发次数', value: '142', sub: '较昨日 +12%', icon: AlertTriangle, color: 'amber' },
+                          { label: '待处理告警', value: '8', sub: '需人工干预', icon: Clock, color: 'red' },
+                        ].map((stat, idx) => (
+                          <div key={idx} className="bg-white/5 border border-white/10 rounded-2xl p-4 group hover:border-white/20 transition-all">
+                            <div className="flex items-center justify-between mb-3">
+                              <div className={`w-10 h-10 rounded-xl bg-${stat.color}-500/10 flex items-center justify-center text-${stat.color}-400 group-hover:scale-110 transition-transform`}>
+                                <stat.icon size={20} />
+                              </div>
+                              <span className="text-[10px] font-black text-white/20 uppercase tracking-widest">STAT_{idx + 1}</span>
+                            </div>
+                            <h4 className="text-2xl font-black text-white mb-1">{stat.value}</h4>
+                            <div className="flex items-center justify-between">
+                              <span className="text-[10px] font-bold text-white/30 uppercase tracking-wider">{stat.label}</span>
+                              <span className="text-[10px] font-bold text-emerald-400/60">{stat.sub}</span>
+                            </div>
+                          </div>
+                        ))}
                       </div>
-                      <div className="px-4 py-3 border-l border-white/5">
-                        <div className="text-[10px] font-bold text-white/35 uppercase tracking-widest">开启规则</div>
-                        <div className="mt-1 text-xl font-semibold text-sky-400">{warningRules.filter((rule) => rule.enabled).length}</div>
-                      </div>
-                      <div className="px-4 py-3 border-l border-white/5">
-                        <div className="text-[10px] font-bold text-white/35 uppercase tracking-widest">已配置区域</div>
-                        <div className="mt-1 text-xl font-semibold text-white">
-                          {new Set(warningRules.flatMap((rule) => rule.effectiveAreaIds)).size}
-                        </div>
-                      </div>
-                    </div>
 
-                    <div className="flex-1 overflow-auto">
-                      <table className="w-full min-w-[1120px] border-collapse">
-                        <thead>
-                          <tr className="border-b border-white/10 bg-[#101925] text-left">
-                            <th className="px-4 py-3 text-[11px] font-medium text-white/75">预警名称</th>
-                            <th className="px-4 py-3 text-[11px] font-medium text-white/75">预警类别</th>
-                            <th className="px-4 py-3 text-[11px] font-medium text-white/75">监测维度</th>
-                            <th className="px-4 py-3 text-[11px] font-medium text-white/75">生效区域</th>
-                            <th className="px-4 py-3 text-[11px] font-medium text-white/75">状态</th>
-                            <th className="px-4 py-3 text-[11px] font-medium text-white/75">操作</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {warningRules.map((rule) => {
-                            const areaNames = rule.effectiveAreaIds
-                              .map((id) => warningAreaLookup.get(id)?.name)
-                              .filter(Boolean) as string[];
-                            const areaSummary = areaNames.length > 2
-                              ? `${areaNames.slice(0, 2).join('、')} +${areaNames.length - 2}`
-                              : areaNames.join('、') || '未配置';
-
-                            return (
-                              <tr
-                                key={rule.id}
-                                onClick={() => setSelectedWarningRuleId(rule.id)}
-                                className={`border-b border-white/5 transition-colors ${
-                                  selectedWarningRuleId === rule.id
-                                    ? 'bg-white/[0.06]'
-                                    : 'bg-[#06101d] hover:bg-white/[0.03]'
-                                }`}
-                              >
-                                <td className="px-4 py-3">
-                                  <div className="flex items-center gap-3">
-                                    <div className={`h-2 w-2 rounded-full ${rule.enabled ? 'bg-sky-400' : 'bg-white/25'}`} />
-                                    <div>
-                                      <div className="text-[13px] text-white/88">{rule.name}</div>
-                                      <div className="mt-1 text-[10px] text-white/30">等级 {rule.severity}</div>
-                                    </div>
-                                  </div>
-                                </td>
-                                <td className="px-4 py-3 text-[12px] text-white/72">{rule.category}</td>
-                                <td className="px-4 py-3 text-[12px] text-white/72">{rule.trigger}</td>
-                                <td className="px-4 py-3">
-                                  <div className="text-[12px] text-white/72">{areaSummary}</div>
-                                </td>
-                                <td className="px-4 py-3">
-                                  <div className="flex items-center gap-3">
-                                    <span className={`text-[12px] ${rule.enabled ? 'text-white/50' : 'text-sky-400'}`}>关闭</span>
-                                    <button
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        toggleWarningRule(rule.id);
-                                      }}
-                                      className={`relative h-5 w-9 rounded-full transition-all ${
-                                        rule.enabled ? 'bg-[#0d76e8]' : 'bg-white/25'
-                                      }`}
-                                      aria-label={`${rule.name}${rule.enabled ? '关闭' : '开启'}`}
-                                    >
-                                      <span
-                                        className={`absolute top-0.5 h-4 w-4 rounded-full bg-white shadow-sm transition-all ${
-                                          rule.enabled ? 'left-[18px]' : 'left-0.5'
-                                        }`}
-                                      />
-                                    </button>
-                                    <span className={`text-[12px] ${rule.enabled ? 'text-sky-400' : 'text-white/50'}`}>开启</span>
-                                  </div>
-                                </td>
-                                <td className="px-4 py-3">
-                                  <button
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      setSelectedWarningRuleId(rule.id);
-                                      setIsWarningConfigOpen(true);
-                                    }}
-                                    className="rounded bg-[#0d76e8] px-3 py-1 text-[11px] font-semibold text-white hover:bg-[#2590ff] transition-colors"
-                                  >
-                                    配置
-                                  </button>
-                                </td>
-                              </tr>
-                            );
-                          })}
-                        </tbody>
-                      </table>
-                    </div>
-                  </>
-                ) : (
-                  <div className="p-6 space-y-6 overflow-y-auto custom-scrollbar">
-                    {/* 船舶风险统计内容 (从业务统计迁移而来) */}
-                    <div className="flex items-center gap-4 bg-white/5 p-2.5 rounded-2xl border border-white/10 overflow-x-auto no-scrollbar shrink-0">
-                      <div className="flex items-center gap-2 shrink-0">
-                        <span className="text-[10px] font-bold text-white/30 uppercase tracking-widest whitespace-nowrap">时间范围</span>
-                        <div className="flex bg-white/5 rounded-lg p-0.5">
-                          {['今天', '昨天', '自定义时间'].map(range => (
-                            <button
-                              key={range}
-                              onClick={() => setStatsTimeRange(range)}
-                              className={`px-3 py-1 text-[10px] font-bold rounded-md transition-all whitespace-nowrap ${statsTimeRange === range ? 'bg-sky-500 text-white shadow-lg shadow-sky-500/20' : 'text-white/40 hover:text-white/60'}`}
-                            >
-                              {range}
+                      {/* 规则管理列表 */}
+                      <div className="bg-[#0a101a] border border-white/5 rounded-3xl overflow-hidden shadow-2xl">
+                        <div className="px-6 py-4 border-b border-white/5 flex items-center justify-between bg-white/[0.02]">
+                          <div className="flex items-center gap-3">
+                            <div className="w-1 h-4 bg-sky-500 rounded-full" />
+                            <h3 className="text-xs font-black text-white/90 uppercase tracking-widest">预警触发规则配置 (Alert Engine Policy)</h3>
+                          </div>
+                          <div className="flex items-center gap-3">
+                            <div className="relative">
+                              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-white/20" />
+                              <input 
+                                type="text" 
+                                placeholder="搜索规则名称..." 
+                                className="bg-white/5 border border-white/10 rounded-lg pl-9 pr-4 py-1.5 text-[11px] text-white focus:outline-none focus:border-sky-500/50 w-48 transition-all"
+                              />
+                            </div>
+                            <button className="px-4 py-1.5 bg-sky-500 hover:bg-sky-400 text-white text-[11px] font-black uppercase tracking-widest rounded-lg transition-all flex items-center gap-2">
+                              <Plus size={14} /> 新增策略
                             </button>
-                          ))}
+                          </div>
+                        </div>
+                        
+                        <div className="overflow-x-auto">
+                          <table className="w-full text-left border-collapse">
+                            <thead>
+                              <tr className="bg-white/5 border-b border-white/5">
+                                <th className="px-6 py-4 text-[10px] font-black text-white/30 uppercase tracking-[0.2em]">规则名称</th>
+                                <th className="px-6 py-4 text-[10px] font-black text-white/30 uppercase tracking-[0.2em]">触发维度</th>
+                                <th className="px-6 py-4 text-[10px] font-black text-white/30 uppercase tracking-[0.2em]">等级</th>
+                                <th className="px-6 py-4 text-[10px] font-black text-white/30 uppercase tracking-[0.2em]">生效区域</th>
+                                <th className="px-6 py-4 text-[10px] font-black text-white/30 uppercase tracking-[0.2em]">状态</th>
+                                <th className="px-6 py-4 text-[10px] font-black text-white/30 uppercase tracking-[0.2em] text-right">操作</th>
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y divide-white/5">
+                              {warningRules.map(rule => {
+                                const areaNames = rule.effectiveAreaIds
+                                  .map((id) => warningAreaLookup.get(id)?.name)
+                                  .filter(Boolean) as string[];
+                                const areaSummary = areaNames.length > 2
+                                  ? `${areaNames.slice(0, 1).join('、')}等${areaNames.length}个区域`
+                                  : areaNames.join('、') || '未指定';
+
+                                return (
+                                  <tr key={rule.id} className="group hover:bg-white/5 transition-colors">
+                                    <td className="px-6 py-4">
+                                      <div className="flex items-center gap-3">
+                                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center border ${
+                                          rule.enabled ? 'bg-sky-500/10 border-sky-500/20 text-sky-400' : 'bg-white/5 border-white/10 text-white/20'
+                                        }`}>
+                                          <Shield size={14} />
+                                        </div>
+                                        <div className="flex flex-col">
+                                          <span className="text-[12px] font-bold text-white/90">{rule.name}</span>
+                                          <span className="text-[9px] text-white/30 font-bold uppercase tracking-widest">{rule.category}</span>
+                                        </div>
+                                      </div>
+                                    </td>
+                                    <td className="px-6 py-4">
+                                      <span className="text-[11px] text-white/60 font-medium">{rule.trigger}</span>
+                                    </td>
+                                    <td className="px-6 py-4">
+                                      <span className={`px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-widest border ${
+                                        rule.severity === '紧急' ? 'bg-red-500/10 text-red-400 border-red-500/20' :
+                                        rule.severity === '警报' ? 'bg-orange-500/10 text-orange-400 border-orange-500/20' :
+                                        rule.severity === '警告' ? 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20' :
+                                        'bg-sky-500/10 text-sky-400 border-sky-500/20'
+                                      }`}>
+                                        {rule.severity}
+                                      </span>
+                                    </td>
+                                    <td className="px-6 py-4">
+                                      <span className="text-[11px] text-white/40">{areaSummary}</span>
+                                    </td>
+                                    <td className="px-6 py-4">
+                                      <button 
+                                        onClick={() => toggleWarningRule(rule.id)}
+                                        className={`relative w-10 h-5 rounded-full transition-all duration-300 ${rule.enabled ? 'bg-sky-500' : 'bg-white/10'}`}
+                                      >
+                                        <div className={`absolute top-1 w-3 h-3 rounded-full bg-white transition-all duration-300 ${rule.enabled ? 'left-6 shadow-[0_0_10px_rgba(255,255,255,0.8)]' : 'left-1'}`} />
+                                      </button>
+                                    </td>
+                                    <td className="px-6 py-4 text-right">
+                                      <div className="flex items-center justify-end gap-2">
+                                        <button
+                                          onClick={() => openWarningRuleConfig(rule.id)}
+                                          className="p-2 hover:bg-sky-500/20 rounded-lg text-white/40 hover:text-sky-400 transition-all"
+                                          aria-label={`配置${rule.name}`}
+                                        >
+                                          <Settings size={14} />
+                                        </button>
+                                        <button className="p-2 hover:bg-red-500/20 rounded-lg text-white/40 hover:text-red-400 transition-all">
+                                          <History size={14} />
+                                        </button>
+                                      </div>
+                                    </td>
+                                  </tr>
+                                );
+                              })}
+                            </tbody>
+                          </table>
                         </div>
                       </div>
-
-                      {statsTimeRange === '自定义时间' && (
-                        <>
-                          <div className="w-px h-4 bg-white/10 shrink-0"></div>
-                          <div className="flex items-center gap-2 shrink-0">
+                    </motion.div>
+                  ) : activeWarningTab === '风险列表' ? (
+                    <motion.div 
+                      key="risk-list"
+                      initial={{ opacity: 0, x: 20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      exit={{ opacity: 0, x: -20 }}
+                      className="space-y-6"
+                    >
+                      {/* 风险列表工具栏 */}
+                      <div className="flex items-center justify-between bg-[#0a101a] border border-white/5 p-4 rounded-2xl shadow-xl">
+                        <div className="flex items-center gap-4">
+                          <div className="flex items-center gap-2">
+                            <span className="text-[10px] font-bold text-white/30 uppercase tracking-widest whitespace-nowrap">处理状态</span>
+                            <div className="flex bg-white/5 rounded-lg p-0.5">
+                              {['全部', '待核实', '处置中', '已关闭'].map(s => (
+                                <button key={s} className={`px-3 py-1 text-[10px] font-bold rounded-md transition-all ${s === '全部' ? 'bg-sky-500 text-white' : 'text-white/40 hover:text-white/60'}`}>{s}</button>
+                              ))}
+                            </div>
+                          </div>
+                          <div className="h-4 w-px bg-white/10" />
+                          <div className="flex items-center gap-2">
+                            <span className="text-[10px] font-bold text-white/30 uppercase tracking-widest whitespace-nowrap">风险等级</span>
+                            <div className="flex bg-white/5 rounded-lg p-0.5">
+                              {['全部', '紧急', '警报', '警告', '注意'].map(l => (
+                                <button key={l} className={`px-3 py-1 text-[10px] font-bold rounded-md transition-all ${l === '全部' ? 'bg-white/10 text-white' : 'text-white/40 hover:text-white/60'}`}>{l}</button>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <div className="relative">
+                            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-white/20" />
                             <input 
-                              type="datetime-local" 
-                              value={customStartTime.replace(' ', 'T')}
-                              onChange={(e) => setCustomStartTime(e.target.value.replace('T', ' '))}
-                              className="bg-white/5 border border-white/10 rounded-lg py-1 px-2 text-[10px] font-mono text-white/80 focus:outline-none focus:border-sky-500/50 transition-colors"
-                            />
-                            <span className="text-white/20 text-[10px]">至</span>
-                            <input 
-                              type="datetime-local" 
-                              value={customEndTime.replace(' ', 'T')}
-                              onChange={(e) => setCustomEndTime(e.target.value.replace('T', ' '))}
-                              className="bg-white/5 border border-white/10 rounded-lg py-1 px-2 text-[10px] font-mono text-white/80 focus:outline-none focus:border-sky-500/50 transition-colors"
+                              type="text" 
+                              placeholder="搜索船名/MMSI..." 
+                              className="bg-white/5 border border-white/10 rounded-lg pl-9 pr-4 py-1.5 text-[11px] text-white focus:outline-none focus:border-sky-500/50 w-48 transition-all"
                             />
                           </div>
-                        </>
-                      )}
-
-                      <div className="w-px h-4 bg-white/10 shrink-0"></div>
-                      <div className="flex items-center gap-2 shrink-0">
-                        <span className="text-[10px] font-bold text-white/30 uppercase tracking-widest whitespace-nowrap">值班区域</span>
-                        <select 
-                          value={statsArea}
-                          onChange={(e) => setStatsArea(e.target.value)}
-                          className="bg-white/5 border border-white/10 rounded-lg py-1 px-2 text-[11px] text-white/80 focus:outline-none focus:border-sky-500/50 min-w-[120px] cursor-pointer hover:bg-white/10 transition-colors"
-                        >
-                          {['全部区域', ...(areaConfig['值班区域'] || []).map(a => a.name)].map(area => (
-                            <option key={area} value={area} className="bg-[#1a1c20] text-white">{area}</option>
-                          ))}
-                        </select>
-                      </div>
-                      <div className="w-px h-4 bg-white/10 shrink-0"></div>
-                      <div className="flex items-center gap-2 shrink-0">
-                        <label className="text-[10px] font-bold text-white/30 uppercase tracking-widest whitespace-nowrap">风险行为</label>
-                        <select className="bg-white/5 border border-white/10 rounded-lg py-1 px-2 text-[11px] text-white/80 focus:outline-none focus:border-sky-500/50 min-w-[100px] cursor-pointer hover:bg-white/10 transition-colors">
-                          <option value="" className="bg-[#1a1c20] text-white">全部行为</option>
-                          <option value="超速航行" className="bg-[#1a1c20] text-white">超速航行</option>
-                          <option value="偏离航道" className="bg-[#1a1c20] text-white">偏离航道</option>
-                          <option value="非法锚泊" className="bg-[#1a1c20] text-white">非法锚泊</option>
-                          <option value="进入禁航区" className="bg-[#1a1c20] text-white">进入禁航区</option>
-                          <option value="异常停泊" className="bg-[#1a1c20] text-white">异常停泊</option>
-                        </select>
-                      </div>
-                      <div className="flex-1"></div>
-                      <button className="shrink-0 px-6 py-1.5 bg-sky-500 hover:bg-sky-400 text-white text-[11px] font-bold rounded-lg transition-all shadow-lg shadow-sky-500/20">
-                        查询
-                      </button>
-                    </div>
-
-                    {/* 统计图表区域 */}
-                    <div className="grid grid-cols-3 gap-4 shrink-0">
-                      {/* 风险类型分布 */}
-                      <div className="bg-white/5 border border-white/10 rounded-2xl p-4">
-                        <div className="flex items-center gap-2 mb-4">
-                          <BarChart3 size={14} className="text-sky-400" />
-                          <span className="text-[11px] font-bold text-white/90 uppercase tracking-widest">风险类型分布</span>
-                        </div>
-                        <div className="h-[150px] w-full">
-                          <ResponsiveContainer width="100%" height="100%">
-                            <PieChart>
-                              <Pie
-                                data={[
-                                  { name: '超速', value: 35 },
-                                  { name: '偏航', value: 25 },
-                                  { name: '非法锚泊', value: 15 },
-                                  { name: '禁区', value: 20 },
-                                  { name: '其他', value: 5 },
-                                ]}
-                                cx="40%"
-                                cy="50%"
-                                innerRadius={45}
-                                outerRadius={75}
-                                paddingAngle={5}
-                                dataKey="value"
-                              >
-                                {[
-                                  '#38bdf8', '#818cf8', '#f472b6', '#fbbf24', '#f87171',
-                                ].map((color, index) => (
-                                  <Cell key={`cell-${index}`} fill={color} opacity={0.8} />
-                                ))}
-                              </Pie>
-                              <Tooltip 
-                                contentStyle={{ backgroundColor: '#0a0a0a', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', fontSize: '12px' }}
-                              />
-                              <Legend 
-                                verticalAlign="middle" 
-                                align="right" 
-                                layout="vertical"
-                                iconType="circle"
-                                iconSize={10}
-                                wrapperStyle={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)', paddingLeft: '5px' }}
-                              />
-                            </PieChart>
-                          </ResponsiveContainer>
+                          <button className="px-4 py-1.5 bg-sky-500/10 hover:bg-sky-500/20 border border-sky-500/20 text-sky-400 text-[11px] font-black uppercase tracking-widest rounded-lg transition-all flex items-center gap-2">
+                            <FileText size={14} /> 导出报表
+                          </button>
                         </div>
                       </div>
 
-                      {/* 高危船舶类型 */}
-                      <div className="bg-white/5 border border-white/10 rounded-2xl p-4">
-                        <div className="flex items-center gap-2 mb-4">
-                          <Ship size={14} className="text-sky-400" />
-                          <span className="text-[11px] font-bold text-white/90 uppercase tracking-widest">高危船舶类型分布</span>
-                        </div>
-                        <div className="h-[150px] w-full">
-                          <ResponsiveContainer width="100%" height="100%">
-                            <BarChart
-                              layout="vertical"
-                              data={[
-                                { type: '散货船', count: 42 },
-                                { type: '油轮', count: 35 },
-                                { type: '集装箱', count: 28 },
-                                { type: '工程船', count: 18 },
-                                { type: '其他', count: 12 },
-                              ]}
-                              margin={{ left: -10, right: 20 }}
-                            >
-                              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" horizontal={true} vertical={false} />
-                              <XAxis type="number" hide />
-                              <YAxis 
-                                dataKey="type" 
-                                type="category" 
-                                axisLine={false} 
-                                tickLine={false}
-                                tick={{ fill: 'rgba(255,255,255,0.4)', fontSize: 10 }}
-                              />
-                              <Tooltip 
-                                cursor={{ fill: 'rgba(255,255,255,0.05)' }}
-                                contentStyle={{ backgroundColor: '#0a0a0a', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', fontSize: '11px' }}
-                              />
-                              <Bar dataKey="count" fill="#38bdf8" radius={[0, 4, 4, 0]} barSize={16} opacity={0.8} />
-                            </BarChart>
-                          </ResponsiveContainer>
-                        </div>
-                      </div>
-
-                      {/* 发生时间分布 */}
-                      <div className="bg-white/5 border border-white/10 rounded-2xl p-4">
-                        <div className="flex items-center gap-2 mb-4">
-                          <Clock size={14} className="text-sky-400" />
-                          <span className="text-[11px] font-bold text-white/90 uppercase tracking-widest">发生时间分布</span>
-                        </div>
-                        <div className="h-[150px] w-full">
-                          <ResponsiveContainer width="100%" height="100%">
-                            <AreaChart
-                              data={[
-                                { time: '00:00', count: 12 },
-                                { time: '04:00', count: 8 },
-                                { time: '08:00', count: 45 },
-                                { time: '12:00', count: 30 },
-                                { time: '16:00', count: 56 },
-                                { time: '20:00', count: 24 },
-                                { time: '23:59', count: 15 },
-                              ]}
-                              margin={{ top: 10, right: 10, left: -20, bottom: 0 }}
-                            >
-                              <defs>
-                                <linearGradient id="colorRiskTime" x1="0" y1="0" x2="0" y2="1">
-                                  <stop offset="5%" stopColor="#38bdf8" stopOpacity={0.3}/>
-                                  <stop offset="95%" stopColor="#38bdf8" stopOpacity={0}/>
-                                </linearGradient>
-                              </defs>
-                              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
-                              <XAxis 
-                                dataKey="time" 
-                                axisLine={false}
-                                tickLine={false}
-                                tick={{ fill: 'rgba(255,255,255,0.3)', fontSize: 11 }}
-                              />
-                              <YAxis 
-                                axisLine={false}
-                                tickLine={false}
-                                tick={{ fill: 'rgba(255,255,255,0.3)', fontSize: 11 }}
-                              />
-                              <Tooltip 
-                                contentStyle={{ backgroundColor: '#0a0a0a', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', fontSize: '12px' }}
-                              />
-                              <Area 
-                                type="monotone" 
-                                dataKey="count" 
-                                stroke="#38bdf8" 
-                                strokeWidth={3}
-                                fillOpacity={1} 
-                                fill="url(#colorRiskTime)" 
-                              />
-                            </AreaChart>
-                          </ResponsiveContainer>
-                        </div>
-                      </div>
-
-                      {/* 风险预警级别统计 */}
-                      <div className="bg-white/5 border border-white/10 rounded-2xl p-4">
-                        <div className="flex items-center gap-2 mb-4">
-                          <ShieldAlert size={14} className="text-sky-400" />
-                          <span className="text-[11px] font-bold text-white/90 uppercase tracking-widest">风险预警级别统计</span>
-                        </div>
-                        <div className="h-[150px] w-full">
-                          <ResponsiveContainer width="100%" height="100%">
-                            <BarChart
-                              data={[
-                                { level: '紧急', count: 8, color: '#f87171' },
-                                { level: '警报', count: 15, color: '#fb923c' },
-                                { level: '警告', count: 32, color: '#facc15' },
-                                { level: '注意', count: 48, color: '#38bdf8' },
-                              ]}
-                              margin={{ top: 10, right: 10, left: -25, bottom: 0 }}
-                            >
-                              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
-                              <XAxis 
-                                dataKey="level" 
-                                axisLine={false} 
-                                tickLine={false}
-                                tick={{ fill: 'rgba(255,255,255,0.4)', fontSize: 11 }}
-                              />
-                              <YAxis axisLine={false} tickLine={false} tick={{ fill: 'rgba(255,255,255,0.3)', fontSize: 11 }} />
-                              <Tooltip 
-                                cursor={{ fill: 'rgba(255,255,255,0.05)' }}
-                                contentStyle={{ backgroundColor: '#0a0a0a', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', fontSize: '12px' }}
-                              />
-                              <Bar dataKey="count" radius={[4, 4, 0, 0]} barSize={32}>
-                                {[
-                                  { level: '紧急', count: 8, color: '#f87171' },
-                                  { level: '警报', count: 15, color: '#fb923c' },
-                                  { level: '警告', count: 32, color: '#facc15' },
-                                  { level: '注意', count: 48, color: '#38bdf8' },
-                                ].map((entry, index) => (
-                                  <Cell key={`cell-${index}`} fill={entry.color} opacity={0.8} />
-                                ))}
-                              </Bar>
-                            </BarChart>
-                          </ResponsiveContainer>
-                        </div>
-                      </div>
-
-                      {/* 风险区域统计 */}
-                      <div className="col-span-2 bg-white/5 border border-white/10 rounded-2xl p-4">
-                        <div className="flex items-center gap-2 mb-4">
-                          <MapPin size={14} className="text-sky-400" />
-                          <span className="text-[11px] font-bold text-white/90 uppercase tracking-widest">风险区域统计 (值班区域)</span>
-                        </div>
-                        <div className="h-[150px] w-full">
-                          <ResponsiveContainer width="100%" height="100%">
-                            <BarChart
-                              layout="vertical"
-                              data={[
-                                { area: '吴淞口5号锚地', count: 56 },
-                                { area: '圆圆沙禁航区', count: 42 },
-                                { area: '长江口北槽航道', count: 38 },
-                                { area: '南槽入口管控区', count: 24 },
-                                { area: '宝山作业区', count: 12 },
-                              ]}
-                              margin={{ left: 20, right: 30, top: 0, bottom: 0 }}
-                            >
-                              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" horizontal={true} vertical={false} />
-                              <XAxis type="number" axisLine={false} tickLine={false} tick={{ fill: 'rgba(255,255,255,0.3)', fontSize: 10 }} />
-                              <YAxis 
-                                dataKey="area" 
-                                type="category" 
-                                axisLine={false} 
-                                tickLine={false}
-                                width={100}
-                                tick={{ fill: 'rgba(255,255,255,0.4)', fontSize: 10 }}
-                              />
-                              <Tooltip 
-                                cursor={{ fill: 'rgba(255,255,255,0.05)' }}
-                                contentStyle={{ backgroundColor: '#0a0a0a', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', fontSize: '11px' }}
-                              />
-                              <Bar dataKey="count" fill="#38bdf8" radius={[0, 4, 4, 0]} barSize={16} opacity={0.8} />
-                            </BarChart>
-                          </ResponsiveContainer>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="bg-white/5 border border-white/10 rounded-2xl overflow-hidden">
-                      <div className="overflow-x-auto">
-                        <table className="w-full text-left border-collapse min-w-[1000px]">
-                          <thead>
-                            <tr className="bg-white/5 border-b border-white/10">
-                              <th className="px-6 py-4 text-[11px] font-bold text-white/40 uppercase tracking-widest">船舶信息</th>
-                              <th className="px-6 py-4 text-[11px] font-bold text-white/40 uppercase tracking-widest">风险类型</th>
-                              <th className="px-6 py-4 text-[11px] font-bold text-white/40 uppercase tracking-widest">触发时间</th>
-                              <th className="px-6 py-4 text-[11px] font-bold text-white/40 uppercase tracking-widest">操作</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {MOCK_RISK_STATS.map((item) => (
-                              <tr key={item.id} className="border-b border-white/5 hover:bg-white/[0.02] transition-colors">
-                                <td className="px-6 py-4">
-                                  <div className="flex flex-col">
-                                    <span className="text-xs font-bold text-white/90">{item.name}</span>
-                                    <span className="text-[10px] text-white/30 font-mono">{item.mmsi}</span>
-                                  </div>
-                                </td>
-                                <td className="px-6 py-4">
-                                  <span className="px-2 py-0.5 bg-red-500/10 border border-red-500/20 rounded text-[10px] font-bold text-red-400">{item.risk}</span>
-                                </td>
-                                <td className="px-6 py-4 text-[10px] text-white/40 font-mono">{item.time}</td>
-                                <td className="px-6 py-4">
-                                  <button
-                                    onClick={() => setDynamicPlaybackSession(getRiskPlaybackSession(item))}
-                                    className="px-2.5 py-1 bg-sky-500/10 hover:bg-sky-500/20 border border-sky-500/25 rounded-lg text-[10px] font-bold text-sky-300 transition-all"
-                                  >
-                                    轨迹回放
-                                  </button>
-                                </td>
+                      {/* 风险详情列表 */}
+                      <div className="bg-[#0a101a] border border-white/5 rounded-3xl overflow-hidden shadow-2xl">
+                        <div className="overflow-x-auto">
+                          <table className="w-full text-left border-collapse">
+                            <thead>
+                              <tr className="bg-white/5 border-b border-white/5">
+                                <th className="px-6 py-4 text-[10px] font-black text-white/30 uppercase tracking-[0.2em]">触发时间</th>
+                                <th className="px-6 py-4 text-[10px] font-black text-white/30 uppercase tracking-[0.2em]">目标船舶</th>
+                                <th className="px-6 py-4 text-[10px] font-black text-white/30 uppercase tracking-[0.2em]">风险类型</th>
+                                <th className="px-6 py-4 text-[10px] font-black text-white/30 uppercase tracking-[0.2em]">风险分值</th>
+                                <th className="px-6 py-4 text-[10px] font-black text-white/30 uppercase tracking-[0.2em]">当前位置</th>
+                                <th className="px-6 py-4 text-[10px] font-black text-white/30 uppercase tracking-[0.2em]">状态</th>
+                                <th className="px-6 py-4 text-[10px] font-black text-white/30 uppercase tracking-[0.2em] text-right">操作</th>
                               </tr>
-                            ))}
-                          </tbody>
-                        </table>
+                            </thead>
+                            <tbody className="divide-y divide-white/5">
+                              {MOCK_RISK_STATS.map(ship => (
+                                <tr key={ship.id} className="group hover:bg-white/[0.02] transition-colors">
+                                  <td className="px-6 py-4">
+                                    <span className="text-[11px] font-mono text-white/40">{ship.time}</span>
+                                  </td>
+                                  <td className="px-6 py-4">
+                                    <div className="flex items-center gap-3">
+                                      <div className="w-8 h-8 rounded-lg bg-red-500/10 flex items-center justify-center text-red-400/60">
+                                        <Ship size={14} />
+                                      </div>
+                                      <div className="flex flex-col">
+                                        <span className="text-[12px] font-bold text-white/90">{ship.name}</span>
+                                        <span className="text-[9px] text-white/20 font-mono tracking-widest">{ship.mmsi}</span>
+                                      </div>
+                                    </div>
+                                  </td>
+                                  <td className="px-6 py-4">
+                                    <span className="text-[11px] text-white/60 font-medium">{ship.risk}</span>
+                                  </td>
+                                  <td className="px-6 py-4">
+                                    <div className="flex items-center gap-3">
+                                      <div className="flex-1 h-1 w-16 bg-white/5 rounded-full overflow-hidden">
+                                        <div className={`h-full ${ship.riskScore > 80 ? 'bg-red-500' : 'bg-orange-500'}`} style={{ width: `${ship.riskScore}%` }} />
+                                      </div>
+                                      <span className={`text-[11px] font-mono font-bold ${ship.riskScore > 80 ? 'text-red-400' : 'text-orange-400'}`}>{ship.riskScore}</span>
+                                    </div>
+                                  </td>
+                                  <td className="px-6 py-4">
+                                    <span className="text-[11px] text-white/40">{ship.snapshot.location}</span>
+                                  </td>
+                                  <td className="px-6 py-4">
+                                    <div className="flex items-center gap-2">
+                                      <div className={`w-1.5 h-1.5 rounded-full ${ship.id.includes('1') ? 'bg-amber-500 animate-pulse' : 'bg-emerald-500'}`} />
+                                      <span className="text-[11px] text-white/60 font-medium">{ship.id.includes('1') ? '待核实' : '已关闭'}</span>
+                                    </div>
+                                  </td>
+                                  <td className="px-6 py-4 text-right">
+                                    <div className="flex items-center justify-end gap-2">
+                                      <button 
+                                        onClick={() => setDynamicPlaybackSession(getRiskPlaybackSession(ship))}
+                                        className="px-3 py-1 bg-sky-500/10 hover:bg-sky-500 text-sky-400 hover:text-white text-[10px] font-black uppercase tracking-widest rounded-lg border border-sky-500/20 transition-all"
+                                      >
+                                        回放
+                                      </button>
+                                      <button className="px-3 py-1 bg-white/5 hover:bg-white/10 text-white/40 hover:text-white text-[10px] font-black uppercase tracking-widest rounded-lg border border-white/10 transition-all">
+                                        处置
+                                      </button>
+                                    </div>
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                        <div className="p-4 border-t border-white/5 flex justify-between items-center bg-white/[0.01]">
+                          <span className="text-[10px] font-bold text-white/20 uppercase tracking-widest">共 42 条风险预警记录</span>
+                          <div className="flex gap-2">
+                            <button className="p-1.5 rounded-lg border border-white/10 text-white/30 hover:text-white transition-all"><ChevronLeft size={16} /></button>
+                            <button className="w-8 h-8 rounded-lg bg-sky-500 text-white text-[10px] font-black">1</button>
+                            <button className="w-8 h-8 rounded-lg bg-white/5 text-white/40 text-[10px] font-black hover:bg-white/10 transition-all">2</button>
+                            <button className="p-1.5 rounded-lg border border-white/10 text-white/30 hover:text-white transition-all"><ChevronRight size={16} /></button>
+                          </div>
+                        </div>
                       </div>
-                    </div>
-                  </div>
-                )}
+                    </motion.div>
+                  ) : (
+                    <motion.div 
+                      key="risk-stats"
+                      initial={{ opacity: 0, x: 20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      exit={{ opacity: 0, x: -20 }}
+                      className="space-y-6"
+                    >
+                      {/* 风险看板顶部 */}
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-4">
+                          <h3 className="text-lg font-black text-white tracking-tight uppercase">风险态势总览</h3>
+                          <div className="flex items-center gap-2 px-3 py-1 bg-white/5 border border-white/10 rounded-lg">
+                            <Clock size={12} className="text-white/40" />
+                            <span className="text-[10px] font-black text-white/60 uppercase tracking-widest">数据更新时间: 2026-03-20 14:30:15</span>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          {['实时', '今日', '本周', '本月'].map(t => (
+                            <button key={t} className="px-4 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest bg-white/5 border border-white/10 text-white/40 hover:text-white transition-all">{t}</button>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-12 gap-6">
+                        {/* 左侧主要统计 */}
+                        <div className="col-span-8 space-y-6">
+                          {/* 风险指数大卡片 */}
+                          <div className="bg-[#0a101a] border border-white/5 rounded-[32px] p-8 relative overflow-hidden group">
+                            <div className="absolute top-0 right-0 w-64 h-64 bg-sky-500/5 blur-[100px] rounded-full -translate-y-1/2 translate-x-1/2" />
+                            <div className="relative z-10 flex items-center justify-between">
+                              <div className="space-y-6">
+                                <div>
+                                  <p className="text-[10px] font-black text-white/30 uppercase tracking-[0.3em] mb-2">Overall Risk Index</p>
+                                  <h2 className="text-5xl font-black text-white tracking-tighter">72.5</h2>
+                                  <div className="flex items-center gap-2 mt-2">
+                                    <div className="px-2 py-0.5 rounded bg-red-500/10 border border-red-500/20 text-red-400 text-[9px] font-black uppercase tracking-widest">风险等级: 中高</div>
+                                    <span className="text-[10px] font-bold text-emerald-400">+4.2% 较上周期</span>
+                                  </div>
+                                </div>
+                                
+                                <div className="grid grid-cols-3 gap-8">
+                                  <div>
+                                    <p className="text-[10px] font-black text-white/20 uppercase tracking-widest mb-1">活跃目标</p>
+                                    <p className="text-xl font-black text-white">1,248</p>
+                                  </div>
+                                  <div>
+                                    <p className="text-[10px] font-black text-white/20 uppercase tracking-widest mb-1">高风险预警</p>
+                                    <p className="text-xl font-black text-red-400">12</p>
+                                  </div>
+                                  <div>
+                                    <p className="text-[10px] font-black text-white/20 uppercase tracking-widest mb-1">处理及时率</p>
+                                    <p className="text-xl font-black text-emerald-400">98.2%</p>
+                                  </div>
+                                </div>
+                              </div>
+                              
+                              <div className="w-64 h-32">
+                                <ResponsiveContainer width="100%" height="100%">
+                                  <AreaChart data={[
+                                    {v: 40}, {v: 35}, {v: 55}, {v: 45}, {v: 70}, {v: 60}, {v: 72.5}
+                                  ]}>
+                                    <defs>
+                                      <linearGradient id="colorRisk" x1="0" y1="0" x2="0" y2="1">
+                                        <stop offset="5%" stopColor="#0ea5e9" stopOpacity={0.3}/>
+                                        <stop offset="95%" stopColor="#0ea5e9" stopOpacity={0}/>
+                                      </linearGradient>
+                                    </defs>
+                                    <Area type="monotone" dataKey="v" stroke="#0ea5e9" strokeWidth={4} fillOpacity={1} fill="url(#colorRisk)" />
+                                  </AreaChart>
+                                </ResponsiveContainer>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* 风险趋势图 */}
+                          <div className="bg-[#0a101a] border border-white/5 rounded-3xl p-6">
+                            <div className="flex items-center justify-between mb-8">
+                              <div className="flex items-center gap-3">
+                                <div className="w-1 h-4 bg-sky-500 rounded-full" />
+                                <h4 className="text-xs font-black text-white/90 uppercase tracking-widest">24小时预警趋势 (24h Alert Trend)</h4>
+                              </div>
+                              <div className="flex items-center gap-4">
+                                <div className="flex items-center gap-2">
+                                  <div className="w-2 h-2 rounded-full bg-sky-500" />
+                                  <span className="text-[10px] font-bold text-white/40 uppercase">触发次数</span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <div className="w-2 h-2 rounded-full bg-emerald-500" />
+                                  <span className="text-[10px] font-bold text-white/40 uppercase">处置次数</span>
+                                </div>
+                              </div>
+                            </div>
+                            <div className="h-64">
+                              <ResponsiveContainer width="100%" height="100%">
+                                <LineChart data={[
+                                  { t: '00:00', a: 12, p: 10 },
+                                  { t: '04:00', a: 8, p: 8 },
+                                  { t: '08:00', a: 45, p: 40 },
+                                  { t: '12:00', a: 82, p: 78 },
+                                  { t: '16:00', a: 65, p: 65 },
+                                  { t: '20:00', a: 34, p: 32 },
+                                  { t: '23:59', a: 15, p: 14 },
+                                ]}>
+                                  <CartesianGrid strokeDasharray="3 3" stroke="#ffffff05" vertical={false} />
+                                  <XAxis dataKey="t" axisLine={false} tickLine={false} tick={{fill: '#ffffff20', fontSize: 10, fontWeight: 'bold'}} />
+                                  <YAxis axisLine={false} tickLine={false} tick={{fill: '#ffffff20', fontSize: 10, fontWeight: 'bold'}} />
+                                  <Tooltip 
+                                    contentStyle={{ backgroundColor: '#0a101a', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px' }}
+                                    itemStyle={{ fontSize: '11px', fontWeight: 'bold' }}
+                                  />
+                                  <Line type="monotone" dataKey="a" stroke="#0ea5e9" strokeWidth={3} dot={{ r: 4, fill: '#0ea5e9', strokeWidth: 2, stroke: '#0a101a' }} activeDot={{ r: 6, strokeWidth: 0 }} />
+                                  <Line type="monotone" dataKey="p" stroke="#10b981" strokeWidth={3} dot={{ r: 4, fill: '#10b981', strokeWidth: 2, stroke: '#0a101a' }} activeDot={{ r: 6, strokeWidth: 0 }} />
+                                </LineChart>
+                              </ResponsiveContainer>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* 右侧分布与列表 */}
+                        <div className="col-span-4 space-y-6">
+                          {/* 风险类型分布 */}
+                          <div className="bg-[#0a101a] border border-white/5 rounded-3xl p-6">
+                            <h4 className="text-xs font-black text-white/90 uppercase tracking-widest mb-6">风险维度分布 (Risk Types)</h4>
+                            <div className="space-y-5">
+                              {[
+                                { label: '超速航行', count: 42, color: 'sky' },
+                                { label: '偏离航道', count: 28, color: 'emerald' },
+                                { label: '非法锚泊', count: 18, color: 'amber' },
+                                { label: '碰撞风险', count: 9, color: 'red' },
+                                { label: '走锚预警', count: 3, color: 'indigo' },
+                              ].map((item, idx) => (
+                                <div key={idx} className="space-y-2">
+                                  <div className="flex items-center justify-between">
+                                    <span className="text-[11px] font-bold text-white/60">{item.label}</span>
+                                    <span className="text-[11px] font-mono font-bold text-white">{item.count} 次</span>
+                                  </div>
+                                  <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
+                                    <motion.div 
+                                      initial={{ width: 0 }}
+                                      animate={{ width: `${(item.count / 42) * 100}%` }}
+                                      className={`h-full bg-${item.color}-500 shadow-[0_0_8px_rgba(var(--${item.color}-rgb),0.5)]`}
+                                    />
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+
+                          {/* 高风险区域排行 */}
+                          <div className="bg-[#0a101a] border border-white/5 rounded-3xl p-6">
+                            <h4 className="text-xs font-black text-white/90 uppercase tracking-widest mb-6">高频风险区域 (Hot Areas)</h4>
+                            <div className="space-y-4">
+                              {[
+                                { name: '吴淞口警戒区', val: 124, trend: 'up' },
+                                { name: '圆圆沙 12号浮', val: 98, trend: 'down' },
+                                { name: '南槽 A2 泊位', val: 56, trend: 'stable' },
+                                { name: '长江口深水航道', val: 42, trend: 'up' },
+                              ].map((area, idx) => (
+                                <div key={idx} className="flex items-center justify-between p-3 rounded-2xl bg-white/[0.02] border border-white/5 group hover:bg-white/5 transition-all">
+                                  <div className="flex items-center gap-3">
+                                    <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center text-[10px] font-black text-white/20">{idx + 1}</div>
+                                    <span className="text-[11px] font-bold text-white/80">{area.name}</span>
+                                  </div>
+                                  <div className="flex flex-col items-end">
+                                    <span className="text-[11px] font-mono font-bold text-sky-400">{area.val}</span>
+                                    {area.trend === 'up' ? <ChevronDown size={10} className="text-red-400 rotate-180" /> : 
+                                     area.trend === 'down' ? <ChevronDown size={10} className="text-emerald-400" /> : 
+                                     <div className="w-2 h-0.5 bg-white/20" />}
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* 底部关注列表 */}
+                      <div className="bg-[#0a101a] border border-white/5 rounded-3xl overflow-hidden">
+                        <div className="px-6 py-4 border-b border-white/5 flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <div className="w-1 h-4 bg-red-500 rounded-full" />
+                            <h3 className="text-xs font-black text-white/90 uppercase tracking-widest">高风险关注名单 (Vessel Watchlist)</h3>
+                          </div>
+                          <button className="text-[10px] font-black text-sky-400 uppercase tracking-widest hover:text-sky-300 transition-colors">查看全部</button>
+                        </div>
+                        <div className="overflow-x-auto">
+                          <table className="w-full text-left border-collapse">
+                            <thead>
+                              <tr className="bg-white/5">
+                                <th className="px-6 py-4 text-[10px] font-black text-white/30 uppercase tracking-widest">船舶名称</th>
+                                <th className="px-6 py-4 text-[10px] font-black text-white/30 uppercase tracking-widest">MMSI</th>
+                                <th className="px-6 py-4 text-[10px] font-black text-white/30 uppercase tracking-widest">风险类型</th>
+                                <th className="px-6 py-4 text-[10px] font-black text-white/30 uppercase tracking-widest">当前位置</th>
+                                <th className="px-6 py-4 text-[10px] font-black text-white/30 uppercase tracking-widest">风险分值</th>
+                                <th className="px-6 py-4 text-[10px] font-black text-white/30 uppercase tracking-widest text-right">快速操作</th>
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y divide-white/5">
+                              {MOCK_RISK_STATS.map(ship => (
+                                <tr key={ship.id} className="group hover:bg-white/[0.02] transition-colors">
+                                  <td className="px-6 py-4">
+                                    <div className="flex items-center gap-3">
+                                      <div className="w-8 h-8 rounded-lg bg-red-500/10 flex items-center justify-center text-red-400">
+                                        <Ship size={14} />
+                                      </div>
+                                      <span className="text-[12px] font-bold text-white/90">{ship.name}</span>
+                                    </div>
+                                  </td>
+                                  <td className="px-6 py-4 text-[11px] font-mono text-white/40">{ship.mmsi}</td>
+                                  <td className="px-6 py-4">
+                                    <span className="text-[11px] text-white/70">{ship.risk}</span>
+                                  </td>
+                                  <td className="px-6 py-4">
+                                    <span className="text-[11px] text-white/40">{ship.snapshot.location}</span>
+                                  </td>
+                                  <td className="px-6 py-4">
+                                    <div className="flex items-center gap-3">
+                                      <div className="flex-1 h-1.5 w-16 bg-white/5 rounded-full overflow-hidden">
+                                        <div className="h-full bg-red-500" style={{ width: `${ship.riskScore}%` }} />
+                                      </div>
+                                      <span className="text-[11px] font-mono font-bold text-red-400">{ship.riskScore}</span>
+                                    </div>
+                                  </td>
+                                  <td className="px-6 py-4 text-right">
+                                    <div className="flex items-center justify-end gap-2">
+                                      <button 
+                                        onClick={() => setDynamicPlaybackSession(getRiskPlaybackSession(ship))}
+                                        className="px-3 py-1 bg-sky-500/10 hover:bg-sky-500 text-sky-400 hover:text-white text-[10px] font-black uppercase tracking-widest rounded-lg border border-sky-500/20 transition-all"
+                                      >
+                                        回放
+                                      </button>
+                                      <button className="px-3 py-1 bg-white/5 hover:bg-white/10 text-white/40 hover:text-white text-[10px] font-black uppercase tracking-widest rounded-lg border border-white/10 transition-all">核实</button>
+                                    </div>
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </div>
 
               <AnimatePresence>
@@ -3685,7 +3718,7 @@ const AdminPanel = ({
                                   }
                                   className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-[12px] text-white focus:outline-none focus:border-sky-500/50"
                                 >
-                                  {['高', '中', '低'].map((level) => (
+                                  {['紧急', '警报', '警告', '注意'].map((level) => (
                                     <option key={level} value={level} className="bg-[#0f1723] text-white">
                                       {level}
                                     </option>

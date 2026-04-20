@@ -189,7 +189,7 @@ export interface IntentTimelineEvent {
 }
 
 export interface IntentRisk {
-  level: '高' | '中' | '低';
+  level: '注意' | '警告' | '警报' | '紧急';
   text: string;
   action: string;
   counterparty?: string;
