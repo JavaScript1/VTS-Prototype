@@ -24,6 +24,9 @@ export interface Alert {
   shipType: string;
   mmsi: string;
   callsign?: string;
+  flag?: string;
+  agent?: string;
+  anchorTime?: string;
   destination: string;
   cargo: string;
   riskScore: number;
@@ -49,11 +52,13 @@ export interface ShipPosition {
   lng: number;
   heading: number;
   name: string;
+  englishName?: string;
   mmsi: string;
+  callsign?: string;
   type: string;
   speed: number;
   destination: string;
-  status: 'normal' | 'warning' | 'caution';
+  status: 'normal' | 'warning' | 'risk';
 }
 
 export interface ShipSearchResult {
@@ -67,10 +72,16 @@ export interface ShipSearchResult {
 
 export interface VhfShipInfo {
   name: string;
+  englishName?: string;
   shipType?: string;
   mmsi?: string;
+  callSign?: string;
+  imo?: string;
+  flag?: string;
   destination?: string;
+  lastPort?: string;
   speed?: string;
+  hdg?: string;
   length?: string;
   width?: string;
   draft?: string;
@@ -201,6 +212,12 @@ export interface IntentRecommendation {
 
 export interface IntentItem {
   ship: string;
+  mmsi?: string;
+  callSign?: string;
+  imo?: string;
+  flag?: string;
+  agent?: string;
+  anchorTime?: string;
   shipType: string;
   cargoType: string;
   length: string;
@@ -220,8 +237,8 @@ export interface IntentItem {
   risks: IntentRisk[];
   situation: IntentSituation;
   recommendation: IntentRecommendation;
-  path: IntentStep[];
-  timeline: IntentTimelineEvent[];
+  path: IntentPathNode[];
+  timeline: IntentTimelineNode[];
 }
 
 // From mockData.ts

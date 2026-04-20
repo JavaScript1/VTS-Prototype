@@ -613,18 +613,18 @@ const PlaybackMapController = ({ playbackData }: { playbackData: any }) => {
 
 // 模拟船舶位置数据 (以吴淞口5号锚地为中心分布)
 const SHIP_POSITIONS: ShipPosition[] = ([
-  {id: 'ship-001', lat: 31.4382, lng: 121.5618, heading: 32, name: '远洋 123', mmsi: '413000001', type: '货轮', speed: 12.4, destination: '外高桥码头', status: 'normal'},
-  {id: 'ship-002', lat: 31.4315, lng: 121.5742, heading: 218, name: '海丰 77', mmsi: '413000002', type: '集装箱船', speed: 9.8, destination: '圆圆沙锚地', status: 'warning'},
-  {id: 'ship-003', lat: 31.4236, lng: 121.5484, heading: 84, name: '振华 15', mmsi: '413000003', type: '工程船', speed: 4.1, destination: '作业区 B5', status: 'caution'},
-  {id: 'ship-004', lat: 31.4461, lng: 121.5865, heading: 305, name: '中海 99', mmsi: '413000004', type: '油轮', speed: 11.7, destination: '长江口航道', status: 'warning'},
-  {id: 'ship-005', lat: 31.4178, lng: 121.5341, heading: 146, name: '顺风 6', mmsi: '413000005', type: '散货船', speed: 6.3, destination: '吴淞口锚地', status: 'normal'},
-  {id: 'ship-006', lat: 31.4544, lng: 121.5522, heading: 12, name: '东方 55', mmsi: '413000055', type: '客船', speed: 14.2, destination: '黄浦江', status: 'normal'},
-  {id: 'ship-007', lat: 31.4096, lng: 121.5828, heading: 262, name: '江海通 8', mmsi: '413000008', type: '散货船', speed: 7.1, destination: '宝山作业区', status: 'caution'},
-  {id: 'ship-008', lat: 31.4408, lng: 121.5294, heading: 118, name: '新海安', mmsi: '413000010', type: '集装箱船', speed: 10.5, destination: '南槽航道', status: 'normal'},
-  {id: 'ship-009', lat: 31.4289, lng: 121.5948, heading: 191, name: '星海', mmsi: '413000012', type: '油轮', speed: 5.9, destination: '1号禁锚区外侧', status: 'warning'},
-  {id: 'ship-010', lat: 31.4612, lng: 121.5686, heading: 56, name: '蓝波', mmsi: '413000015', type: '拖船', speed: 8.4, destination: '吴淞口警戒区', status: 'normal'},
-  {id: 'ship-011', lat: 31.4145, lng: 121.5634, heading: 332, name: '运兴 96', mmsi: '413000096', type: '货船', speed: 9.2, destination: '黄浦江', status: 'normal'},
-  {id: 'ship-012', lat: 31.4347, lng: 121.5449, heading: 274, name: '远洋 99', mmsi: '413000099', type: '散货船', speed: 13.1, destination: '6号锚地', status: 'caution'},
+  {id: 'ship-001', lat: 31.4382, lng: 121.5618, heading: 32, name: '远洋 123', englishName: 'OCEAN PIONEER 123', callsign: 'BARD1', mmsi: '413000001', type: '货轮', speed: 12.4, destination: '外高桥码头', status: 'normal'},
+  {id: 'ship-002', lat: 31.4315, lng: 121.5742, heading: 218, name: '海丰 77', englishName: 'HAI FENG 77', callsign: 'VRGT5', mmsi: '413000002', type: '集装箱船', speed: 9.8, destination: '圆圆沙锚地', status: 'warning'},
+  {id: 'ship-003', lat: 31.4236, lng: 121.5484, heading: 84, name: '振华 15', englishName: 'ZHEN HUA 15', callsign: 'BHKS3', mmsi: '413000003', type: '工程船', speed: 4.1, destination: '作业区 B5', status: 'caution'},
+  {id: 'ship-004', lat: 31.4461, lng: 121.5865, heading: 305, name: '中海 99', englishName: 'COSCO 99', callsign: 'BUIO9', mmsi: '413000004', type: '油轮', speed: 11.7, destination: '长江口航道', status: 'warning'},
+  {id: 'ship-005', lat: 31.4178, lng: 121.5341, heading: 146, name: '顺风 6', englishName: 'SHUN FENG 6', callsign: 'BSFG6', mmsi: '413000005', type: '散货船', speed: 6.3, destination: '吴淞口锚地', status: 'normal'},
+  {id: 'ship-006', lat: 31.4544, lng: 121.5522, heading: 12, name: '东方 55', englishName: 'DONG FANG 55', callsign: 'BDOO5', mmsi: '413000055', type: '客船', speed: 14.2, destination: '黄浦江', status: 'normal'},
+  {id: 'ship-007', lat: 31.4096, lng: 121.5828, heading: 262, name: '江海通 8', englishName: 'JIANG HAI TONG 8', callsign: 'BHT8', mmsi: '413000008', type: '散货船', speed: 7.1, destination: '宝山作业区', status: 'caution'},
+  {id: 'ship-008', lat: 31.4408, lng: 121.5294, heading: 118, name: '新海安', englishName: 'XIN HAI AN', callsign: 'XHA10', mmsi: '413000010', type: '集装箱船', speed: 10.5, destination: '南槽航道', status: 'normal'},
+  {id: 'ship-009', lat: 31.4289, lng: 121.5948, heading: 191, name: '星海', englishName: 'XING HAI', callsign: 'XH12', mmsi: '413000012', type: '油轮', speed: 5.9, destination: '1号禁锚区外侧', status: 'warning'},
+  {id: 'ship-010', lat: 31.4612, lng: 121.5686, heading: 56, name: '蓝波', englishName: 'LAN BO', callsign: 'LB15', mmsi: '413000015', type: '拖船', speed: 8.4, destination: '吴淞口警戒区', status: 'normal'},
+  {id: 'ship-011', lat: 31.4145, lng: 121.5634, heading: 332, name: '运兴 96', englishName: 'YUN XING 96', callsign: 'YX96', mmsi: '413000096', type: '货船', speed: 9.2, destination: '黄浦江', status: 'normal'},
+  {id: 'ship-012', lat: 31.4347, lng: 121.5449, heading: 274, name: '远洋 99', englishName: 'OCEAN PIONEER 99', callsign: 'BYYP9', mmsi: '413000099', type: '散货船', speed: 13.1, destination: '6号锚地', status: 'caution'},
 ] satisfies ShipPosition[]).map((ship): ShipPosition => ({
   ...ship,
   lat: ship.lat + HOME_MAP_LAT_OFFSET,
@@ -827,6 +827,9 @@ const MOCK_ALERTS: Alert[] = [
     shipType: '散货船',
     mmsi: '413000008',
     callsign: 'BHT8',
+    flag: '中国',
+    agent: '江海通',
+    anchorTime: '2026-03-18 14:20',
     destination: '上海',
     cargo: '铁矿石',
     riskScore: 85,
@@ -852,6 +855,9 @@ const MOCK_ALERTS: Alert[] = [
     shipType: '集装箱船',
     mmsi: '413000010',
     callsign: 'XHA10',
+    flag: '中国',
+    agent: '中远海运',
+    anchorTime: '2026-03-19 08:30',
     destination: '宁波',
     cargo: '日用品',
     riskScore: 72,
@@ -877,6 +883,9 @@ const MOCK_ALERTS: Alert[] = [
     shipType: '油船',
     mmsi: '413000012',
     callsign: 'XH12',
+    flag: '中国',
+    agent: '新诚航运',
+    anchorTime: '2026-03-18 20:15',
     destination: '舟山',
     cargo: '原油',
     riskScore: 65,
@@ -1163,10 +1172,14 @@ const mergeVhfShipInfo = (
   next: Partial<VhfShipInfo> & { name: string },
 ): VhfShipInfo => ({
   name: current?.name ?? next.name,
+  englishName: next.englishName ?? current?.englishName,
   shipType: next.shipType ?? current?.shipType,
   mmsi: next.mmsi ?? current?.mmsi,
+  callSign: next.callSign ?? current?.callSign,
+  imo: next.imo ?? current?.imo,
   destination: next.destination ?? current?.destination,
   speed: next.speed ?? current?.speed,
+  hdg: next.hdg ?? current?.hdg,
   length: next.length ?? current?.length,
   width: next.width ?? current?.width,
   draft: next.draft ?? current?.draft,
@@ -1256,6 +1269,11 @@ const createHomeShipDynamicEvents = ({
 const INTENT_DATA: IntentItem[] = [
   {
     ship: '远洋99',
+    mmsi: '413000099',
+    callSign: 'BYYP9',
+    imo: '9123456',
+    flag: '中国',
+    agent: '中远海运',
     shipType: '散货船',
     cargoType: '煤炭',
     length: '185m',
@@ -1297,6 +1315,7 @@ const INTENT_DATA: IntentItem[] = [
       action: '减速至 8kn 以下，回归推荐航迹，重点关注左前方会遇船。',
       priority: '立即',
     },
+    anchorTime: '2026-03-18 10:30',
     path: [
       { label: '6号锚地', status: 'completed', action: '申请起锚' },
       { label: '吴淞口', status: 'active', action: '由北向南划江' },
@@ -1310,6 +1329,12 @@ const INTENT_DATA: IntentItem[] = [
   },
   {
     ship: '海丰国际',
+    englishName: 'SITC INTERNATIONAL',
+    mmsi: '413000002',
+    callSign: 'VRGT5',
+    imo: '9234567',
+    flag: '中国香港',
+    agent: '海丰国际',
     shipType: '集装箱船',
     cargoType: '日用品',
     length: '210m',
@@ -1351,6 +1376,7 @@ const INTENT_DATA: IntentItem[] = [
       action: '减速进入队列，保持南槽中心线，提前关注交叉来船。',
       priority: '立即',
     },
+    anchorTime: '2026-03-18 10:30',
     path: [
       { label: '圆圆沙', status: 'completed', action: '已起锚' },
       { label: '南槽航道', status: 'active', action: '由北向南航行' },
@@ -1405,6 +1431,7 @@ const INTENT_DATA: IntentItem[] = [
       action: '保持低速解缆，先完成艏向修正，再进入离港航道。',
       priority: '优先',
     },
+    anchorTime: '2026-03-18 10:30',
     path: [
       { label: '外高桥', status: 'active', action: '离泊中' },
       { label: '南槽航道', status: 'pending', action: '航行' },
@@ -1458,6 +1485,7 @@ const INTENT_DATA: IntentItem[] = [
       action: '继续减速并限制横移，确认锚位后再执行抛锚。',
       priority: '优先',
     },
+    anchorTime: '2026-03-18 10:30',
     path: [
       { label: '长江口', status: 'completed', action: '进港航行' },
       { label: '10号锚地', status: 'active', action: '准备抛锚' },
@@ -1511,6 +1539,7 @@ const INTENT_DATA: IntentItem[] = [
       action: '延后穿越，待主航道直航船通过后再快速直穿。',
       priority: '立即',
     },
+    anchorTime: '2026-03-18 10:30',
     path: [
       { label: '北槽', status: 'completed', action: '航行' },
       { label: '主航道', status: 'active', action: '穿越主航道' },
@@ -1564,6 +1593,7 @@ const INTENT_DATA: IntentItem[] = [
       action: '保持当前航速，先回归中心线，再按窗口进入黄浦江。',
       priority: '优先',
     },
+    anchorTime: '2026-03-18 10:30',
     path: [
       { label: '长江口', status: 'completed', action: '进港' },
       { label: '吴淞口', status: 'active', action: '划江' },
@@ -5326,6 +5356,8 @@ export default function App() {
       upsert(ship.name, {
         shipType: ship.type,
         mmsi: ship.mmsi,
+        callSign: ship.callsign,
+        englishName: ship.englishName,
         destination: ship.destination,
         speed: `${ship.speed.toFixed(1)}kn`,
       });
@@ -5334,12 +5366,19 @@ export default function App() {
     INTENT_DATA.forEach((item) => {
       upsert(item.ship, {
         shipType: item.shipType,
+        englishName: item.englishName,
+        mmsi: item.mmsi,
+        callSign: item.callSign,
+        imo: item.imo,
+        flag: item.flag,
+        lastPort: item.past,
         cargoType: item.cargoType,
         length: item.length,
         width: item.width,
         draft: item.draft,
         speed: item.speed,
         destination: item.destination,
+        hdg: item.situation?.hdg,
       });
     });
 
@@ -5937,127 +5976,191 @@ export default function App() {
                 </div>
               </div>
 
-              <div className={vhfViewMode === 'list' ? 'flex-1 overflow-y-auto p-2 space-y-2 custom-scrollbar' : 'flex-1 min-h-0 overflow-hidden p-2'}>
+              <div className="flex-1 overflow-y-auto p-1.5 space-y-2.5 custom-scrollbar">
                 {vhfViewMode === 'list' ? (
                   [...vhfMessages].reverse().map((msg, idx) => msg && (
                     <motion.div 
                       key={msg.id} 
-                      initial={{ opacity: 0, x: msg.isVTS ? 20 : -20 }}
+                      initial={{ opacity: 0, x: msg.isVTS ? 5 : -5 }}
                       animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: idx * 0.05 }}
-                      className={`pb-2 ${msg.isVTS ? 'text-right' : 'text-left'}`}
+                      transition={{ delay: idx * 0.03 }}
+                      className={`flex flex-col ${msg.isVTS ? 'items-end' : 'items-start'}`}
                     >
-                      <div className={`flex items-center gap-2 ${msg.isVTS ? 'justify-end' : 'justify-start'}`}>
-                        {msg.isVTS ? (
-                          <>
-                            <span className="text-[9px] font-mono text-white/30">{msg.date} {msg.time}</span>
-                            <div className="flex items-center gap-1 px-1 py-0.5 text-[9px] font-bold text-sky-300/85">
-                              <Radio size={9} className="text-sky-300" />
-                              {msg.duration}
-                            </div>
-                            <span className="text-[10px] font-bold text-sky-200">{msg.sender}</span>
-                            <div className="flex h-4 w-4 items-center justify-center rounded-full bg-sky-500/90">
-                              <User size={10} className="text-white" />
-                            </div>
-                          </>
-                        ) : (
-                          <>
-                            <span className="text-[10px] font-bold text-white/80">{msg.sender}</span>
-                            <div className="flex items-center gap-1 px-1 py-0.5 text-[9px] font-bold text-sky-400/80">
-                              <Radio size={9} className="text-sky-400" />
-                              {msg.duration}
-                            </div>
-                            <span className="text-[9px] font-mono text-white/30">{msg.date} {msg.time}</span>
-                          </>
-                        )}
+                      {/* 发送者 & 时间 */}
+                      <div className={`flex items-center gap-1.5 mb-0.5 px-0.5 ${msg.isVTS ? 'flex-row-reverse' : 'flex-row'}`}>
+                        <span className={`text-[9px] font-black tracking-tight ${msg.isVTS ? 'text-sky-400/80' : 'text-white/30'}`}>
+                          {msg.sender}
+                        </span>
+                        <span className="text-[7px] font-mono text-white/15">{msg.time}</span>
                       </div>
 
-                      <div className={`mt-1 flex items-start gap-2 ${msg.isVTS ? 'justify-end' : 'justify-start'}`}>
-                        {!msg.isVTS && <div className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-white/22" />}
-                        <p className={`max-w-[92%] text-[11px] leading-relaxed ${msg.isVTS ? 'text-sky-100' : 'text-white/88'}`}>
-                          {msg.content}
-                        </p>
-                        <button className="mt-0.5 p-0.5 text-sky-500/35 hover:text-sky-400 transition-colors">
-                          <Settings size={12} />
-                        </button>
+                      {/* 消息卡片 */}
+                      <div className={`group relative max-w-[92%] rounded-lg border p-1.5 transition-all shadow-sm ${
+                        msg.isVTS 
+                          ? 'bg-sky-500/10 border-sky-500/20 rounded-tr-none' 
+                          : 'bg-white/[0.02] border-white/5 rounded-tl-none'
+                      }`}>
+                        <div className={`flex ${msg.content.length > 20 ? 'items-center gap-2' : 'flex-wrap items-center gap-x-2'} ${msg.isVTS ? 'flex-row' : 'flex-row'}`}>
+                          {msg.isVTS ? (
+                            <>
+                              <div className="inline-flex items-center gap-1 px-1 rounded bg-black/10 shrink-0">
+                                <Radio size={7} className="text-sky-400/60" />
+                                <span className="text-[7px] font-bold font-mono text-white/20">{msg.duration}</span>
+                              </div>
+                              <p className={`text-[10px] leading-snug tracking-wide text-sky-50 text-right ${msg.content.length > 20 ? 'flex-1' : ''}`}>
+                                {msg.content}
+                              </p>
+                            </>
+                          ) : (
+                            <>
+                              <p className={`text-[10px] leading-snug tracking-wide text-white/75 ${msg.content.length > 20 ? 'flex-1' : ''}`}>
+                                {msg.content}
+                              </p>
+                              <div className="inline-flex items-center gap-1 px-1 rounded bg-black/10 shrink-0">
+                                <Radio size={7} className="text-white/20" />
+                                <span className="text-[7px] font-bold font-mono text-white/20">{msg.duration}</span>
+                              </div>
+                            </>
+                          )}
+                        </div>
                       </div>
                     </motion.div>
                   ))
                 ) : (
-                  <div className="h-full min-h-0 flex flex-col">
-                    <section className="min-h-0 flex-[1.18] bg-[#080808] overflow-hidden">
+                  <div className="h-full min-h-0 flex flex-col">                    <section className="min-h-0 flex-[1.5] bg-[#080808] overflow-hidden">
 
-                      {activeVhfSession ? (
-                        <>
-                          <div className="px-3 py-3 border-b border-white/6">
-                            <div className="flex items-center justify-between gap-3">
-                              <div className="min-w-0">
-                                <div className="flex items-center gap-2 flex-wrap">
-                                  <div className="w-3 h-3 rounded-full bg-sky-500 shrink-0" />
-                                  <h3 className="text-[15px] leading-none font-black text-white tracking-tight truncate">{activeVhfSession.shipName}</h3>
-                                  <span className="px-1.5 py-0.5 rounded-md bg-white/10 text-[8px] font-black text-white/55 shrink-0">
-                                    {activeVhfSession.shipInfo?.shipType || '类型待识别'}
-                                  </span>
+                       {activeVhfSession ? (
+                        <div className="h-full flex flex-col">
+                          {/* 会话顶部：船舶核心信息卡 */}
+                          <div className="px-3 py-1.5 border-b border-white/10 bg-[#0c0c0c]">
+                            <div className="flex items-start justify-between gap-3 mb-1.5">
+                              <div className="flex items-center gap-2.5 min-w-0">
+                                <div className="w-8 h-8 rounded-xl bg-sky-500/20 flex items-center justify-center border border-sky-500/30">
+                                  <Ship size={18} className="text-sky-400" />
                                 </div>
-                                <div className="mt-2.5 flex items-center gap-3 flex-wrap text-white/38">
-                                  <div className="flex items-center gap-1.5 text-[9px]">
-                                    <Maximize2 size={10} />
-                                    <span>{activeVhfSession.shipInfo?.length && activeVhfSession.shipInfo?.width
-                                      ? `${activeVhfSession.shipInfo.length}×${activeVhfSession.shipInfo.width}`
-                                      : activeVhfSession.shipInfo?.length || '--'}</span>
+                                <div className="min-w-0 flex-1">
+                                  <div className="flex items-center gap-x-2 gap-y-0.5 flex-wrap">
+                                    <h3 className="text-[12px] font-black text-white leading-tight">{activeVhfSession.shipName}</h3>
+                                    {activeVhfSession.shipInfo?.englishName && (
+                                      <span className="text-[9px] font-bold text-white/30 uppercase leading-tight">{activeVhfSession.shipInfo.englishName}</span>
+                                    )}
                                   </div>
-                                  <div className="flex items-center gap-1.5 text-[9px]">
-                                    <Activity size={10} />
-                                    <span>{activeVhfSession.shipInfo?.speed || '待更新'}</span>
-                                  </div>
-                                  <div className="flex items-center gap-1.5 text-[9px]">
-                                    <MapPin size={10} />
-                                    <span>{activeVhfSession.shipInfo?.destination || '位置待更新'}</span>
+                                  
+                                  <div className="mt-0.5 flex items-center gap-2">
+                                    <span className="text-sky-400 text-[8px] font-black uppercase tracking-widest bg-sky-500/10 px-1 py-0.5 rounded border border-sky-500/20 shrink-0">
+                                      {activeVhfSession.shipInfo?.shipType || '未知类型'}
+                                    </span>
+                                    <span className="text-white/40 flex items-center gap-1.5 text-[9px] font-bold">
+                                      <span className="w-px h-2 bg-white/10" />
+                                      载货: <span className="text-white/60">{activeVhfSession.shipInfo?.cargoType || '--'}</span>
+                                    </span>
                                   </div>
                                 </div>
                               </div>
-                              <div className={`px-2.5 py-1.5 rounded-[18px] border text-[9px] font-black shrink-0 ${
-                                activeVhfSession.sessionType === 'alert'
-                                  ? 'bg-sky-500/10 border-sky-500/40 text-sky-300'
-                                  : 'bg-sky-500/10 border-sky-500/35 text-sky-300'
-                              }`}>
-                                {activeVhfSession.intent}
+                            </div>
+
+                            {/* 船舶参数：高密度视觉优化 */}
+                            <div className="mt-1 border-t border-white/5 pt-1.5">
+                              <div className="grid grid-cols-3 gap-x-2 gap-y-1.5">
+                                {/* 第一行：意图与航程 - 强调色 */}
+                                <div className="col-span-1 pb-1 border-b border-white/5 bg-sky-500/[0.04] -mx-1 pl-1 rounded-sm">
+                                  <div className="text-[7px] uppercase tracking-widest text-sky-400/40">意图</div>
+                                  <div className="text-[9px] font-black text-sky-400 uppercase tracking-tighter truncate">{activeVhfSession.intent}</div>
+                                </div>
+                                <div className="col-span-2 pb-1 border-b border-white/5 bg-white/[0.01] -mx-1 pr-1 pl-2 rounded-sm">
+                                  <div className="text-[7px] uppercase tracking-widest text-white/10">航程 (上一港 / 下一港)</div>
+                                  <div className="text-[9px] text-white/80 truncate">
+                                    <span className="text-white/40">{activeVhfSession.shipInfo?.lastPort || '--'}</span>
+                                    <span className="mx-1 text-sky-500/30">→</span>
+                                    <span className="text-sky-400 font-bold">{activeVhfSession.shipInfo?.destination || '--'}</span>
+                                  </div>
+                                </div>
+
+                                {/* 第二行：身份三要素 - 单等宽强调 */}
+                                <div className="space-y-0 pt-0.5 border-r border-white/5 pr-1">
+                                  <div className="text-[7px] uppercase tracking-widest text-white/20">呼号</div>
+                                  <div className="text-[9px] font-mono font-bold text-sky-300/90">{activeVhfSession.shipInfo?.callSign || '--'}</div>
+                                </div>
+                                <div className="space-y-0 pt-0.5 border-r border-white/5 px-1">
+                                  <div className="text-[7px] uppercase tracking-widest text-white/20">MMSI</div>
+                                  <div className="text-[9px] font-mono font-bold text-sky-300/90">{activeVhfSession.shipInfo?.mmsi || '----'}</div>
+                                </div>
+                                <div className="space-y-0 pt-0.5 pl-1">
+                                  <div className="text-[7px] uppercase tracking-widest text-white/20">IMO</div>
+                                  <div className="text-[9px] font-mono text-white/60">{activeVhfSession.shipInfo?.imo || '--'}</div>
+                                </div>
+
+                                {/* 第三行：物理规格 - 暖色调微调 */}
+                                <div className="space-y-0 border-r border-white/5 pr-1">
+                                  <div className="text-[7px] uppercase tracking-widest text-white/20">船籍</div>
+                                  <div className="text-[9px] text-white/75 font-medium">{activeVhfSession.shipInfo?.flag || '--'}</div>
+                                </div>
+                                <div className="space-y-0 border-r border-white/5 px-1">
+                                  <div className="text-[7px] uppercase tracking-widest text-white/20">吃水</div>
+                                  <div className="text-[9px] text-orange-300/90 font-mono font-bold">{activeVhfSession.shipInfo?.draft || '--'}</div>
+                                </div>
+                                <div className="space-y-0 pl-1">
+                                  <div className="text-[7px] uppercase tracking-widest text-white/20">长 / 宽</div>
+                                  <div className="text-[9px] text-orange-200/80 font-mono">
+                                    {activeVhfSession.shipInfo?.length || '--'} <span className="text-white/20">/</span> {activeVhfSession.shipInfo?.width || '--'}
+                                  </div>
+                                </div>
                               </div>
                             </div>
                           </div>
 
-                          <div className="flex-1 min-h-0 overflow-y-auto px-3 py-3 space-y-3 custom-scrollbar">
+                          {/* 对话区域：同步列表规则的精致流 */}
+                          <div className="flex-1 min-h-0 overflow-y-auto px-3 py-3 space-y-3 custom-scrollbar bg-[#080808]">
                             {activeVhfSession.messages.map((msg, idx) => (
                               <motion.div
                                 key={msg.id}
-                                initial={{ opacity: 0, x: msg.isVTS ? 16 : -16 }}
+                                initial={{ opacity: 0, x: msg.isVTS ? 5 : -5 }}
                                 animate={{ opacity: 1, x: 0 }}
                                 transition={{ delay: idx * 0.04 }}
-                                className="flex flex-col"
+                                className={`flex flex-col ${msg.isVTS ? 'items-end' : 'items-start'}`}
                               >
-                                <div className={`mb-1 flex items-center gap-2 ${msg.isVTS ? 'justify-end' : 'justify-start'}`}>
-                                  {msg.isVTS ? (
-                                    <>
-                                      <span className="text-[8px] font-mono text-white/22">{msg.time}</span>
-                                      <span className={`text-[10px] font-black text-sky-300/80`}>{msg.sender}</span>
-                                    </>
-                                  ) : (
-                                    <>
-                                      <span className="text-[8px] font-mono text-white/22">{msg.time}</span>
-                                      <span className={`text-[10px] font-black text-white/58`}>{msg.sender}</span>
-                                    </>
-                                  )}
+                                {/* 发送者 & 时间 */}
+                                <div className={`flex items-center gap-1.5 mb-0.5 px-0.5 ${msg.isVTS ? 'flex-row-reverse' : 'flex-row'}`}>
+                                  <span className={`text-[9px] font-black tracking-tight ${msg.isVTS ? 'text-sky-400/80' : 'text-white/30'}`}>
+                                    {msg.sender}
+                                  </span>
+                                  <span className="text-[7px] font-mono text-white/15">{msg.time}</span>
                                 </div>
-                                <div className={`${msg.isVTS ? 'pr-5 border-r-2 border-sky-500/35 text-sky-100 ml-auto text-right' : 'pl-4 border-l-2 border-white/10 text-white/88'} max-w-[94%]`}>
-                                  <p className="text-[12px] leading-relaxed">{msg.content}</p>
-                                  <div className={`mt-1 text-[8px] font-bold ${msg.isVTS ? 'text-sky-200/35' : 'text-white/22'}`}>
-                                    {msg.duration}
+
+                                {/* 消息卡片 */}
+                                <div className={`group relative max-w-[92%] rounded-lg border p-1.5 transition-all shadow-sm ${
+                                  msg.isVTS 
+                                    ? 'bg-sky-500/10 border-sky-400/20 rounded-tr-none' 
+                                    : 'bg-[#1a1a1a] border-white/5 rounded-tl-none'
+                                }`}>
+                                  <div className={`flex ${msg.content.length > 20 ? 'items-center gap-2' : 'flex-wrap items-center gap-x-2'} ${msg.isVTS ? 'flex-row' : 'flex-row'}`}>
+                                    {msg.isVTS ? (
+                                      <>
+                                        <div className="inline-flex items-center gap-1 px-1 rounded bg-black/20 shrink-0">
+                                          <Radio size={7} className="text-sky-400/60" />
+                                          <span className="text-[7px] font-bold font-mono text-white/20">{msg.duration}</span>
+                                        </div>
+                                        <p className={`text-[10px] leading-snug tracking-wide text-sky-50 text-right ${msg.content.length > 20 ? 'flex-1' : ''}`}>
+                                          {msg.content}
+                                        </p>
+                                      </>
+                                    ) : (
+                                      <>
+                                        <p className={`text-[10px] leading-snug tracking-wide text-white/75 ${msg.content.length > 20 ? 'flex-1' : ''}`}>
+                                          {msg.content}
+                                        </p>
+                                        <div className="inline-flex items-center gap-1 px-1 rounded bg-black/20 shrink-0">
+                                          <Radio size={7} className="text-white/20" />
+                                          <span className="text-[7px] font-bold font-mono text-white/20">{msg.duration}</span>
+                                        </div>
+                                      </>
+                                    )}
                                   </div>
                                 </div>
                               </motion.div>
                             ))}
                           </div>
-                        </>
+                        </div>
                       ) : (
                         <div className="flex-1 flex items-center justify-center text-[11px] text-white/35">
                           当前没有正在进行的 VHF 会话。
@@ -6065,43 +6168,47 @@ export default function App() {
                       )}
                     </section>
 
-                    <section className="min-h-0 flex-[0.76] bg-[#080808] overflow-hidden border-t border-white/6">
-                      <div className="px-3 py-1.5 border-b border-white/6 bg-[#0a0a0a] flex items-center justify-between">
+                    <section className="min-h-0 flex-[0.4] bg-[#080808] overflow-hidden border-t border-white/6">
+                      <div className="px-3 py-1 border-b border-white/5 bg-[#0a0a0a] flex items-center justify-between">
                         <div className="flex items-center gap-2">
-                          <span className="text-[10px] font-black text-white/38 tracking-[0.06em]">等待对话船舶</span>
+                          <span className="text-[9px] font-black text-white/20 tracking-[0.06em]">等待对话船舶</span>
                         </div>
-                        <span className="text-[9px] font-black text-white/28">共 {waitingVhfSessions.length} 条</span>
+                        <span className="text-[8px] font-black text-white/15">共 {waitingVhfSessions.length} 条</span>
                       </div>
 
                       <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar">
-                        {waitingVhfSessions.length > 0 ? waitingVhfSessions.map((session, index) => (
-                          <motion.button
-                            key={session.sessionId}
-                            initial={{ opacity: 0, y: 10 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: index * 0.05 }}
-                            onClick={() => setSelectedVhfSessionId(session.sessionId)}
-                            className="w-full border-b border-white/6 px-3 py-2.5 text-left hover:bg-[#09131a] transition-all"
-                          >
-                            <div className="flex items-start justify-between gap-3">
-                              <div className="min-w-0">
-                                <div className="flex items-center gap-2">
-                                  <span className="text-[10px] font-black text-white/90">{session.shipName}</span>
-                                  <div className="w-1.5 h-1.5 rounded-full bg-sky-500 shrink-0" />
+                        {waitingVhfSessions.length > 0 ? waitingVhfSessions.map((session, index) => {
+                          const shipInfo = session.shipInfo;
+                          return (
+                            <motion.button
+                              key={session.sessionId}
+                              initial={{ opacity: 0, y: 10 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              transition={{ delay: index * 0.05 }}
+                              onClick={() => setSelectedVhfSessionId(session.sessionId)}
+                              className="w-full border-b border-white/5 px-3 py-1 text-left hover:bg-white/[0.02] transition-all"
+                            >
+                              <div className="flex items-center justify-between gap-3">
+                                <div className="flex-1 min-w-0 flex flex-col">
+                                  <div className="flex items-baseline gap-1.5">
+                                    <span className="text-[10px] font-black text-white/80">{session.shipName}</span>
+                                    {shipInfo?.englishName && (
+                                      <span className="text-[8px] font-bold text-white/20 truncate">{shipInfo.englishName}</span>
+                                    )}
+                                  </div>
+                                  <div className="text-[9px] text-white/30 truncate">
+                                    {session.messages.find((message) => !message.isVTS)?.content || session.messages[session.messages.length - 1]?.content || '暂无内容'}
+                                  </div>
                                 </div>
-                                <div className="mt-0.5 text-[10px] italic text-white/36 truncate">
-                                  “{session.messages.find((message) => !message.isVTS)?.content || session.messages[session.messages.length - 1]?.content || '暂无摘要'}”
+                                <div className="shrink-0">
+                                  <span className="px-1.5 py-0.5 rounded bg-sky-500/10 border border-sky-500/20 text-[8px] font-black text-sky-400">
+                                    {session.intent}
+                                  </span>
                                 </div>
                               </div>
-                              <div className="flex flex-col items-end gap-1 shrink-0">
-                                <div className="text-[9px] font-black text-white/24">{session.latestTime.split(' ').pop()}</div>
-                                <div className="px-2 py-0.5 rounded-full bg-sky-500/10 text-[9px] font-black text-sky-400">
-                                  {session.intent}
-                                </div>
-                              </div>
-                            </div>
-                          </motion.button>
-                        )) : (
+                            </motion.button>
+                          );
+                        }) : (
                           <div className="flex h-full items-center justify-center px-4 text-[11px] text-white/35">
                             当前没有等待中的 VHF 会话。
                           </div>
@@ -6257,6 +6364,37 @@ export default function App() {
                         className="overflow-hidden border-t border-white/5"
                       >
                         <div className="p-2 space-y-1.5 bg-[#0d1117]">
+                          {/* 船舶详情信息卡 - 参考锚地态势样式 */}
+                          <div className="rounded-lg border border-white/5 bg-white/[0.02] px-2 py-2">
+                            <div className="grid grid-cols-3 gap-x-2 gap-y-1.5">
+                              <div className="space-y-0.5">
+                                <div className="text-[8px] uppercase tracking-widest text-white/30">MMSI</div>
+                                <div className="text-[9px] font-mono text-white/75">{item.mmsi || '--'}</div>
+                              </div>
+                              <div className="space-y-0.5">
+                                <div className="text-[8px] uppercase tracking-widest text-white/30">呼号</div>
+                                <div className="text-[9px] font-mono text-white/75">{item.callSign || '--'}</div>
+                              </div>
+                              <div className="space-y-0.5">
+                                <div className="text-[8px] uppercase tracking-widest text-white/30">船籍</div>
+                                <div className="text-[9px] text-white/75">{item.flag || '--'}</div>
+                              </div>
+                              
+                              <div className="space-y-0.5">
+                                <div className="text-[8px] uppercase tracking-widest text-white/30">最大吃水</div>
+                                <div className="text-[9px] text-white/75">{item.draft}</div>
+                              </div>
+                              <div className="space-y-0.5">
+                                <div className="text-[8px] uppercase tracking-widest text-white/30">长/宽</div>
+                                <div className="text-[9px] text-white/75">{item.length}/{item.width}</div>
+                              </div>
+                              <div className="space-y-0.5">
+                                <div className="text-[8px] uppercase tracking-widest text-white/30">航向/航速</div>
+                                <div className="text-[9px] text-white/75">{item.situation.hdg}/{item.speed}</div>
+                              </div>
+                            </div>
+                          </div>
+
                           <div className="rounded-lg border border-sky-500/15 bg-sky-500/[0.06] px-2 py-1.5">
                             <div className="flex items-center gap-1.5 text-[9px] font-bold text-white">
                               <LocateFixed size={10} className="shrink-0 text-sky-400" />
@@ -6445,31 +6583,43 @@ export default function App() {
                           className="overflow-hidden border-t border-white/5"
                         >
                           <div className="p-3 space-y-4">
-                            {/* 风险详情数据 */}
-                            <div className="grid grid-cols-2 gap-2">
-                              <div className="bg-white/5 p-2 rounded-lg border border-white/5">
-                                <div className="text-[8px] text-white/30 font-bold uppercase tracking-widest mb-1">呼号 / MMSI</div>
-                                <div className="text-[10px] font-mono text-sky-400">{alert.callsign} / {alert.mmsi}</div>
-                              </div>
-                              <div className="bg-white/5 p-2 rounded-lg border border-white/5">
-                                <div className="text-[8px] text-white/30 font-bold uppercase tracking-widest mb-1">风险指数</div>
-                                <div className="text-[10px] font-bold text-red-400">{alert.riskScore}</div>
-                              </div>
-                              <div className="bg-white/5 p-2 rounded-lg border border-white/5">
-                                <div className="text-[8px] text-white/30 font-bold uppercase tracking-widest mb-1">船长 / 船宽</div>
-                                <div className="text-[10px] text-white/80">{alert.length} / {alert.width}</div>
-                              </div>
-                              <div className="bg-white/5 p-2 rounded-lg border border-white/5">
-                                <div className="text-[8px] text-white/30 font-bold uppercase tracking-widest mb-1">吃水 / 船型</div>
-                                <div className="text-[10px] text-white/80">{alert.draft} / {alert.shipType}</div>
-                              </div>
-                              <div className="bg-white/5 p-2 rounded-lg border border-white/5">
-                                <div className="text-[8px] text-white/30 font-bold uppercase tracking-widest mb-1">目的港</div>
-                                <div className="text-[10px] text-white/80">{alert.destination}</div>
-                              </div>
-                              <div className="bg-white/5 p-2 rounded-lg border border-white/5">
-                                <div className="text-[8px] text-white/30 font-bold uppercase tracking-widest mb-1">货物类型</div>
-                                <div className="text-[10px] text-white/80">{alert.cargo}</div>
+                            {/* 风险详情数据 - 参考锚地态势样式 */}
+                            <div className="rounded-lg border border-white/5 bg-white/[0.02] px-2 py-2">
+                              <div className="grid grid-cols-3 gap-x-2 gap-y-1.5">
+                                <div className="space-y-0.5">
+                                  <div className="text-[8px] uppercase tracking-widest text-white/30">MMSI</div>
+                                  <div className="text-[9px] font-mono text-white/75">{alert.mmsi || '--'}</div>
+                                </div>
+                                <div className="space-y-0.5">
+                                  <div className="text-[8px] uppercase tracking-widest text-white/30">呼号</div>
+                                  <div className="text-[9px] font-mono text-white/75">{alert.callsign || '--'}</div>
+                                </div>
+                                <div className="space-y-0.5">
+                                  <div className="text-[8px] uppercase tracking-widest text-white/30">船籍</div>
+                                  <div className="text-[9px] text-white/75">{alert.flag || '--'}</div>
+                                </div>
+                                
+                                <div className="space-y-0.5">
+                                  <div className="text-[8px] uppercase tracking-widest text-white/30">最大吃水</div>
+                                  <div className="text-[9px] text-white/75">{alert.draft}</div>
+                                </div>
+                                <div className="space-y-0.5">
+                                  <div className="text-[8px] uppercase tracking-widest text-white/30">长/宽</div>
+                                  <div className="text-[9px] text-white/75">{alert.length}/{alert.width}</div>
+                                </div>
+                                <div className="space-y-0.5">
+                                  <div className="text-[8px] uppercase tracking-widest text-white/30">代理</div>
+                                  <div className="text-[9px] text-white/75 truncate">{alert.agent || '--'}</div>
+                                </div>
+
+                                <div className="col-span-2 space-y-0.5">
+                                  <div className="text-[8px] uppercase tracking-widest text-white/30">目的港</div>
+                                  <div className="text-[9px] text-white/75">{alert.destination}</div>
+                                </div>
+                                <div className="space-y-0.5">
+                                  <div className="text-[8px] uppercase tracking-widest text-white/30">风险指数</div>
+                                  <div className="text-[9px] font-bold text-red-400">{alert.riskScore}</div>
+                                </div>
                               </div>
                             </div>
 
