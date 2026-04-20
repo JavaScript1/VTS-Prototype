@@ -2025,6 +2025,7 @@ const AdminPanel = ({
   const [activeSubTab, setActiveSubTab] = useState('值班区域');
   const [activeScenarioTab, setActiveScenarioTab] = useState('VHF船舶会话');
   const [activeStatsTab, setActiveStatsTab] = useState(initialStatsTab || '值班统计');
+  const [activeWarningTab, setActiveWarningTab] = useState('实时预警');
   const [statsTimeRange, setStatsTimeRange] = useState('今天');
   const [statsArea, setStatsArea] = useState('全部区域');
   const [showVhfDetails, setShowVhfDetails] = useState(false);
@@ -2658,7 +2659,7 @@ const AdminPanel = ({
                 {activeMenu}
                 {activeMenu === '业务统计' && (
                   <div className="flex bg-white/5 rounded-lg p-0.5 ml-4">
-                    {['值班统计', '船舶风险统计', '意图统计'].map(tab => (
+                    {['值班统计', '意图统计'].map(tab => (
                       <button
                         key={tab}
                         onClick={() => setActiveStatsTab(tab)}
@@ -3143,7 +3144,19 @@ const AdminPanel = ({
                 <div className="flex items-center gap-3">
                   <Layout size={14} className="text-white/70" />
                   <div className="w-1 h-4 rounded-full bg-sky-400" />
-                  <span className="text-[15px] font-semibold text-white">预警管理</span>
+                  <span className="text-[15px] font-semibold text-white mr-4">预警管理</span>
+                  
+                  <div className="flex bg-white/5 rounded-lg p-0.5">
+                    {['实时预警', '风险统计'].map(tab => (
+                      <button
+                        key={tab}
+                        onClick={() => setActiveWarningTab(tab)}
+                        className={`px-4 py-1 text-[11px] font-bold rounded-md transition-all whitespace-nowrap ${activeWarningTab === tab ? 'bg-sky-500 text-white shadow-lg shadow-sky-500/20' : 'text-white/40 hover:text-white/60'}`}
+                      >
+                        {tab}
+                      </button>
+                    ))}
+                  </div>
                 </div>
                 <div className="flex items-center gap-4 text-white/70">
                   <button className="hover:text-white transition-colors">
@@ -3156,108 +3169,200 @@ const AdminPanel = ({
               </div>
 
               <div className="flex-1 min-h-0 flex flex-col">
-                <div className="grid grid-cols-3 border-b border-white/10 bg-[#0d1724] shrink-0">
-                  <div className="px-4 py-3">
-                    <div className="text-[10px] font-bold text-white/35 uppercase tracking-widest">规则总数</div>
-                    <div className="mt-1 text-xl font-semibold text-white">{warningRules.length}</div>
-                  </div>
-                  <div className="px-4 py-3 border-l border-white/5">
-                    <div className="text-[10px] font-bold text-white/35 uppercase tracking-widest">开启规则</div>
-                    <div className="mt-1 text-xl font-semibold text-sky-400">{warningRules.filter((rule) => rule.enabled).length}</div>
-                  </div>
-                  <div className="px-4 py-3 border-l border-white/5">
-                    <div className="text-[10px] font-bold text-white/35 uppercase tracking-widest">已配置区域</div>
-                    <div className="mt-1 text-xl font-semibold text-white">
-                      {new Set(warningRules.flatMap((rule) => rule.effectiveAreaIds)).size}
+                {activeWarningTab === '实时预警' ? (
+                  <>
+                    <div className="grid grid-cols-3 border-b border-white/10 bg-[#0d1724] shrink-0">
+                      <div className="px-4 py-3">
+                        <div className="text-[10px] font-bold text-white/35 uppercase tracking-widest">规则总数</div>
+                        <div className="mt-1 text-xl font-semibold text-white">{warningRules.length}</div>
+                      </div>
+                      <div className="px-4 py-3 border-l border-white/5">
+                        <div className="text-[10px] font-bold text-white/35 uppercase tracking-widest">开启规则</div>
+                        <div className="mt-1 text-xl font-semibold text-sky-400">{warningRules.filter((rule) => rule.enabled).length}</div>
+                      </div>
+                      <div className="px-4 py-3 border-l border-white/5">
+                        <div className="text-[10px] font-bold text-white/35 uppercase tracking-widest">已配置区域</div>
+                        <div className="mt-1 text-xl font-semibold text-white">
+                          {new Set(warningRules.flatMap((rule) => rule.effectiveAreaIds)).size}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex-1 overflow-auto">
+                      <table className="w-full min-w-[1120px] border-collapse">
+                        <thead>
+                          <tr className="border-b border-white/10 bg-[#101925] text-left">
+                            <th className="px-4 py-3 text-[11px] font-medium text-white/75">预警名称</th>
+                            <th className="px-4 py-3 text-[11px] font-medium text-white/75">预警类别</th>
+                            <th className="px-4 py-3 text-[11px] font-medium text-white/75">监测维度</th>
+                            <th className="px-4 py-3 text-[11px] font-medium text-white/75">生效区域</th>
+                            <th className="px-4 py-3 text-[11px] font-medium text-white/75">状态</th>
+                            <th className="px-4 py-3 text-[11px] font-medium text-white/75">操作</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {warningRules.map((rule) => {
+                            const areaNames = rule.effectiveAreaIds
+                              .map((id) => warningAreaLookup.get(id)?.name)
+                              .filter(Boolean) as string[];
+                            const areaSummary = areaNames.length > 2
+                              ? `${areaNames.slice(0, 2).join('、')} +${areaNames.length - 2}`
+                              : areaNames.join('、') || '未配置';
+
+                            return (
+                              <tr
+                                key={rule.id}
+                                onClick={() => setSelectedWarningRuleId(rule.id)}
+                                className={`border-b border-white/5 transition-colors ${
+                                  selectedWarningRuleId === rule.id
+                                    ? 'bg-white/[0.06]'
+                                    : 'bg-[#06101d] hover:bg-white/[0.03]'
+                                }`}
+                              >
+                                <td className="px-4 py-3">
+                                  <div className="flex items-center gap-3">
+                                    <div className={`h-2 w-2 rounded-full ${rule.enabled ? 'bg-sky-400' : 'bg-white/25'}`} />
+                                    <div>
+                                      <div className="text-[13px] text-white/88">{rule.name}</div>
+                                      <div className="mt-1 text-[10px] text-white/30">等级 {rule.severity}</div>
+                                    </div>
+                                  </div>
+                                </td>
+                                <td className="px-4 py-3 text-[12px] text-white/72">{rule.category}</td>
+                                <td className="px-4 py-3 text-[12px] text-white/72">{rule.trigger}</td>
+                                <td className="px-4 py-3">
+                                  <div className="text-[12px] text-white/72">{areaSummary}</div>
+                                </td>
+                                <td className="px-4 py-3">
+                                  <div className="flex items-center gap-3">
+                                    <span className={`text-[12px] ${rule.enabled ? 'text-white/50' : 'text-sky-400'}`}>关闭</span>
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        toggleWarningRule(rule.id);
+                                      }}
+                                      className={`relative h-5 w-9 rounded-full transition-all ${
+                                        rule.enabled ? 'bg-[#0d76e8]' : 'bg-white/25'
+                                      }`}
+                                      aria-label={`${rule.name}${rule.enabled ? '关闭' : '开启'}`}
+                                    >
+                                      <span
+                                        className={`absolute top-0.5 h-4 w-4 rounded-full bg-white shadow-sm transition-all ${
+                                          rule.enabled ? 'left-[18px]' : 'left-0.5'
+                                        }`}
+                                      />
+                                    </button>
+                                    <span className={`text-[12px] ${rule.enabled ? 'text-sky-400' : 'text-white/50'}`}>开启</span>
+                                  </div>
+                                </td>
+                                <td className="px-4 py-3">
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setSelectedWarningRuleId(rule.id);
+                                      setIsWarningConfigOpen(true);
+                                    }}
+                                    className="rounded bg-[#0d76e8] px-3 py-1 text-[11px] font-semibold text-white hover:bg-[#2590ff] transition-colors"
+                                  >
+                                    配置
+                                  </button>
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  </>
+                ) : (
+                  <div className="p-6 space-y-6 overflow-y-auto custom-scrollbar">
+                    {/* 船舶风险统计内容 (从业务统计迁移而来) */}
+                    <div className="flex items-center gap-4 bg-white/5 p-2.5 rounded-2xl border border-white/10 overflow-x-auto no-scrollbar shrink-0">
+                      <div className="flex items-center gap-2 shrink-0">
+                        <span className="text-[10px] font-bold text-white/30 uppercase tracking-widest whitespace-nowrap">时间范围</span>
+                        <div className="flex bg-white/5 rounded-lg p-0.5">
+                          {['今天', '昨天', '最近7天', '自定义'].map(range => (
+                            <button
+                              key={range}
+                              onClick={() => setStatsTimeRange(range)}
+                              className={`px-3 py-1 text-[10px] font-bold rounded-md transition-all whitespace-nowrap ${statsTimeRange === range ? 'bg-sky-500 text-white shadow-lg shadow-sky-500/20' : 'text-white/40 hover:text-white/60'}`}
+                            >
+                              {range}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                      <div className="w-px h-4 bg-white/10 shrink-0"></div>
+                      <div className="flex items-center gap-2 shrink-0">
+                        <span className="text-[10px] font-bold text-white/30 uppercase tracking-widest whitespace-nowrap">值班区域</span>
+                        <select 
+                          value={statsArea}
+                          onChange={(e) => setStatsArea(e.target.value)}
+                          className="bg-white/5 border border-white/10 rounded-lg py-1 px-2 text-[11px] text-white/80 focus:outline-none focus:border-sky-500/50 min-w-[120px] cursor-pointer hover:bg-white/10 transition-colors"
+                        >
+                          {['全部区域', ...(areaConfig['值班区域'] || []).map(a => a.name)].map(area => (
+                            <option key={area} value={area} className="bg-[#1a1c20] text-white">{area}</option>
+                          ))}
+                        </select>
+                      </div>
+                      <div className="w-px h-4 bg-white/10 shrink-0"></div>
+                      <div className="flex items-center gap-2 shrink-0">
+                        <label className="text-[10px] font-bold text-white/30 uppercase tracking-widest whitespace-nowrap">风险行为</label>
+                        <select className="bg-white/5 border border-white/10 rounded-lg py-1 px-2 text-[11px] text-white/80 focus:outline-none focus:border-sky-500/50 min-w-[100px] cursor-pointer hover:bg-white/10 transition-colors">
+                          <option value="" className="bg-[#1a1c20] text-white">全部行为</option>
+                          <option value="超速航行" className="bg-[#1a1c20] text-white">超速航行</option>
+                          <option value="偏离航道" className="bg-[#1a1c20] text-white">偏离航道</option>
+                          <option value="非法锚泊" className="bg-[#1a1c20] text-white">非法锚泊</option>
+                          <option value="进入禁航区" className="bg-[#1a1c20] text-white">进入禁航区</option>
+                          <option value="异常停泊" className="bg-[#1a1c20] text-white">异常停泊</option>
+                        </select>
+                      </div>
+                      <div className="flex-1"></div>
+                      <button className="shrink-0 px-6 py-1.5 bg-sky-500 hover:bg-sky-400 text-white text-[11px] font-bold rounded-lg transition-all shadow-lg shadow-sky-500/20">
+                        查询
+                      </button>
+                    </div>
+
+                    <div className="bg-white/5 border border-white/10 rounded-2xl overflow-hidden">
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-left border-collapse min-w-[1000px]">
+                          <thead>
+                            <tr className="bg-white/5 border-b border-white/10">
+                              <th className="px-6 py-4 text-[11px] font-bold text-white/40 uppercase tracking-widest">船舶信息</th>
+                              <th className="px-6 py-4 text-[11px] font-bold text-white/40 uppercase tracking-widest">风险类型</th>
+                              <th className="px-6 py-4 text-[11px] font-bold text-white/40 uppercase tracking-widest">触发时间</th>
+                              <th className="px-6 py-4 text-[11px] font-bold text-white/40 uppercase tracking-widest">操作</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {MOCK_RISK_STATS.map((item) => (
+                              <tr key={item.id} className="border-b border-white/5 hover:bg-white/[0.02] transition-colors">
+                                <td className="px-6 py-4">
+                                  <div className="flex flex-col">
+                                    <span className="text-xs font-bold text-white/90">{item.name}</span>
+                                    <span className="text-[10px] text-white/30 font-mono">{item.mmsi}</span>
+                                  </div>
+                                </td>
+                                <td className="px-6 py-4">
+                                  <span className="px-2 py-0.5 bg-red-500/10 border border-red-500/20 rounded text-[10px] font-bold text-red-400">{item.risk}</span>
+                                </td>
+                                <td className="px-6 py-4 text-[10px] text-white/40 font-mono">{item.time}</td>
+                                <td className="px-6 py-4">
+                                  <button
+                                    onClick={() => setDynamicPlaybackSession(getRiskPlaybackSession(item))}
+                                    className="px-2.5 py-1 bg-sky-500/10 hover:bg-sky-500/20 border border-sky-500/25 rounded-lg text-[10px] font-bold text-sky-300 transition-all"
+                                  >
+                                    轨迹回放
+                                  </button>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
                     </div>
                   </div>
-                </div>
-
-                <div className="flex-1 overflow-auto">
-                  <table className="w-full min-w-[1120px] border-collapse">
-                    <thead>
-                      <tr className="border-b border-white/10 bg-[#101925] text-left">
-                        <th className="px-4 py-3 text-[11px] font-medium text-white/75">预警名称</th>
-                        <th className="px-4 py-3 text-[11px] font-medium text-white/75">预警类别</th>
-                        <th className="px-4 py-3 text-[11px] font-medium text-white/75">监测维度</th>
-                        <th className="px-4 py-3 text-[11px] font-medium text-white/75">生效区域</th>
-                        <th className="px-4 py-3 text-[11px] font-medium text-white/75">状态</th>
-                        <th className="px-4 py-3 text-[11px] font-medium text-white/75">操作</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {warningRules.map((rule) => {
-                        const areaNames = rule.effectiveAreaIds
-                          .map((id) => warningAreaLookup.get(id)?.name)
-                          .filter(Boolean) as string[];
-                        const areaSummary = areaNames.length > 2
-                          ? `${areaNames.slice(0, 2).join('、')} +${areaNames.length - 2}`
-                          : areaNames.join('、') || '未配置';
-
-                        return (
-                          <tr
-                            key={rule.id}
-                            onClick={() => setSelectedWarningRuleId(rule.id)}
-                            className={`border-b border-white/5 transition-colors ${
-                              selectedWarningRuleId === rule.id
-                                ? 'bg-white/[0.06]'
-                                : 'bg-[#06101d] hover:bg-white/[0.03]'
-                            }`}
-                          >
-                            <td className="px-4 py-3">
-                              <div className="flex items-center gap-3">
-                                <div className={`h-2 w-2 rounded-full ${rule.enabled ? 'bg-sky-400' : 'bg-white/25'}`} />
-                                <div>
-                                  <div className="text-[13px] text-white/88">{rule.name}</div>
-                                  <div className="mt-1 text-[10px] text-white/30">等级 {rule.severity}</div>
-                                </div>
-                              </div>
-                            </td>
-                            <td className="px-4 py-3 text-[12px] text-white/72">{rule.category}</td>
-                            <td className="px-4 py-3 text-[12px] text-white/72">{rule.trigger}</td>
-                            <td className="px-4 py-3">
-                              <div className="text-[12px] text-white/72">{areaSummary}</div>
-                            </td>
-                            <td className="px-4 py-3">
-                              <div className="flex items-center gap-3">
-                                <span className={`text-[12px] ${rule.enabled ? 'text-white/50' : 'text-sky-400'}`}>关闭</span>
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    toggleWarningRule(rule.id);
-                                  }}
-                                  className={`relative h-5 w-9 rounded-full transition-all ${
-                                    rule.enabled ? 'bg-[#0d76e8]' : 'bg-white/25'
-                                  }`}
-                                  aria-label={`${rule.name}${rule.enabled ? '关闭' : '开启'}`}
-                                >
-                                  <span
-                                    className={`absolute top-0.5 h-4 w-4 rounded-full bg-white shadow-sm transition-all ${
-                                      rule.enabled ? 'left-[18px]' : 'left-0.5'
-                                    }`}
-                                  />
-                                </button>
-                                <span className={`text-[12px] ${rule.enabled ? 'text-sky-400' : 'text-white/50'}`}>开启</span>
-                              </div>
-                            </td>
-                            <td className="px-4 py-3">
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setSelectedWarningRuleId(rule.id);
-                                  setIsWarningConfigOpen(true);
-                                }}
-                                className="rounded bg-[#0d76e8] px-3 py-1 text-[11px] font-semibold text-white hover:bg-[#2590ff] transition-colors"
-                              >
-                                配置
-                              </button>
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                </div>
+                )}
               </div>
 
               <AnimatePresence>
@@ -4047,302 +4152,7 @@ const AdminPanel = ({
                 </button>
               </div>
 
-              {activeStatsTab === '船舶风险统计' && (
-                <div className="space-y-4">
-
-                  {/* 数据表格 */}
-                  <div className="bg-white/5 border border-white/10 rounded-2xl overflow-hidden">
-                    <div className="overflow-x-auto">
-                      <table className="w-full text-left border-collapse min-w-[1000px]">
-                        <thead>
-                          <tr className="bg-white/5 border-b border-white/10">
-                            <th className="px-6 py-4 text-[11px] font-bold text-white/40 uppercase tracking-widest">船舶信息</th>
-                            <th className="px-6 py-4 text-[11px] font-bold text-white/40 uppercase tracking-widest">货物类型</th>
-                            <th className="px-6 py-4 text-[11px] font-bold text-white/40 uppercase tracking-widest">风险行为</th>
-                            <th className="px-6 py-4 text-[11px] font-bold text-white/40 uppercase tracking-widest">触发时间</th>
-                            <th className="px-6 py-4 text-[11px] font-bold text-white/40 uppercase tracking-widest">操作</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {MOCK_RISK_STATS.map((item) => (
-                            <React.Fragment key={item.id}>
-                              <tr 
-                                className={`border-b border-white/5 hover:bg-white/[0.02] transition-colors cursor-pointer ${expandedRowId === item.id ? 'bg-white/[0.03]' : ''}`}
-                                onClick={() => setExpandedRowId(expandedRowId === item.id ? null : item.id)}
-                              >
-                                <td className="px-6 py-4">
-                                  <div className="flex flex-col">
-                                    <span className="text-xs font-bold text-white/90">{item.name}</span>
-                                    <span className="text-[10px] text-white/30 font-mono">{item.mmsi}</span>
-                                    <span className="text-[10px] text-sky-400/60">{item.type}</span>
-                                  </div>
-                                </td>
-                                <td className="px-6 py-4 text-xs text-white/60">{item.cargo}</td>
-                                <td className="px-6 py-4">
-                                  <span className="px-2 py-0.5 bg-red-500/10 border border-red-500/20 rounded text-[10px] font-bold text-red-400">
-                                    {item.risk}
-                                  </span>
-                                </td>
-                                <td className="px-6 py-4 text-[10px] text-white/40 font-mono">{item.time}</td>
-                                <td className="px-6 py-4">
-                                  <div className="flex items-center gap-2">
-                                    <button
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        setDynamicPlaybackSession(getRiskPlaybackSession(item));
-                                      }}
-                                      className="px-2.5 py-1 bg-sky-500/10 hover:bg-sky-500/20 border border-sky-500/25 rounded-lg text-[10px] font-bold text-sky-300 transition-all flex items-center gap-1.5"
-                                    >
-                                      <Play size={11} />
-                                      轨迹回放
-                                    </button>
-                                    <ChevronDown 
-                                      size={14} 
-                                      className={`text-white/20 transition-transform duration-300 ${expandedRowId === item.id ? 'rotate-180' : ''}`} 
-                                    />
-                                  </div>
-                                </td>
-                              </tr>
-                              <AnimatePresence>
-                                {expandedRowId === item.id && (
-                                  <tr>
-                                    <td colSpan={5} className="px-6 py-0 border-b border-white/5 bg-white/[0.01]">
-                                      <motion.div
-                                        initial={{ height: 0, opacity: 0 }}
-                                        animate={{ height: 'auto', opacity: 1 }}
-                                        exit={{ height: 0, opacity: 0 }}
-                                        className="overflow-hidden"
-                                      >
-                                        <div className="py-4 grid grid-cols-12 gap-6">
-                                          {/* 左侧：详情 + 时间轴 */}
-                                          <div className="col-span-8 space-y-6">
-                                            <div className="grid grid-cols-2 gap-6">
-                                              {/* 风险详情 */}
-                                              <div className="space-y-1">
-                                                <span className="text-[10px] font-bold text-white/20 uppercase tracking-widest">风险详情</span>
-                                                <div className="bg-white/5 border border-white/5 rounded-xl p-4 space-y-3 h-[130px] flex flex-col justify-center">
-                                                  <div className="flex justify-between items-center">
-                                                    <span className="text-[10px] text-white/40">风险指数</span>
-                                                    <span className="text-sm font-black text-red-400">{item.riskScore}</span>
-                                                  </div>
-                                                  <div className="flex justify-between items-center">
-                                                    <span className="text-[10px] text-white/40">风险行为</span>
-                                                    <span className="px-1.5 py-0.5 bg-red-500/10 border border-red-500/20 rounded text-[10px] font-bold text-red-400">{item.risk}</span>
-                                                  </div>
-                                                  <div className="flex justify-between items-center">
-                                                    <span className="text-[10px] text-white/40">触发时间</span>
-                                                    <span className="text-[10px] font-mono text-white/60">{item.time.split(' ')[1]}</span>
-                                                  </div>
-                                                </div>
-                                              </div>
-
-                                              {/* 船舶详情 */}
-                                              <div className="space-y-1">
-                                                <span className="text-[10px] font-bold text-white/20 uppercase tracking-widest">船舶详情</span>
-                                                <div className="bg-white/5 border border-white/5 rounded-xl p-4 h-[130px] flex flex-col justify-center">
-                                                  <div className="grid grid-cols-2 gap-x-8 gap-y-2.5">
-                                                    <div className="flex justify-between items-center">
-                                                      <span className="text-[10px] text-white/40">呼号</span>
-                                                      <span className="text-[10px] font-mono text-sky-400">{item.callsign}</span>
-                                                    </div>
-                                                    <div className="flex justify-between items-center">
-                                                      <span className="text-[10px] text-white/40">MMSI</span>
-                                                      <span className="text-[10px] font-mono text-sky-400">{item.mmsi}</span>
-                                                    </div>
-                                                    <div className="flex justify-between items-center">
-                                                      <span className="text-[10px] text-white/40">船长</span>
-                                                      <span className="text-[10px] text-white/80">{item.length}m</span>
-                                                    </div>
-                                                    <div className="flex justify-between items-center">
-                                                      <span className="text-[10px] text-white/40">船宽</span>
-                                                      <span className="text-[10px] text-white/80">{item.width}m</span>
-                                                    </div>
-                                                    <div className="flex justify-between items-center">
-                                                      <span className="text-[10px] text-white/40">吃水</span>
-                                                      <span className="text-[10px] text-white/80">{item.draft}m</span>
-                                                    </div>
-                                                    <div className="flex justify-between items-center">
-                                                      <span className="text-[10px] text-white/80">船型</span>
-                                                      <span className="text-[10px] text-white/40">{item.type}</span>
-                                                    </div>
-                                                    <div className="flex justify-between items-center">
-                                                      <span className="text-[10px] text-white/40">货物</span>
-                                                      <span className="text-[10px] text-white/80 truncate ml-2">{item.cargo}</span>
-                                                    </div>
-                                                    <div className="flex justify-between items-center">
-                                                      <span className="text-[10px] text-white/40">目的港</span>
-                                                      <span className="text-[10px] text-white/80 truncate ml-2">{item.destination}</span>
-                                                    </div>
-                                                  </div>
-                                                </div>
-                                              </div>
-                                            </div>
-
-                                            {/* 风险演化时间轴 */}
-                                            <div className="space-y-1">
-                                              <span className="text-[10px] font-bold text-white/20 uppercase tracking-widest">风险演化时间轴</span>
-                                              <div className="bg-white/5 border border-white/5 rounded-xl p-4 h-[112px] flex items-center">
-                                                <div className="flex items-center justify-between gap-2 w-full">
-                                                  {item.timeline.map((t, idx) => (
-                                                    <div key={idx} className="flex-1 relative">
-                                                      {idx !== item.timeline.length - 1 && (
-                                                        <div className="absolute top-[11px] left-[50%] w-full h-[1px] bg-white/10" />
-                                                      )}
-                                                      <div className="flex flex-col items-center gap-1.5 relative z-10">
-                                                        <div className={`w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-bold ${
-                                                          t.type === 'risk' ? 'bg-red-500/20 text-red-400 border border-red-500/30' :
-                                                          t.type === 'warning' ? 'bg-orange-500/20 text-orange-400 border border-orange-500/30' :
-                                                          'bg-white/10 text-white/40 border border-white/10'
-                                                        }`}>
-                                                          {idx + 1}
-                                                        </div>
-                                                        <div className="text-center">
-                                                          <div className="text-[9px] font-bold text-white/70 whitespace-nowrap overflow-hidden text-ellipsis max-w-[80px]">{t.event}</div>
-                                                          <div className="text-[7px] font-mono text-white/20">{t.time}</div>
-                                                        </div>
-                                                      </div>
-                                                    </div>
-                                                  ))}
-                                                </div>
-                                              </div>
-                                            </div>
-                                          </div>
-
-                                          {/* 右侧：预警快照 */}
-                                          <div className="col-span-4 space-y-1">
-                                            <span className="text-[10px] font-bold text-white/20 uppercase tracking-widest">预警快照</span>
-                                            <div className="bg-white/5 border border-white/5 rounded-xl overflow-hidden group relative">
-                                              <div className="relative aspect-video">
-                                                <img 
-                                                  src={item.snapshot?.image} 
-                                                  alt="Snapshot" 
-                                                  className="w-full h-full object-cover opacity-60 group-hover:opacity-80 transition-opacity" 
-                                                  referrerPolicy="no-referrer" 
-                                                />
-                                                <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent flex flex-col justify-end p-3">
-                                                  <div className="flex items-center gap-2 mb-2">
-                                                    <MapPin size={12} className="text-sky-400" />
-                                                    <span className="text-[10px] text-white/90 font-bold truncate">{item.snapshot?.location}</span>
-                                                  </div>
-                                                  <div className="grid grid-cols-3 gap-2">
-                                                    <div className="flex flex-col">
-                                                      <span className="text-[8px] text-white/40 uppercase tracking-tighter">实际航速</span>
-                                                      <span className="text-[11px] font-bold text-red-400">{item.snapshot?.actualSpeed} kn</span>
-                                                    </div>
-                                                    <div className="flex flex-col">
-                                                      <span className="text-[8px] text-white/40 uppercase tracking-tighter">规定限速</span>
-                                                      <span className="text-[11px] font-bold text-emerald-400">{item.snapshot?.speedLimit} kn</span>
-                                                    </div>
-                                                    <div className="flex flex-col">
-                                                      <span className="text-[8px] text-white/40 uppercase tracking-tighter">超速幅度</span>
-                                                      <span className="text-[11px] font-bold text-amber-400">
-                                                        {item.snapshot ? (((item.snapshot.actualSpeed - item.snapshot.speedLimit) / item.snapshot.speedLimit) * 100).toFixed(1) : 0}%
-                                                      </span>
-                                                    </div>
-                                                  </div>
-                                                </div>
-                                                <div className="absolute top-2 right-2 px-1.5 py-0.5 bg-red-500 text-white text-[8px] font-black rounded uppercase tracking-widest shadow-lg">
-                                                  Warning Snapshot
-                                                </div>
-                                              </div>
-                                            </div>
-                                            <button
-                                              onClick={() => setDynamicPlaybackSession(getRiskPlaybackSession(item))}
-                                              className="w-full py-2.5 bg-sky-500 hover:bg-sky-400 text-white text-xs font-bold rounded-xl transition-all shadow-lg shadow-sky-500/20 flex items-center justify-center gap-2"
-                                            >
-                                              <Play size={14} />
-                                              进入轨迹回放
-                                            </button>
-                                          </div>
-                                        </div>
-                                      </motion.div>
-                                    </td>
-                                  </tr>
-                                )}
-                              </AnimatePresence>
-                            </React.Fragment>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                    <div className="p-4 border-t border-white/5 flex justify-between items-center">
-                      <span className="text-[10px] font-bold text-white/20 uppercase tracking-widest">共 {MOCK_RISK_STATS.length} 条记录</span>
-                      <div className="flex gap-2">
-                        <button className="p-1.5 rounded-lg border border-white/10 text-white/30 hover:text-white transition-all"><ChevronLeft size={16} /></button>
-                        <button className="w-8 h-8 rounded-lg bg-sky-500 text-white text-xs font-bold shadow-lg shadow-sky-500/20">1</button>
-                        <button className="p-1.5 rounded-lg border border-white/10 text-white/30 hover:text-white transition-all"><ChevronRight size={16} /></button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-
               {activeStatsTab === '意图统计' && (
-                <div className="space-y-4">
-
-                  {/* 数据表格 */}
-                  <div className="bg-white/5 border border-white/10 rounded-2xl overflow-hidden">
-                    <div className="overflow-x-auto">
-                      <table className="w-full text-left border-collapse min-w-[1000px]">
-                        <thead>
-                          <tr className="bg-white/5 border-b border-white/10">
-                            <th className="px-6 py-4 text-[11px] font-bold text-white/40 uppercase tracking-widest">船舶信息</th>
-                            <th className="px-6 py-4 text-[11px] font-bold text-white/40 uppercase tracking-widest">识别意图</th>
-                            <th className="px-6 py-4 text-[11px] font-bold text-white/40 uppercase tracking-widest">置信度</th>
-                            <th className="px-6 py-4 text-[11px] font-bold text-white/40 uppercase tracking-widest">发生时间</th>
-                            <th className="px-6 py-4 text-[11px] font-bold text-white/40 uppercase tracking-widest">当前状态</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {MOCK_INTENT_STATS.map((item) => (
-                            <tr key={item.id} className="border-b border-white/5 hover:bg-white/[0.02] transition-colors">
-                              <td className="px-6 py-4">
-                                <div className="flex flex-col">
-                                  <span className="text-xs font-bold text-white/90">{item.name}</span>
-                                  <span className="text-[10px] text-white/30 font-mono">{item.mmsi}</span>
-                                  <span className="text-[10px] text-sky-400/60">{item.type}</span>
-                                </div>
-                              </td>
-                              <td className="px-6 py-4 text-xs text-white/60">{item.intent}</td>
-                              <td className="px-6 py-4">
-                                <div className="flex items-center gap-2">
-                                  <div className="flex-1 h-1 bg-white/5 rounded-full overflow-hidden max-w-[60px]">
-                                    <div 
-                                      className="h-full bg-sky-500" 
-                                      style={{ width: `${item.confidence}%` }} 
-                                    />
-                                  </div>
-                                  <span className="text-[10px] font-mono text-sky-400">{item.confidence}%</span>
-                                </div>
-                              </td>
-                              <td className="px-6 py-4 text-[10px] text-white/40 font-mono">{item.time}</td>
-                              <td className="px-6 py-4">
-                                <span className={`px-2 py-0.5 border rounded text-[10px] font-bold ${
-                                  item.status === '批准' ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' :
-                                  item.status === '拒绝' ? 'bg-red-500/10 border-red-500/20 text-red-400' :
-                                  item.status === '回复等待' ? 'bg-orange-500/10 border-orange-500/20 text-orange-400' :
-                                  item.status === '主动询问' ? 'bg-yellow-500/10 border-yellow-500/20 text-yellow-400' :
-                                  'bg-blue-500/10 border-blue-500/20 text-blue-400'
-                                }`}>
-                                  {item.status}
-                                </span>
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                    <div className="p-4 border-t border-white/5 flex justify-between items-center">
-                      <span className="text-[10px] font-bold text-white/20 uppercase tracking-widest">共 {MOCK_INTENT_STATS.length} 条记录</span>
-                      <div className="flex gap-2">
-                        <button className="p-1.5 rounded-lg border border-white/10 text-white/30 hover:text-white transition-all"><ChevronLeft size={16} /></button>
-                        <button className="w-8 h-8 rounded-lg bg-sky-500 text-white text-xs font-bold shadow-lg shadow-sky-500/20">1</button>
-                        <button className="p-1.5 rounded-lg border border-white/10 text-white/30 hover:text-white transition-all"><ChevronRight size={16} /></button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
 
               {activeStatsTab === '值班统计' && (
                 <div className="space-y-6">
