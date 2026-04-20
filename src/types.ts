@@ -58,7 +58,7 @@ export interface ShipPosition {
   type: string;
   speed: number;
   destination: string;
-  status: 'normal' | 'warning' | 'risk';
+  status: 'normal' | 'warning' | 'risk' | 'caution';
 }
 
 export interface ShipSearchResult {
@@ -214,6 +214,7 @@ export interface IntentRecommendation {
 
 export interface IntentItem {
   ship: string;
+  englishName?: string;
   mmsi?: string;
   callSign?: string;
   imo?: string;
@@ -239,8 +240,8 @@ export interface IntentItem {
   risks: IntentRisk[];
   situation: IntentSituation;
   recommendation: IntentRecommendation;
-  path: IntentPathNode[];
-  timeline: IntentTimelineNode[];
+  path: IntentStep[];
+  timeline: IntentTimelineEvent[];
 }
 
 // From mockData.ts

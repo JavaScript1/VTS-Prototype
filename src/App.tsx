@@ -63,7 +63,7 @@ import {
   Area
 } from 'recharts';
 import { MapContainer, TileLayer, Marker, CircleMarker, useMapEvents, Polygon, Polyline, Rectangle, useMap, Popup } from 'react-leaflet';
-import L from 'leaflet';
+import * as L from 'leaflet';
 import {
   type SidebarTab,
   type VHFMessage,
@@ -342,7 +342,7 @@ const formatRemainingDuration = (expiryTime: string, currentTime: Date): string 
 };
 
 const formatAnchorageRemainingDuration = (expiryTime: string, currentTime: Date) =>
-  formatRemainingDuration(expiryTime, currentTime).replaceAll(' ', '');
+  formatRemainingDuration(expiryTime, currentTime).replace(/ /g, '');
 
 const getAnchorageExpiryMeta = (expiryTime: string) => {
   const [date = '--', time = '--:--'] = expiryTime.split(' ');
@@ -1162,6 +1162,8 @@ const normalizeLegacyVhfMessage = (message: VHFMessage): AggregatedVhfMessage =>
 });
 
 const getConversationCardTimeLabel = (card: ConversationCard) => {
+  const start = card.messages[0]?.time;
+  const end = card.messages[card.messages.length - 1]?.time;
   return start && end && start !== end ? `${start} - ${end}` : start || end;
 };
 
@@ -4152,8 +4154,6 @@ const AdminPanel = ({
                 </button>
               </div>
 
-              {activeStatsTab === '意图统计' && (
-
               {activeStatsTab === '值班统计' && (
                 <div className="space-y-6">
                   {/* 核心指标卡片 */}
@@ -4268,6 +4268,72 @@ const AdminPanel = ({
                           />
                         </AreaChart>
                       </ResponsiveContainer>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {activeStatsTab === '意图统计' && (
+                <div className="space-y-4">
+                  {/* 数据表格 */}
+                  <div className="bg-white/5 border border-white/10 rounded-2xl overflow-hidden">
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-left border-collapse min-w-[1000px]">
+                        <thead>
+                          <tr className="bg-white/5 border-b border-white/10">
+                            <th className="px-6 py-4 text-[11px] font-bold text-white/40 uppercase tracking-widest">船舶信息</th>
+                            <th className="px-6 py-4 text-[11px] font-bold text-white/40 uppercase tracking-widest">识别意图</th>
+                            <th className="px-6 py-4 text-[11px] font-bold text-white/40 uppercase tracking-widest">置信度</th>
+                            <th className="px-6 py-4 text-[11px] font-bold text-white/40 uppercase tracking-widest">发生时间</th>
+                            <th className="px-6 py-4 text-[11px] font-bold text-white/40 uppercase tracking-widest">当前状态</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {MOCK_INTENT_STATS.map((item) => (
+                            <tr key={item.id} className="border-b border-white/5 hover:bg-white/[0.02] transition-colors">
+                              <td className="px-6 py-4">
+                                <div className="flex flex-col">
+                                  <span className="text-xs font-bold text-white/90">{item.name}</span>
+                                  <span className="text-[10px] text-white/30 font-mono">{item.mmsi}</span>
+                                  <span className="text-[10px] text-sky-400/60">{item.type}</span>
+                                </div>
+                              </td>
+                              <td className="px-6 py-4 text-xs text-white/60">{item.intent}</td>
+                              <td className="px-6 py-4">
+                                <div className="flex items-center gap-2">
+                                  <div className="flex-1 h-1 bg-white/5 rounded-full overflow-hidden max-w-[60px]">
+                                    <div 
+                                      className="h-full bg-sky-500" 
+                                      style={{ width: `${item.confidence}%` }} 
+                                    />
+                                  </div>
+                                  <span className="text-[10px] font-mono text-sky-400">{item.confidence}%</span>
+                                </div>
+                              </td>
+                              <td className="px-6 py-4 text-[10px] text-white/40 font-mono">{item.time}</td>
+                              <td className="px-6 py-4">
+                                <span className={`px-2 py-0.5 border rounded text-[10px] font-bold ${
+                                  item.status === '批准' ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' :
+                                  item.status === '拒绝' ? 'bg-red-500/10 border-red-500/20 text-red-400' :
+                                  item.status === '回复等待' ? 'bg-orange-500/10 border-orange-500/20 text-orange-400' :
+                                  item.status === '主动询问' ? 'bg-yellow-500/10 border-yellow-500/20 text-yellow-400' :
+                                  'bg-blue-500/10 border-blue-500/20 text-blue-400'
+                                }`}>
+                                  {item.status}
+                                </span>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                    <div className="p-4 border-t border-white/5 flex justify-between items-center">
+                      <span className="text-[10px] font-bold text-white/20 uppercase tracking-widest">共 {MOCK_INTENT_STATS.length} 条记录</span>
+                      <div className="flex gap-2">
+                        <button className="p-1.5 rounded-lg border border-white/10 text-white/30 hover:text-white transition-all"><ChevronLeft size={16} /></button>
+                        <button className="w-8 h-8 rounded-lg bg-sky-500 text-white text-xs font-bold shadow-lg shadow-sky-500/20">1</button>
+                        <button className="p-1.5 rounded-lg border border-white/10 text-white/30 hover:text-white transition-all"><ChevronRight size={16} /></button>
+                      </div>
                     </div>
                   </div>
                 </div>
