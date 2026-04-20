@@ -60,7 +60,14 @@ import {
   Tooltip, 
   ResponsiveContainer,
   AreaChart,
-  Area
+  Area,
+  PieChart,
+  Pie,
+  Cell,
+  Legend,
+  BarChart,
+  Bar,
+  LabelList
 } from 'recharts';
 import { MapContainer, TileLayer, Marker, CircleMarker, useMapEvents, Polygon, Polyline, Rectangle, useMap, Popup } from 'react-leaflet';
 import * as L from 'leaflet';
@@ -2029,6 +2036,8 @@ const AdminPanel = ({
   const [activeStatsTab, setActiveStatsTab] = useState(initialStatsTab || '值班统计');
   const [activeWarningTab, setActiveWarningTab] = useState('实时预警');
   const [statsTimeRange, setStatsTimeRange] = useState('今天');
+  const [customStartTime, setCustomStartTime] = useState('2026-04-20 00:00');
+  const [customEndTime, setCustomEndTime] = useState('2026-04-20 23:59');
   const [statsArea, setStatsArea] = useState('全部区域');
   const [showVhfDetails, setShowVhfDetails] = useState(false);
   const [selectedVhfSnippet, setSelectedVhfSnippet] = useState<any>(null);
@@ -3283,7 +3292,7 @@ const AdminPanel = ({
                       <div className="flex items-center gap-2 shrink-0">
                         <span className="text-[10px] font-bold text-white/30 uppercase tracking-widest whitespace-nowrap">时间范围</span>
                         <div className="flex bg-white/5 rounded-lg p-0.5">
-                          {['今天', '昨天', '最近7天', '自定义'].map(range => (
+                          {['今天', '昨天', '自定义时间'].map(range => (
                             <button
                               key={range}
                               onClick={() => setStatsTimeRange(range)}
@@ -3294,6 +3303,28 @@ const AdminPanel = ({
                           ))}
                         </div>
                       </div>
+
+                      {statsTimeRange === '自定义时间' && (
+                        <>
+                          <div className="w-px h-4 bg-white/10 shrink-0"></div>
+                          <div className="flex items-center gap-2 shrink-0">
+                            <input 
+                              type="datetime-local" 
+                              value={customStartTime.replace(' ', 'T')}
+                              onChange={(e) => setCustomStartTime(e.target.value.replace('T', ' '))}
+                              className="bg-white/5 border border-white/10 rounded-lg py-1 px-2 text-[10px] font-mono text-white/80 focus:outline-none focus:border-sky-500/50 transition-colors"
+                            />
+                            <span className="text-white/20 text-[10px]">至</span>
+                            <input 
+                              type="datetime-local" 
+                              value={customEndTime.replace(' ', 'T')}
+                              onChange={(e) => setCustomEndTime(e.target.value.replace('T', ' '))}
+                              className="bg-white/5 border border-white/10 rounded-lg py-1 px-2 text-[10px] font-mono text-white/80 focus:outline-none focus:border-sky-500/50 transition-colors"
+                            />
+                          </div>
+                        </>
+                      )}
+
                       <div className="w-px h-4 bg-white/10 shrink-0"></div>
                       <div className="flex items-center gap-2 shrink-0">
                         <span className="text-[10px] font-bold text-white/30 uppercase tracking-widest whitespace-nowrap">值班区域</span>
@@ -3323,6 +3354,230 @@ const AdminPanel = ({
                       <button className="shrink-0 px-6 py-1.5 bg-sky-500 hover:bg-sky-400 text-white text-[11px] font-bold rounded-lg transition-all shadow-lg shadow-sky-500/20">
                         查询
                       </button>
+                    </div>
+
+                    {/* 统计图表区域 */}
+                    <div className="grid grid-cols-3 gap-4 shrink-0">
+                      {/* 风险类型分布 */}
+                      <div className="bg-white/5 border border-white/10 rounded-2xl p-4">
+                        <div className="flex items-center gap-2 mb-4">
+                          <BarChart3 size={14} className="text-sky-400" />
+                          <span className="text-[11px] font-bold text-white/90 uppercase tracking-widest">风险类型分布</span>
+                        </div>
+                        <div className="h-[150px] w-full">
+                          <ResponsiveContainer width="100%" height="100%">
+                            <PieChart>
+                              <Pie
+                                data={[
+                                  { name: '超速', value: 35 },
+                                  { name: '偏航', value: 25 },
+                                  { name: '非法锚泊', value: 15 },
+                                  { name: '禁区', value: 20 },
+                                  { name: '其他', value: 5 },
+                                ]}
+                                cx="40%"
+                                cy="50%"
+                                innerRadius={35}
+                                outerRadius={55}
+                                paddingAngle={5}
+                                dataKey="value"
+                              >
+                                {[
+                                  '#38bdf8', '#818cf8', '#f472b6', '#fbbf24', '#f87171',
+                                ].map((color, index) => (
+                                  <Cell key={`cell-${index}`} fill={color} opacity={0.8} />
+                                ))}
+                              </Pie>
+                              <Tooltip 
+                                contentStyle={{ backgroundColor: '#0a0a0a', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', fontSize: '10px' }}
+                              />
+                              <Legend 
+                                verticalAlign="middle" 
+                                align="right" 
+                                layout="vertical"
+                                iconType="circle"
+                                iconSize={6}
+                                wrapperStyle={{ fontSize: '9px', color: 'rgba(255,255,255,0.4)', paddingLeft: '5px' }}
+                              />
+                            </PieChart>
+                          </ResponsiveContainer>
+                        </div>
+                      </div>
+
+                      {/* 高危船舶类型 */}
+                      <div className="bg-white/5 border border-white/10 rounded-2xl p-4">
+                        <div className="flex items-center gap-2 mb-4">
+                          <Ship size={14} className="text-sky-400" />
+                          <span className="text-[11px] font-bold text-white/90 uppercase tracking-widest">高危船舶类型分布</span>
+                        </div>
+                        <div className="h-[150px] w-full">
+                          <ResponsiveContainer width="100%" height="100%">
+                            <BarChart
+                              layout="vertical"
+                              data={[
+                                { type: '散货船', count: 42 },
+                                { type: '油轮', count: 35 },
+                                { type: '集装箱', count: 28 },
+                                { type: '工程船', count: 18 },
+                                { type: '其他', count: 12 },
+                              ]}
+                              margin={{ left: -10, right: 20 }}
+                            >
+                              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" horizontal={true} vertical={false} />
+                              <XAxis type="number" hide />
+                              <YAxis 
+                                dataKey="type" 
+                                type="category" 
+                                axisLine={false} 
+                                tickLine={false}
+                                tick={{ fill: 'rgba(255,255,255,0.4)', fontSize: 9 }}
+                              />
+                              <Tooltip 
+                                cursor={{ fill: 'rgba(255,255,255,0.05)' }}
+                                contentStyle={{ backgroundColor: '#0a0a0a', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', fontSize: '10px' }}
+                              />
+                              <Bar dataKey="count" fill="#38bdf8" radius={[0, 4, 4, 0]} barSize={12} opacity={0.8} />
+                            </BarChart>
+                          </ResponsiveContainer>
+                        </div>
+                      </div>
+
+                      {/* 发生时间分布 */}
+                      <div className="bg-white/5 border border-white/10 rounded-2xl p-4">
+                        <div className="flex items-center gap-2 mb-4">
+                          <Clock size={14} className="text-sky-400" />
+                          <span className="text-[11px] font-bold text-white/90 uppercase tracking-widest">发生时间分布</span>
+                        </div>
+                        <div className="h-[150px] w-full">
+                          <ResponsiveContainer width="100%" height="100%">
+                            <AreaChart
+                              data={[
+                                { time: '00:00', count: 12 },
+                                { time: '04:00', count: 8 },
+                                { time: '08:00', count: 45 },
+                                { time: '12:00', count: 30 },
+                                { time: '16:00', count: 56 },
+                                { time: '20:00', count: 24 },
+                                { time: '23:59', count: 15 },
+                              ]}
+                              margin={{ top: 10, right: 10, left: -20, bottom: 0 }}
+                            >
+                              <defs>
+                                <linearGradient id="colorRiskTime" x1="0" y1="0" x2="0" y2="1">
+                                  <stop offset="5%" stopColor="#38bdf8" stopOpacity={0.3}/>
+                                  <stop offset="95%" stopColor="#38bdf8" stopOpacity={0}/>
+                                </linearGradient>
+                              </defs>
+                              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
+                              <XAxis 
+                                dataKey="time" 
+                                axisLine={false}
+                                tickLine={false}
+                                tick={{ fill: 'rgba(255,255,255,0.3)', fontSize: 9 }}
+                              />
+                              <YAxis 
+                                axisLine={false}
+                                tickLine={false}
+                                tick={{ fill: 'rgba(255,255,255,0.3)', fontSize: 9 }}
+                              />
+                              <Tooltip 
+                                contentStyle={{ backgroundColor: '#0a0a0a', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', fontSize: '10px' }}
+                              />
+                              <Area 
+                                type="monotone" 
+                                dataKey="count" 
+                                stroke="#38bdf8" 
+                                strokeWidth={2}
+                                fillOpacity={1} 
+                                fill="url(#colorRiskTime)" 
+                              />
+                            </AreaChart>
+                          </ResponsiveContainer>
+                        </div>
+                      </div>
+
+                      {/* 风险预警级别统计 */}
+                      <div className="bg-white/5 border border-white/10 rounded-2xl p-4">
+                        <div className="flex items-center gap-2 mb-4">
+                          <ShieldAlert size={14} className="text-sky-400" />
+                          <span className="text-[11px] font-bold text-white/90 uppercase tracking-widest">风险预警级别统计</span>
+                        </div>
+                        <div className="h-[150px] w-full">
+                          <ResponsiveContainer width="100%" height="100%">
+                            <BarChart
+                              data={[
+                                { level: '紧急', count: 8, color: '#f87171' },
+                                { level: '警报', count: 15, color: '#fb923c' },
+                                { level: '警告', count: 32, color: '#facc15' },
+                                { level: '注意', count: 48, color: '#38bdf8' },
+                              ]}
+                              margin={{ top: 10, right: 10, left: -25, bottom: 0 }}
+                            >
+                              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
+                              <XAxis 
+                                dataKey="level" 
+                                axisLine={false} 
+                                tickLine={false}
+                                tick={{ fill: 'rgba(255,255,255,0.4)', fontSize: 9 }}
+                              />
+                              <YAxis axisLine={false} tickLine={false} tick={{ fill: 'rgba(255,255,255,0.3)', fontSize: 9 }} />
+                              <Tooltip 
+                                cursor={{ fill: 'rgba(255,255,255,0.05)' }}
+                                contentStyle={{ backgroundColor: '#0a0a0a', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', fontSize: '10px' }}
+                              />
+                              <Bar dataKey="count" radius={[4, 4, 0, 0]} barSize={20}>
+                                {[
+                                  { level: '紧急', count: 8, color: '#f87171' },
+                                  { level: '警报', count: 15, color: '#fb923c' },
+                                  { level: '警告', count: 32, color: '#facc15' },
+                                  { level: '注意', count: 48, color: '#38bdf8' },
+                                ].map((entry, index) => (
+                                  <Cell key={`cell-${index}`} fill={entry.color} opacity={0.8} />
+                                ))}
+                              </Bar>
+                            </BarChart>
+                          </ResponsiveContainer>
+                        </div>
+                      </div>
+
+                      {/* 风险区域统计 */}
+                      <div className="col-span-2 bg-white/5 border border-white/10 rounded-2xl p-4">
+                        <div className="flex items-center gap-2 mb-4">
+                          <MapPin size={14} className="text-sky-400" />
+                          <span className="text-[11px] font-bold text-white/90 uppercase tracking-widest">风险区域统计 (值班区域)</span>
+                        </div>
+                        <div className="h-[150px] w-full">
+                          <ResponsiveContainer width="100%" height="100%">
+                            <BarChart
+                              layout="vertical"
+                              data={[
+                                { area: '吴淞口5号锚地', count: 56 },
+                                { area: '圆圆沙禁航区', count: 42 },
+                                { area: '长江口北槽航道', count: 38 },
+                                { area: '南槽入口管控区', count: 24 },
+                                { area: '宝山作业区', count: 12 },
+                              ]}
+                              margin={{ left: 20, right: 30, top: 0, bottom: 0 }}
+                            >
+                              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" horizontal={true} vertical={false} />
+                              <XAxis type="number" axisLine={false} tickLine={false} tick={{ fill: 'rgba(255,255,255,0.3)', fontSize: 9 }} />
+                              <YAxis 
+                                dataKey="area" 
+                                type="category" 
+                                axisLine={false} 
+                                tickLine={false}
+                                width={80}
+                                tick={{ fill: 'rgba(255,255,255,0.4)', fontSize: 9 }}
+                              />
+                              <Tooltip 
+                                cursor={{ fill: 'rgba(255,255,255,0.05)' }}
+                                contentStyle={{ backgroundColor: '#0a0a0a', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', fontSize: '10px' }}
+                              />
+                              <Bar dataKey="count" fill="#38bdf8" radius={[0, 4, 4, 0]} barSize={12} opacity={0.8} />
+                            </BarChart>
+                          </ResponsiveContainer>
+                        </div>
+                      </div>
                     </div>
 
                     <div className="bg-white/5 border border-white/10 rounded-2xl overflow-hidden">
