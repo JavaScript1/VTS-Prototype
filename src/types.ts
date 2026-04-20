@@ -136,6 +136,8 @@ export interface HomeShipDynamicEvent {
   id: string;
   time: string;
   text: string;
+  type: 'navigation' | 'safety' | 'business' | 'communication';
+  level: 'info' | 'warning' | 'risk';
   trackPointId: string | null;
 }
 

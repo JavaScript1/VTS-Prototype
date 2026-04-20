@@ -1243,27 +1243,30 @@ const createHomeShipDynamicEvents = ({
   intent?: IntentItem;
   track: HomeShipTrackPoint[];
 }): HomeShipDynamicEvent[] => {
-  const fromTimeline = (intent?.timeline || []).map((item, index) => ({
+  const fromTimeline: HomeShipDynamicEvent[] = (intent?.timeline || []).map((item, index) => ({
     id: `${shipId}-timeline-${index}`,
     time: item.time.replace(' UTC', ''),
     text: item.content,
+    type: 'communication',
+    level: 'info',
     trackPointId: track[Math.max(track.length - 1 - index, 0)]?.id ?? null,
   }));
 
   const baseDate = intent?.occurrenceTime?.split(' ')[0] || '2026-03-19';
-  const fromTrack = [...track].reverse().map((point) => ({
-    id: `${shipId}-${point.id}`,
+  const fromTrack: HomeShipDynamicEvent[] = [...track].reverse().map((point, index) => ({
+    id: `${shipId}-event-${index}`,
     time: `${baseDate} ${point.time}:12`,
-    text:
-      point.kind === 'current'
-        ? `进入${route.current}`
-        : point.label === '进入辖区'
-          ? `申请锚地（被值班员拒绝）`
-          : point.note,
+    text: point.kind === 'current' 
+      ? `正在沿 ${route.current} 航行`
+      : point.label === '进入辖区'
+        ? `进入值班辖区水域`
+        : point.note,
+    type: 'navigation',
+    level: 'info',
     trackPointId: point.id,
   }));
 
-  return [...fromTrack, ...fromTimeline].slice(0, 4);
+  return [...fromTrack, ...fromTimeline].slice(0, 8).sort((a, b) => b.time.localeCompare(a.time));
 };
 
 const INTENT_DATA: IntentItem[] = [
@@ -5616,190 +5619,223 @@ export default function App() {
   }, [homeShipDetails, selectedHomeShipId]);
 
   const homeShipDetailModule = selectedHomeShip ? (
-    <div className="px-3 py-3">
-      <div className="py-1">
+    <div className="flex flex-col h-full bg-[#0a0a0a]">
+      {/* 1. 头部：身份识别 & 快捷操作 */}
+      <div className="px-4 py-3 border-b border-white/10 bg-[#0d1117]">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
-            <div className="flex items-center gap-2">
-              <span className="truncate text-[16px] font-semibold text-white">{selectedHomeShip.displayName}</span>
-              <span className={`text-[9px] font-black ${
-                selectedHomeShip.status === 'warning'
-                  ? 'text-red-300'
-                  : selectedHomeShip.status === 'caution'
-                    ? 'text-amber-300'
-                    : 'text-emerald-300'
+            <div className="flex items-center gap-2 flex-wrap">
+              <h2 className="text-[16px] font-black text-white leading-tight truncate">
+                {selectedHomeShip.name}
+              </h2>
+              {selectedHomeShip.displayName.split(' / ')[0] && (
+                <span className="text-[10px] font-bold text-white/30 uppercase truncate">
+                  {selectedHomeShip.displayName.split(' / ')[0]}
+                </span>
+              )}
+            </div>
+            <div className="mt-1 flex items-center gap-2">
+              <span className={`px-1.5 py-0.5 rounded text-[8px] font-black uppercase tracking-widest ${
+                selectedHomeShip.status === 'warning' ? 'bg-red-500/10 text-red-400 border border-red-500/20' :
+                selectedHomeShip.status === 'caution' ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20' :
+                'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
               }`}>
                 {selectedHomeShip.status === 'warning' ? '风险关注' : selectedHomeShip.status === 'caution' ? '持续跟踪' : '动态正常'}
               </span>
+              <span className="text-[10px] font-mono text-white/40">MMSI: {selectedHomeShip.mmsi}</span>
             </div>
-            <div className="mt-1 text-[10px] text-white/35">{selectedHomeShip.type} · MMSI {selectedHomeShip.mmsi}</div>
           </div>
-          <div className="flex flex-col items-end gap-2">
-            <div className="flex items-center gap-1 text-[8px] font-black uppercase tracking-widest text-sky-300">
-              <div className="h-1.5 w-1.5 rounded-full bg-sky-400 animate-pulse" />
-              实时跟踪
+          <div className="flex flex-col items-end gap-1.5 shrink-0">
+            <div className="flex items-center gap-1.5 text-[8px] font-black text-sky-400 uppercase tracking-widest bg-sky-500/10 px-1.5 py-0.5 rounded-full border border-sky-500/20">
+              <div className="h-1 w-1 rounded-full bg-sky-400 animate-pulse" />
+              Tracking
             </div>
             <button
               onClick={() => setSelectedHomeShipTrackPointId(selectedHomeShip.track[selectedHomeShip.track.length - 1]?.id ?? null)}
-              className="px-0 py-0 text-[10px] font-semibold text-white/60 hover:text-white"
+              className="text-[9px] font-bold text-white/50 hover:text-white transition-colors underline decoration-white/20 underline-offset-2"
             >
-              定位当前
+              定位当前位置
             </button>
           </div>
         </div>
 
-        <div className="mt-4 grid grid-cols-3 gap-2.5">
-          <button className="flex items-center justify-center gap-1 rounded-lg bg-sky-500 px-3 py-2 text-[10px] font-black text-white shadow-lg shadow-sky-500/20 transition-colors hover:bg-sky-400">
-            <FileText size={12} />
-            查看详情
+        <div className="mt-4 grid grid-cols-2 gap-2">
+          <button className="flex items-center justify-center gap-1.5 rounded-lg bg-sky-500 py-2 text-[10px] font-black text-white shadow-lg shadow-sky-500/20 hover:bg-sky-400 transition-all active:scale-95">
+            <Radio size={12} /> 进入 VHF 会话
           </button>
-          <button className="flex items-center justify-center gap-1 rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-[10px] font-black text-white/72 transition-colors hover:bg-white/10">
-            <Settings size={12} />
-            编辑信息
-          </button>
-          <button className="flex items-center justify-center gap-1 rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-2 text-[10px] font-black text-red-300 transition-colors hover:bg-red-500/20">
-            <X size={12} />
-            删除船舶
+          <button className="flex items-center justify-center gap-1.5 rounded-lg border border-white/10 bg-white/5 py-2 text-[10px] font-black text-white/70 hover:bg-white/10 transition-all active:scale-95">
+            <History size={12} /> 轨迹完整回放
           </button>
         </div>
+      </div>
 
-        <div className="mt-5">
-          <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-white/32">
-            <Ship size={12} className="text-sky-400" />
-            船舶基本信息
+      <div className="flex-1 overflow-y-auto custom-scrollbar p-3 space-y-4">
+        {/* 2. 动态信息与状态看板 */}
+        <section className="space-y-2">
+          <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-white/20">
+            <Activity size={12} className="text-sky-400" />
+            实时动态与状态
           </div>
-          <div className="mt-2 rounded-2xl border border-white/8 bg-white/[0.03] p-3">
-            <div className="grid grid-cols-2 gap-x-4 gap-y-3 text-[10px]">
-              <div className="flex items-center justify-between gap-2 text-white/40"><span>船舶名称</span><span className="truncate text-white/82">{selectedHomeShip.displayName}</span></div>
-              <div className="flex items-center justify-between gap-2 text-white/40"><span>MMSI</span><span className="font-mono text-sky-300">{selectedHomeShip.mmsi}</span></div>
-              <div className="flex items-center justify-between gap-2 text-white/40"><span>IMO</span><span className="font-mono text-white/78">{selectedHomeShip.imo}</span></div>
-              <div className="flex items-center justify-between gap-2 text-white/40"><span>船舶类型</span><span className="text-white/78">{selectedHomeShip.type}</span></div>
-              <div className="flex items-center justify-between gap-2 text-white/40"><span>所属公司</span><span className="truncate text-white/78">{selectedHomeShip.businessInfo.operator}</span></div>
-              <div className="flex items-center justify-between gap-2 text-white/40"><span>代理申请</span><span className="truncate text-white/78">{selectedHomeShip.businessInfo.applicant}</span></div>
-              <div className="flex items-center justify-between gap-2 text-white/40"><span>呼号</span><span className="font-mono text-sky-300">{selectedHomeShip.callsign}</span></div>
-              <div className="flex items-center justify-between gap-2 text-white/40"><span>总吨</span><span className="text-white/78">{selectedHomeShip.grossTonnage}</span></div>
-              <div className="flex items-center justify-between gap-2 text-white/40"><span>船长</span><span className="text-white/78">{selectedHomeShip.length}</span></div>
-              <div className="flex items-center justify-between gap-2 text-white/40"><span>船宽</span><span className="text-white/78">{selectedHomeShip.width}</span></div>
-              <div className="flex items-center justify-between gap-2 text-white/40"><span>吃水</span><span className="text-white/78">{selectedHomeShip.draft}</span></div>
-              <div className="flex items-center justify-between gap-2 text-white/40"><span>货种</span><span className="truncate text-white/78">{selectedHomeShip.cargo}</span></div>
+          <div className="rounded-xl border border-white/5 bg-white/[0.02] p-3 shadow-inner">
+            <div className="grid grid-cols-3 gap-4">
+              <div className="space-y-1">
+                <div className="text-[8px] uppercase tracking-widest text-white/20">实时航速</div>
+                <div className="text-[14px] font-black text-white font-mono">{selectedHomeShip.speed.toFixed(1)} <span className="text-[10px] text-white/30">kn</span></div>
+              </div>
+              <div className="space-y-1">
+                <div className="text-[8px] uppercase tracking-widest text-white/20">实时航向</div>
+                <div className="text-[14px] font-black text-white font-mono">{selectedHomeShip.heading}°</div>
+              </div>
+              <div className="space-y-1">
+                <div className="text-[8px] uppercase tracking-widest text-white/20">吃水高度</div>
+                <div className="text-[14px] font-black text-orange-400 font-mono">{selectedHomeShip.draft}</div>
+              </div>
+            </div>
+            
+            <div className="mt-3 pt-3 border-t border-white/5 flex items-center justify-between">
+               <div className="flex-1 min-w-0">
+                  <div className="text-[8px] uppercase tracking-widest text-white/20 mb-1">当前位置 / 航段</div>
+                  <div className="text-[10px] font-bold text-sky-400 truncate">{selectedHomeShip.route.current}</div>
+               </div>
+               <div className="text-right pl-4">
+                  <div className="text-[8px] uppercase tracking-widest text-white/20 mb-1">目的地</div>
+                  <div className="text-[10px] font-bold text-white/80 truncate">{selectedHomeShip.destination}</div>
+               </div>
             </div>
           </div>
-        </div>
+        </section>
 
-        <div className="mt-5">
-          <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-white/32">
-            <Activity size={12} className="text-sky-400" />
-            船舶状态信息
+        {/* 3. 船舶静态信息网格 */}
+        <section className="space-y-2">
+          <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-white/20">
+            <Ship size={12} className="text-sky-400" />
+            船舶技术参数 (静态)
           </div>
-          <div className="mt-2 rounded-xl bg-white/[0.03] px-3 py-2 text-[11px] font-semibold text-white/92">
-            {selectedHomeShip.statusBanner}
+          <div className="rounded-xl border border-white/5 bg-white/[0.01] p-3 shadow-inner">
+            <div className="grid grid-cols-3 gap-x-2 gap-y-3">
+              <div className="space-y-0.5">
+                <div className="text-[7px] uppercase tracking-widest text-white/20">呼号</div>
+                <div className="text-[9px] font-mono text-sky-300 font-bold">{selectedHomeShip.callsign}</div>
+              </div>
+              <div className="space-y-0.5">
+                <div className="text-[7px] uppercase tracking-widest text-white/20">IMO</div>
+                <div className="text-[9px] font-mono text-white/60">{selectedHomeShip.imo}</div>
+              </div>
+              <div className="space-y-0.5">
+                <div className="text-[7px] uppercase tracking-widest text-white/20">船舶类型</div>
+                <div className="text-[9px] text-white/70 truncate">{selectedHomeShip.type}</div>
+              </div>
+              
+              <div className="space-y-0.5">
+                <div className="text-[7px] uppercase tracking-widest text-white/20">长 / 宽</div>
+                <div className="text-[9px] text-white/70 font-mono">{selectedHomeShip.length} / {selectedHomeShip.width}</div>
+              </div>
+              <div className="space-y-0.5">
+                <div className="text-[7px] uppercase tracking-widest text-white/20">载重吨位</div>
+                <div className="text-[9px] text-white/70">{selectedHomeShip.grossTonnage} <span className="opacity-40 font-black">GT</span></div>
+              </div>
+              <div className="space-y-0.5">
+                <div className="text-[7px] uppercase tracking-widest text-white/20">主要载货</div>
+                <div className="text-[9px] text-white/75 truncate">{selectedHomeShip.cargo}</div>
+              </div>
+            </div>
           </div>
-          <div className="mt-3 grid grid-cols-2 gap-x-4 gap-y-3 text-[10px]">
-          <div>
-            <div className="text-[8px] font-black uppercase tracking-widest text-white/25">航速</div>
-            <div className="mt-1 text-[12px] font-semibold text-white">{selectedHomeShip.speed.toFixed(1)} kn</div>
-          </div>
-          <div>
-            <div className="text-[8px] font-black uppercase tracking-widest text-white/25">航向</div>
-            <div className="mt-1 text-[12px] font-semibold text-white">{selectedHomeShip.heading}°</div>
-          </div>
-          <div>
-            <div className="text-[8px] font-black uppercase tracking-widest text-white/25">当前位置</div>
-            <div className="mt-1 text-[11px] leading-5 text-white/80">{selectedHomeShip.route.current}</div>
-          </div>
-          <div>
-            <div className="text-[8px] font-black uppercase tracking-widest text-white/25">目的地</div>
-            <div className="mt-1 text-[11px] leading-5 text-white/80">{selectedHomeShip.route.destination}</div>
-          </div>
-          <div>
-            <div className="text-[8px] font-black uppercase tracking-widest text-white/25">经度</div>
-            <div className="mt-1 text-[11px] font-mono text-sky-300">{selectedHomeShip.lng.toFixed(5)}°E</div>
-          </div>
-          <div>
-            <div className="text-[8px] font-black uppercase tracking-widest text-white/25">纬度</div>
-            <div className="mt-1 text-[11px] font-mono text-sky-300">{selectedHomeShip.lat.toFixed(5)}°N</div>
-          </div>
-        </div>
-          <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-[9px] text-white/38">
-            <span>{selectedHomeShip.vhfSummary}</span>
-            <span className="text-red-300/90">风险: {selectedHomeShip.riskSummary}</span>
-            <span>轨迹点 {selectedHomeShip.track.length}</span>
-          </div>
-        </div>
+        </section>
 
-        <div className="mt-5">
-          <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-white/32">
-            <MapPin size={12} className="text-sky-400" />
-            航线概览
+        {/* 4. 业务与估计信息 */}
+        <section className="space-y-2">
+          <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-white/20">
+            <FileText size={12} className="text-sky-400" />
+            业务估计与申报信息
           </div>
-          <div className="mt-2 flex items-center gap-2 text-[11px] text-white/82">
-            <span>{selectedHomeShip.route.past}</span>
-            <ChevronRight size={12} className="text-white/25" />
-            <span className="text-sky-300">{selectedHomeShip.route.current}</span>
-            <ChevronRight size={12} className="text-white/25" />
-            <span>{selectedHomeShip.route.destination}</span>
-          </div>
-          <div className="mt-2 text-[10px] leading-5 text-white/42">{selectedHomeShip.intentSummary}</div>
-        </div>
-
-        <div className="mt-5">
-          <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-white/32">
-            <Clock size={12} className="text-sky-400" />
-            船舶历史事件
-          </div>
-          <div className="mt-2 space-y-2">
-            {selectedHomeShip.dynamicEvents.map((event) => (
-              <button
-                key={event.id}
-                onClick={() => setSelectedHomeShipTrackPointId(event.trackPointId)}
-                className="flex w-full items-start justify-between gap-3 rounded-xl border border-white/8 bg-white/[0.03] px-3 py-2 text-left transition-colors hover:bg-white/[0.05]"
-              >
-                <div className="min-w-0">
-                  <div className="text-[11px] font-semibold text-white">{event.text}</div>
-                  <div className="mt-1 text-[9px] text-white/35">
-                    {event.trackPointId ? '点击联动高亮对应船位' : '无关联轨迹点'}
-                  </div>
+          <div className="rounded-xl border border-white/5 bg-sky-500/[0.02] p-3 shadow-inner">
+            <div className="grid grid-cols-2 gap-3">
+              <div className="bg-white/5 p-2 rounded-lg">
+                <div className="text-[7px] uppercase tracking-widest text-white/20 mb-1">预计抵港 (ETA)</div>
+                <div className="text-[10px] font-mono font-bold text-emerald-400">{selectedHomeShip.businessInfo.eta}</div>
+              </div>
+              <div className="bg-white/5 p-2 rounded-lg">
+                <div className="text-[7px] uppercase tracking-widest text-white/20 mb-1">计划靠泊位置</div>
+                <div className="text-[10px] font-bold text-white/70">{selectedHomeShip.businessInfo.plannedBerth}</div>
+              </div>
+              <div className="col-span-2 flex items-center justify-between px-1 text-[9px]">
+                <div className="flex items-center gap-2">
+                   <span className="text-white/30">所属公司:</span>
+                   <span className="text-white/60 font-medium">{selectedHomeShip.businessInfo.operator}</span>
                 </div>
-                <span className="shrink-0 text-[9px] font-mono text-sky-300/85">{event.time}</span>
-              </button>
+                <div className="flex items-center gap-2">
+                   <span className="text-white/30">代理人:</span>
+                   <span className="text-white/60 font-medium">{selectedHomeShip.businessInfo.applicant}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* 5. 对话信息 (VHF) */}
+        <section className="space-y-2">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-white/20">
+              <MessageSquare size={12} className="text-sky-400" />
+              最新 VHF 对话摘要
+            </div>
+          </div>
+          <div className="rounded-xl border border-white/5 bg-[#12141a] p-3 italic shadow-sm">
+            <div className="flex items-center justify-between mb-2">
+               <span className="text-[8px] font-black text-sky-400/50 uppercase tracking-widest">Live Feed</span>
+               <span className="text-[8px] font-mono text-white/20">CH16</span>
+            </div>
+            <p className="text-[11px] leading-relaxed text-white/70">
+              “{selectedHomeShip.vhfSummary}”
+            </p>
+          </div>
+        </section>
+
+        {/* 6. 事件全生命周期 (进辖区-出辖区) */}
+        <section className="space-y-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-white/20">
+              <Clock size={12} className="text-sky-400" />
+              全生命周期事件轴
+            </div>
+            <span className="text-[8px] text-white/30 uppercase">Inbound → Present</span>
+          </div>
+          <div className="relative pl-4 space-y-4">
+            <div className="absolute left-1.5 top-2 bottom-2 w-px bg-white/10" />
+            
+            {selectedHomeShip.dynamicEvents.map((event) => (
+              <div key={event.id} className="relative group">
+                <div className={`absolute -left-[14px] top-1 h-2 w-2 rounded-full border-2 border-[#0a0a0a] z-10 ${
+                  event.level === 'risk' ? 'bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.5)]' :
+                  event.level === 'warning' ? 'bg-amber-500' :
+                  event.type === 'navigation' ? 'bg-emerald-500' : 'bg-sky-500'
+                }`} />
+                
+                <button
+                  onClick={() => setSelectedHomeShipTrackPointId(event.trackPointId)}
+                  className="flex w-full flex-col items-start gap-1 rounded-lg bg-white/[0.02] hover:bg-white/[0.04] p-2 transition-all text-left border border-white/5"
+                >
+                  <div className="flex w-full items-center justify-between gap-2">
+                    <span className={`text-[8px] font-black uppercase tracking-widest px-1 rounded ${
+                      event.type === 'navigation' ? 'bg-emerald-500/10 text-emerald-400' :
+                      event.type === 'safety' ? 'bg-red-500/10 text-red-400' :
+                      event.type === 'business' ? 'bg-amber-500/10 text-amber-400' : 'bg-sky-500/10 text-sky-400'
+                    }`}>
+                      {event.type}
+                    </span>
+                    <span className="text-[9px] font-mono text-white/20">{event.time.split(' ').pop()}</span>
+                  </div>
+                  <div className="text-[11px] font-bold text-white/80 leading-snug">{event.text}</div>
+                  {event.trackPointId && (
+                    <div className="mt-1 flex items-center gap-1 text-[8px] font-bold text-sky-500/40 uppercase">
+                      <MapPin size={8} /> Linked Track Point
+                    </div>
+                  )}
+                </button>
+              </div>
             ))}
           </div>
-        </div>
-
-        <div className="mt-5">
-          <div className="flex items-center justify-between gap-3">
-            <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-white/32">
-              <History size={12} className="text-sky-400" />
-              历史轨迹
-            </div>
-            <div className="text-[9px] text-white/28">
-              {selectedHomeShipTrackPoint ? `高亮 ${selectedHomeShipTrackPoint.label}` : '等待高亮'}
-            </div>
-          </div>
-          <div className="mt-2 space-y-1.5">
-            {selectedHomeShip.track.map((point) => {
-              const active = selectedHomeShipTrackPoint?.id === point.id;
-              return (
-                <button
-                  key={point.id}
-                  onClick={() => setSelectedHomeShipTrackPointId(point.id)}
-                  className={`flex w-full items-start justify-between gap-3 px-0 py-2 text-left transition-colors ${
-                    active ? 'text-white' : 'hover:text-white text-white/72'
-                  }`}
-                >
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-2">
-                      <span className={`h-2 w-2 rounded-full ${active ? 'bg-sky-400' : point.kind === 'current' ? 'bg-emerald-400' : 'bg-white/28'}`} />
-                      <span className="truncate text-[11px] font-semibold">{point.label}</span>
-                    </div>
-                    <div className="mt-1 pl-4 text-[10px] leading-5 text-white/40">{point.note}</div>
-                  </div>
-                  <span className="shrink-0 text-[9px] font-mono text-white/28">{point.time}</span>
-                </button>
-              );
-            })}
-          </div>
-        </div>
+        </section>
       </div>
     </div>
   ) : null;
