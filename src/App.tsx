@@ -3166,33 +3166,24 @@ const AdminPanel = ({
                       exit={{ opacity: 0, y: -10 }}
                       className="space-y-6"
                     >
-                      {/* 统计概览 */}
-                      <div className="flex items-center gap-4">
-                        {[
-                          { label: '预警规则总数', value: warningRules.length, sub: '已覆盖全部辖区', icon: Shield, color: 'sky' },
-                          { label: '当前激活规则', value: warningRules.filter(r => r.enabled).length, sub: '运行正常', icon: Check, color: 'emerald' },
-                        ].map((stat, idx) => (
-                          <div key={idx} className="w-[300px] bg-white/5 border border-white/10 rounded-2xl p-3.5 group hover:border-white/20 transition-all shrink-0">
-                            <div className="flex items-center justify-between mb-2.5">
-                              <div className={`w-9 h-9 rounded-xl bg-${stat.color}-500/10 flex items-center justify-center text-${stat.color}-400 group-hover:scale-110 transition-transform`}>
-                                <stat.icon size={18} />
-                              </div>
-                              <h4 className="text-xl font-black text-white">{stat.value}</h4>
-                            </div>
-                            <div className="flex items-center justify-between border-t border-white/5 pt-2">
-                              <span className="text-[9px] font-bold text-white/30 uppercase tracking-wider">{stat.label}</span>
-                              <span className="text-[9px] font-bold text-emerald-400/60">{stat.sub}</span>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-
                       {/* 规则管理列表 */}
                       <div className="bg-[#0a101a] border border-white/5 rounded-3xl overflow-hidden shadow-2xl">
                         <div className="px-6 py-4 border-b border-white/5 flex items-center justify-between bg-white/[0.02]">
-                          <div className="flex items-center gap-3">
-                            <div className="w-1 h-4 bg-sky-500 rounded-full" />
-                            <h3 className="text-xs font-black text-white/90 uppercase tracking-widest">预警触发规则配置</h3>
+                          <div className="flex items-center gap-6">
+                            <div className="flex items-center gap-3">
+                              <div className="w-1 h-4 bg-sky-500 rounded-full" />
+                              <h3 className="text-xs font-black text-white/90 uppercase tracking-widest whitespace-nowrap">预警触发规则配置</h3>
+                            </div>
+                            <div className="flex items-center gap-4">
+                              <div className="flex items-center gap-2 px-2.5 py-1 bg-white/[0.03] border border-white/5 rounded-lg">
+                                <span className="text-[10px] font-black text-white/20 uppercase tracking-wider">规则总数</span>
+                                <span className="text-[12px] font-mono font-black text-sky-400">{warningRules.length}</span>
+                              </div>
+                              <div className="flex items-center gap-2 px-2.5 py-1 bg-white/[0.03] border border-white/5 rounded-lg">
+                                <span className="text-[10px] font-black text-white/20 uppercase tracking-wider">已激活</span>
+                                <span className="text-[12px] font-mono font-black text-emerald-400">{warningRules.filter(r => r.enabled).length}</span>
+                              </div>
+                            </div>
                           </div>
                           <div className="flex items-center gap-3">
                             <div className="relative">
@@ -3588,108 +3579,210 @@ const AdminPanel = ({
                         {/* 左侧主要统计 */}
                         <div className="col-span-8 space-y-6">
                           {/* 风险次数大卡片 - 重构为左右结构 */}
-                          <div className="bg-[#0a101a] border border-white/5 rounded-[32px] p-6 relative overflow-hidden group h-[320px] flex gap-8">
+                          <div className="bg-[#0a101a] border border-white/5 rounded-[32px] p-6 relative overflow-hidden group h-[320px] flex gap-10">
                             <div className="absolute top-0 right-0 w-64 h-64 bg-sky-500/5 blur-[100px] rounded-full -translate-y-1/2 translate-x-1/2" />
                             
                             {/* 左侧主要统计 */}
-                            <div className="flex-1 flex flex-col justify-between relative z-10">
+                            <div className="w-48 flex flex-col justify-center relative z-10 shrink-0">
                               <div>
-                                <p className="text-[10px] font-black text-white/30 uppercase tracking-[0.3em] mb-4">{activeRiskAnalysisTab}风险总计</p>
-                                <div className="flex items-center gap-8">
-                                  <h2 className="text-7xl font-black text-white tracking-tighter">142</h2>
-                                </div>
-                              </div>
-
-                              <div className="flex gap-4 p-4 bg-white/5 border border-white/10 rounded-2xl w-fit">
-                                <div>
-                                  <p className="text-[10px] font-bold text-white/40 mb-1">较上月环比</p>
-                                  <p className="text-lg font-black text-emerald-400">+12.5%</p>
-                                </div>
-                                <div className="w-px h-8 bg-white/10 mx-2 self-center" />
-                                <div>
-                                  <p className="text-[10px] font-bold text-white/40 mb-1">风险处置率</p>
-                                  <p className="text-lg font-black text-sky-400">98.2%</p>
+                                <p className="text-[10px] font-black text-white/30 uppercase tracking-[0.3em] mb-4">{activeRiskAnalysisTab}数据概览</p>
+                                <div className="space-y-1">
+                                  <h2 className="text-6xl font-black text-white tracking-tighter">1,428</h2>
+                                  <p className="text-[10px] font-bold text-white/20 uppercase tracking-widest">总计预警触发次数</p>
                                 </div>
                               </div>
                             </div>
 
-                            {/* 右侧风险分级按钮 */}
-                            <div className="w-56 flex flex-col gap-3 relative z-10">
-                              {[
-                                { label: '紧急', value: '12', bg: 'bg-red-500/10', border: 'border-red-500/20', text: 'text-red-400' },
-                                { label: '警报', value: '28', bg: 'bg-orange-500/10', border: 'border-orange-500/20', text: 'text-orange-400' },
-                                { label: '警告', value: '45', bg: 'bg-yellow-500/10', border: 'border-yellow-500/20', text: 'text-yellow-400' },
-                                { label: '注意', value: '57', bg: 'bg-sky-500/10', border: 'border-sky-500/20', text: 'text-sky-400' },
-                              ].map((item, i) => (
-                                <button 
-                                  key={i} 
-                                  onClick={() => setActiveRiskLevel(activeRiskLevel === item.label ? null : item.label)}
-                                  className={`flex-1 ${item.bg} border ${activeRiskLevel === item.label ? 'border-white/40 ring-1 ring-white/20' : item.border} rounded-2xl p-4 flex flex-col justify-center group/item hover:brightness-125 transition-all text-left relative overflow-hidden`}
-                                >
-                                  {activeRiskLevel === item.label && (
-                                    <div className="absolute top-0 right-0 w-8 h-8 bg-white/10 rounded-bl-2xl flex items-center justify-center">
-                                      <Check size={10} className="text-white" />
-                                    </div>
-                                  )}
-                                  <p className={`text-[10px] font-black ${item.text} uppercase tracking-widest mb-1`}>{item.label}</p>
-                                  <p className={`text-2xl font-black ${item.text} group-hover/item:scale-110 transition-transform origin-left`}>{item.value}</p>
-                                </button>
-                              ))}
+                            {/* 中间/右侧趋势图 */}
+                            <div className="flex-1 flex flex-col relative z-10">
+                              <div className="flex items-center justify-between mb-6">
+                                <div className="flex items-center gap-3">
+                                  <div className="w-1 h-4 bg-sky-500 rounded-full" />
+                                  <span className="text-xs font-black text-white/90 uppercase tracking-widest">预警趋势</span>
+                                </div>
+                                <div className="flex items-center gap-6">
+                                  <div className="flex items-center gap-2">
+                                    <div className="w-3 h-1 bg-sky-500 rounded-full" />
+                                    <span className="text-[10px] font-bold text-white/40">预警次数</span>
+                                  </div>
+                                  <div className="flex items-center gap-2">
+                                    <div className="w-3 h-1 bg-emerald-500 rounded-full" />
+                                    <span className="text-[10px] font-bold text-white/40">干预次数</span>
+                                  </div>
+                                </div>
+                              </div>
+                              <div className="flex-1">
+                                <ResponsiveContainer width="100%" height="100%">
+                                  <LineChart data={[
+                                    { time: '04-10', warning: 124, intervention: 118 },
+                                    { time: '04-12', warning: 156, intervention: 142 },
+                                    { time: '04-14', warning: 132, intervention: 128 },
+                                    { time: '04-16', warning: 188, intervention: 176 },
+                                    { time: '04-18', warning: 145, intervention: 139 },
+                                    { time: '04-20', warning: 167, intervention: 162 },
+                                  ]}>
+                                    <CartesianGrid strokeDasharray="3 3" stroke="#ffffff05" vertical={false} />
+                                    <XAxis 
+                                      dataKey="time" 
+                                      axisLine={{ stroke: '#ffffff10' }} 
+                                      tickLine={{ stroke: '#ffffff10' }} 
+                                      tick={{fill: '#ffffff20', fontSize: 10, fontMono: true}} 
+                                    />
+                                    <YAxis 
+                                      axisLine={{ stroke: '#ffffff10' }} 
+                                      tickLine={{ stroke: '#ffffff10' }} 
+                                      tick={{fill: '#ffffff20', fontSize: 10, fontMono: true}} 
+                                    />
+                                    <Tooltip 
+                                      contentStyle={{ backgroundColor: '#0a101a', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '16px', boxShadow: '0 20px 50px rgba(0,0,0,0.5)' }}
+                                      itemStyle={{ fontSize: '11px', fontWeight: 'bold' }}
+                                    />
+                                    <Line 
+                                      type="monotone" 
+                                      dataKey="warning" 
+                                      name="预警次数"
+                                      stroke="#0ea5e9" 
+                                      strokeWidth={4} 
+                                      dot={{ fill: '#0ea5e9', strokeWidth: 2, r: 4, stroke: '#0a101a' }}
+                                      activeDot={{ r: 6, strokeWidth: 0 }}
+                                    />
+                                    <Line 
+                                      type="monotone" 
+                                      dataKey="intervention" 
+                                      name="干预次数"
+                                      stroke="#10b981" 
+                                      strokeWidth={4} 
+                                      dot={{ fill: '#10b981', strokeWidth: 2, r: 4, stroke: '#0a101a' }}
+                                      activeDot={{ r: 6, strokeWidth: 0 }}
+                                    />
+                                  </LineChart>
+                                </ResponsiveContainer>
+                              </div>
                             </div>
                           </div>
 
-                          {/* 月度风险趋势图 */}
-                          <div className="bg-[#0a101a] border border-white/5 rounded-3xl p-6 h-[320px] flex flex-col">
-                            <div className="flex items-center justify-between mb-8">
-                              <div className="flex items-center gap-3">
+                          <div className="grid grid-cols-2 gap-6">
+                            {/* 风险船舶类型分布 */}
+                            <div className="bg-[#0a101a] border border-white/5 rounded-3xl p-6 h-[320px] flex flex-col">
+                              <div className="flex items-center gap-3 mb-6">
                                 <div className="w-1 h-4 bg-sky-500 rounded-full" />
-                                <h4 className="text-xs font-black text-white/90 uppercase tracking-widest">{activeRiskAnalysisTab}风险变化趋势</h4>
+                                <h4 className="text-xs font-black text-white/90 uppercase tracking-widest">风险船舶类型分布</h4>
                               </div>
-                              <div className="flex items-center gap-3">
-                                {[
-                                  { label: '紧急', color: '#f43f5e' },
-                                  { label: '警报', color: '#fb923c' },
-                                  { label: '警告', color: '#facc15' },
-                                  { label: '注意', color: '#38bdf8' }
-                                ].map(indicator => (
-                                  <div key={indicator.label} className="flex items-center gap-1.5 opacity-60">
-                                    <div className="w-2 h-2 rounded-full" style={{ backgroundColor: indicator.color }} />
-                                    <span className="text-[10px] font-bold text-white/40">{indicator.label}</span>
-                                  </div>
-                                ))}
+                              <div className="flex-1 flex items-center">
+                                <div className="w-[45%] h-full">
+                                  <ResponsiveContainer width="100%" height="100%">
+                                    <PieChart>
+                                      <Pie
+                                        data={[
+                                          { name: '集装箱船', value: 45, count: 64, color: '#38bdf8' },
+                                          { name: '散货船', value: 32, count: 45, color: '#818cf8' },
+                                          { name: '油轮', value: 24, count: 34, color: '#fb923c' },
+                                          { name: '工程船', value: 18, count: 26, color: '#f43f5e' },
+                                          { name: '其他', value: 23, count: 33, color: '#94a3b8' },
+                                        ]}
+                                        innerRadius={55}
+                                        outerRadius={75}
+                                        paddingAngle={4}
+                                        dataKey="value"
+                                      >
+                                        {[
+                                          { color: '#38bdf8' },
+                                          { color: '#818cf8' },
+                                          { color: '#fb923c' },
+                                          { color: '#f43f5e' },
+                                          { color: '#94a3b8' },
+                                        ].map((entry, index) => (
+                                          <Cell key={`cell-${index}`} fill={entry.color} stroke="none" />
+                                        ))}
+                                      </Pie>
+                                      <Tooltip 
+                                        contentStyle={{ backgroundColor: '#0a101a', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px' }}
+                                        itemStyle={{ fontSize: '10px', fontWeight: 'bold' }}
+                                      />
+                                    </PieChart>
+                                  </ResponsiveContainer>
+                                </div>
+                                <div className="w-[55%] space-y-3 pl-6">
+                                  {[
+                                    { name: '集装箱船', value: 32, count: 45, color: '#38bdf8' },
+                                    { name: '散货船', value: 25, count: 36, color: '#818cf8' },
+                                    { name: '油轮', value: 18, count: 26, color: '#fb923c' },
+                                    { name: '工程船', value: 15, count: 21, color: '#f43f5e' },
+                                    { name: '其他', value: 10, count: 14, color: '#94a3b8' },
+                                  ].map((item, idx) => (
+                                    <div key={idx} className="flex items-center justify-between group cursor-default">
+                                      <div className="flex items-center gap-2 min-w-0">
+                                        <div className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: item.color }} />
+                                        <span className="text-[11px] font-bold text-white/40 group-hover:text-white/80 transition-colors truncate">{item.name}</span>
+                                      </div>
+                                      <div className="flex items-center gap-3 shrink-0">
+                                        <span className="text-[11px] font-mono font-bold text-white/60">{item.count}次</span>
+                                        <span className="text-[10px] font-mono font-bold text-white/20">{item.value}%</span>
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
                               </div>
                             </div>
-                            <div className="flex-1">
-                              <ResponsiveContainer width="100%" height="100%">
-                                <LineChart data={[
-                                  { day: '04-01', e: 2, a: 5, w: 8, n: 12 },
-                                  { day: '04-05', e: 1, a: 4, w: 12, n: 10 },
-                                  { day: '04-10', e: 4, a: 8, w: 7, n: 15 },
-                                  { day: '04-15', e: 2, a: 3, w: 10, n: 8 },
-                                  { day: '04-20', e: 3, a: 8, w: 8, n: 12 },
-                                ]}>
-                                  <CartesianGrid strokeDasharray="3 3" stroke="#ffffff05" vertical={false} />
-                                  <XAxis 
-                                    dataKey="day" 
-                                    axisLine={{ stroke: '#ffffff10' }} 
-                                    tickLine={{ stroke: '#ffffff10' }} 
-                                    tick={{fill: '#ffffff20', fontSize: 10, fontWeight: 'bold'}} 
-                                  />
-                                  <YAxis 
-                                    axisLine={{ stroke: '#ffffff10' }} 
-                                    tickLine={{ stroke: '#ffffff10' }} 
-                                    tick={{fill: '#ffffff20', fontSize: 10, fontWeight: 'bold'}} 
-                                  />
-                                  <Tooltip 
-                                    contentStyle={{ backgroundColor: '#0a101a', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px', boxShadow: '0 20px 40px rgba(0,0,0,0.4)' }}
-                                    itemStyle={{ fontSize: '11px', fontWeight: 'bold' }}
-                                  />
-                                  <Line type="monotone" dataKey="e" stroke="#f43f5e" strokeWidth={activeRiskLevel === '紧急' || !activeRiskLevel ? 3 : 1} strokeOpacity={activeRiskLevel === '紧急' || !activeRiskLevel ? 1 : 0.2} dot={activeRiskLevel === '紧急' || !activeRiskLevel} />
-                                  <Line type="monotone" dataKey="a" stroke="#fb923c" strokeWidth={activeRiskLevel === '警报' || !activeRiskLevel ? 3 : 1} strokeOpacity={activeRiskLevel === '警报' || !activeRiskLevel ? 1 : 0.2} dot={activeRiskLevel === '警报' || !activeRiskLevel} />
-                                  <Line type="monotone" dataKey="w" stroke="#facc15" strokeWidth={activeRiskLevel === '警告' || !activeRiskLevel ? 3 : 1} strokeOpacity={activeRiskLevel === '警告' || !activeRiskLevel ? 1 : 0.2} dot={activeRiskLevel === '警告' || !activeRiskLevel} />
-                                  <Line type="monotone" dataKey="n" stroke="#38bdf8" strokeWidth={activeRiskLevel === '注意' || !activeRiskLevel ? 3 : 1} strokeOpacity={activeRiskLevel === '注意' || !activeRiskLevel ? 1 : 0.2} dot={activeRiskLevel === '注意' || !activeRiskLevel} />
-                                </LineChart>
-                              </ResponsiveContainer>
+
+                            {/* 预警等级分布 */}
+                            <div className="bg-[#0a101a] border border-white/5 rounded-3xl p-6 h-[320px] flex flex-col">
+                              <div className="flex items-center gap-3 mb-6">
+                                <div className="w-1 h-4 bg-amber-500 rounded-full" />
+                                <h4 className="text-xs font-black text-white/90 uppercase tracking-widest">预警等级占比</h4>
+                              </div>
+                              <div className="flex-1 flex items-center">
+                                <div className="w-[45%] h-full">
+                                  <ResponsiveContainer width="100%" height="100%">
+                                    <PieChart>
+                                      <Pie
+                                        data={[
+                                          { name: '紧急', value: 15, count: 21, color: '#f43f5e' },
+                                          { name: '警报', value: 25, count: 36, color: '#fb923c' },
+                                          { name: '警告', value: 35, count: 50, color: '#facc15' },
+                                          { name: '注意', value: 25, count: 35, color: '#38bdf8' },
+                                        ]}
+                                        innerRadius={55}
+                                        outerRadius={75}
+                                        paddingAngle={4}
+                                        dataKey="value"
+                                      >
+                                        {[
+                                          { color: '#f43f5e' },
+                                          { color: '#fb923c' },
+                                          { color: '#facc15' },
+                                          { color: '#38bdf8' },
+                                        ].map((entry, index) => (
+                                          <Cell key={`cell-${index}`} fill={entry.color} stroke="none" />
+                                        ))}
+                                      </Pie>
+                                      <Tooltip 
+                                        contentStyle={{ backgroundColor: '#0a101a', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px' }}
+                                        itemStyle={{ fontSize: '10px', fontWeight: 'bold' }}
+                                      />
+                                    </PieChart>
+                                  </ResponsiveContainer>
+                                </div>
+                                <div className="w-[55%] space-y-4 pl-6">
+                                  {[
+                                    { name: '紧急', value: 15, count: 21, color: '#f43f5e' },
+                                    { name: '警报', value: 25, count: 36, color: '#fb923c' },
+                                    { name: '警告', value: 35, count: 50, color: '#facc15' },
+                                    { name: '注意', value: 25, count: 35, color: '#38bdf8' },
+                                  ].map((item, idx) => (
+                                    <div key={idx} className="flex items-center justify-between group cursor-default">
+                                      <div className="flex items-center gap-2 min-w-0">
+                                        <div className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: item.color }} />
+                                        <span className="text-[11px] font-bold text-white/40 group-hover:text-white/80 transition-colors truncate">{item.name}</span>
+                                      </div>
+                                      <div className="flex items-center gap-3 shrink-0">
+                                        <span className="text-[11px] font-mono font-bold text-white/60">{item.count}次</span>
+                                        <span className="text-[10px] font-mono font-bold text-white/20">{item.value}%</span>
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
                             </div>
                           </div>
                         </div>
