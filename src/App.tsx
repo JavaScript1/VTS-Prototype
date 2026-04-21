@@ -993,12 +993,9 @@ const getRiskPlaybackSession = (item: typeof MOCK_RISK_STATS[number]) => {
         { label: '管制状态', value: item.risk },
       ],
       weather: [
-        { label: '天气态势', value: weatherCondition },
         { label: '风力', value: item.wind },
         { label: '浪高', value: item.wave },
         { label: '能见度', value: item.visibility },
-        { label: '限速', value: `${item.snapshot.speedLimit.toFixed(1)} kn` },
-        { label: '偏差', value: `${Math.max(item.snapshot.actualSpeed - item.snapshot.speedLimit, 0).toFixed(1)} kn` },
       ],
     },
   };
@@ -2053,6 +2050,8 @@ const AdminPanel = ({
   const [activeRiskAnalysisTab, setActiveRiskAnalysisTab] = useState('月度');
   const [statsTimeRange, setStatsTimeRange] = useState('今天');
   const [activeRiskLevel, setActiveRiskLevel] = useState<string | null>(null);
+  const [riskStatusFilter, setRiskStatusFilter] = useState('全部');
+  const [riskFalsePositiveFilter, setRiskFalsePositiveFilter] = useState('全部');
   const [customStartTime, setCustomStartTime] = useState('2026-04-20 00:00');
   const [customEndTime, setCustomEndTime] = useState('2026-04-20 23:59');
   const [statsArea, setStatsArea] = useState('全部区域');
@@ -3327,60 +3326,88 @@ const AdminPanel = ({
                       exit={{ opacity: 0, x: -20 }}
                       className="space-y-6"
                     >
-                      {/* 筛选工具栏 */}
-                      <div className="flex items-center justify-between bg-[#0a101a] border border-white/5 p-4 rounded-2xl shadow-xl">
-                        <div className="flex items-center gap-4">
-                          <div className="flex items-center gap-2">
-                            <span className="text-[10px] font-bold text-white/30 uppercase tracking-widest whitespace-nowrap">发生时间</span>
-                            <div className="flex bg-white/5 rounded-lg p-0.5">
-                              {['今天', '昨天', '自定义'].map(s => (
-                                <button 
-                                  key={s} 
-                                  onClick={() => setStatsTimeRange(s)}
-                                  className={`px-3 py-1 text-[10px] font-bold rounded-md transition-all ${statsTimeRange === s ? 'bg-sky-500 text-white' : 'text-white/40 hover:text-white/60'}`}
-                                >
-                                  {s}
-                                </button>
-                              ))}
-                            </div>
+                      {/* 紧凑型单行筛选工具栏 */}
+                      <div className="flex items-center justify-between bg-[#0a101a] border border-white/5 p-2.5 rounded-2xl shadow-xl">
+                        <div className="flex items-center gap-3 overflow-x-auto no-scrollbar pr-4">
+                          {/* 发生时间 */}
+                          <div className="flex items-center gap-2 px-3 py-1.5 bg-white/[0.03] border border-white/10 rounded-xl hover:bg-white/[0.05] transition-all">
+                            <Clock size={12} className="text-sky-400" />
+                            <select 
+                              value={statsTimeRange}
+                              onChange={(e) => setStatsTimeRange(e.target.value)}
+                              className="bg-transparent text-[11px] font-bold text-white/80 focus:outline-none cursor-pointer"
+                            >
+                              {['今天', '昨天', '自定义'].map(s => <option key={s} value={s} className="bg-[#0a1420]">{s}</option>)}
+                            </select>
                             {statsTimeRange === '自定义' && (
-                              <div className="flex items-center gap-2 ml-2 animate-in fade-in slide-in-from-left-2">
+                              <div className="flex items-center gap-1.5 ml-1 pl-2 border-l border-white/10 animate-in fade-in zoom-in-95">
                                 <input 
                                   type="datetime-local" 
                                   value={customStartTime.replace(' ', 'T')}
                                   onChange={(e) => setCustomStartTime(e.target.value.replace('T', ' '))}
-                                  className="bg-white/5 border border-white/10 rounded-lg py-1 px-2 text-[10px] font-mono text-white/80 focus:outline-none focus:border-sky-500/50 transition-colors"
+                                  className="bg-transparent border-none text-[10px] font-mono text-sky-400 focus:outline-none w-32"
                                 />
                                 <span className="text-white/20 text-[10px]">至</span>
                                 <input 
                                   type="datetime-local" 
                                   value={customEndTime.replace(' ', 'T')}
                                   onChange={(e) => setCustomEndTime(e.target.value.replace('T', ' '))}
-                                  className="bg-white/5 border border-white/10 rounded-lg py-1 px-2 text-[10px] font-mono text-white/80 focus:outline-none focus:border-sky-500/50 transition-colors"
+                                  className="bg-transparent border-none text-[10px] font-mono text-sky-400 focus:outline-none w-32"
                                 />
                               </div>
                             )}
                           </div>
-                          <div className="h-4 w-px bg-white/10" />
-                          <div className="flex items-center gap-2">
-                            <span className="text-[10px] font-bold text-white/30 uppercase tracking-widest whitespace-nowrap">风险等级</span>
-                            <div className="flex bg-white/5 rounded-lg p-0.5">
-                              {['全部', '紧急', '警报', '警告', '注意'].map(l => (
-                                <button key={l} className={`px-3 py-1 text-[10px] font-bold rounded-md transition-all ${l === '全部' ? 'bg-white/10 text-white' : 'text-white/40 hover:text-white/60'}`}>{l}</button>
-                              ))}
-                            </div>
+
+                          {/* 状态范围 */}
+                          <div className="flex items-center gap-2 px-3 py-1.5 bg-white/[0.03] border border-white/10 rounded-xl hover:bg-white/[0.05] transition-all">
+                            <Activity size={12} className="text-emerald-400" />
+                            <span className="text-[10px] font-black text-white/20 uppercase tracking-widest whitespace-nowrap">状态</span>
+                            <select 
+                              value={riskStatusFilter}
+                              onChange={(e) => setRiskStatusFilter(e.target.value)}
+                              className="bg-transparent text-[11px] font-bold text-white/80 focus:outline-none cursor-pointer"
+                            >
+                              {['全部', '报警中', '已关闭'].map(s => <option key={s} value={s} className="bg-[#0a1420]">{s}</option>)}
+                            </select>
+                          </div>
+
+                          {/* 是否误报 */}
+                          <div className="flex items-center gap-2 px-3 py-1.5 bg-white/[0.03] border border-white/10 rounded-xl hover:bg-white/[0.05] transition-all">
+                            <Filter size={12} className="text-rose-400" />
+                            <span className="text-[10px] font-black text-white/20 uppercase tracking-widest whitespace-nowrap">误报</span>
+                            <select 
+                              value={riskFalsePositiveFilter}
+                              onChange={(e) => setRiskFalsePositiveFilter(e.target.value)}
+                              className="bg-transparent text-[11px] font-bold text-white/80 focus:outline-none cursor-pointer"
+                            >
+                              {['全部', '无效', '有效'].map(s => <option key={s} value={s} className="bg-[#0a1420]">{s}</option>)}
+                            </select>
+                          </div>
+
+                          {/* 风险等级 */}
+                          <div className="flex items-center gap-2 px-3 py-1.5 bg-white/[0.03] border border-white/10 rounded-xl hover:bg-white/[0.05] transition-all">
+                            <ShieldAlert size={12} className="text-amber-400" />
+                            <span className="text-[10px] font-black text-white/20 uppercase tracking-widest whitespace-nowrap">等级</span>
+                            <select 
+                              value={activeRiskLevel || '全部'}
+                              onChange={(e) => setActiveRiskLevel(e.target.value === '全部' ? null : e.target.value)}
+                              className="bg-transparent text-[11px] font-bold text-white/80 focus:outline-none cursor-pointer"
+                            >
+                              {['全部', '紧急', '警报', '警告', '注意'].map(l => <option key={l} value={l} className="bg-[#0a1420]">{l}</option>)}
+                            </select>
                           </div>
                         </div>
-                        <div className="flex items-center gap-3">
-                          <div className="relative">
-                            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-white/20" />
+
+                        <div className="flex items-center gap-3 shrink-0">
+                          <div className="relative group">
+                            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-white/20 group-focus-within:text-sky-400 transition-colors" />
                             <input 
                               type="text" 
                               placeholder="搜索船名/MMSI..." 
-                              className="bg-white/5 border border-white/10 rounded-lg pl-9 pr-4 py-1.5 text-[11px] text-white focus:outline-none focus:border-sky-500/50 w-48 transition-all"
+                              className="bg-white/5 border border-white/10 rounded-xl pl-9 pr-4 py-2 text-[11px] text-white focus:outline-none focus:border-sky-500/50 w-40 hover:bg-white/[0.08] transition-all"
                             />
                           </div>
-                          <button className="px-4 py-1.5 bg-sky-500/10 hover:bg-sky-500/20 border border-sky-500/20 text-sky-400 text-[11px] font-black uppercase tracking-widest rounded-lg transition-all flex items-center gap-2">
+                          <button className="px-4 py-2 bg-sky-500 hover:bg-sky-400 text-white text-[11px] font-black uppercase tracking-widest rounded-xl transition-all shadow-lg shadow-sky-500/20 flex items-center gap-2">
                             <FileText size={14} /> 导出报表
                           </button>
                         </div>
@@ -3394,7 +3421,8 @@ const AdminPanel = ({
                               <tr className="bg-white/5 border-b border-white/5">
                                 <th className="px-6 py-4 text-[10px] font-black text-white/30 uppercase tracking-[0.2em]">触发时间</th>
                                 <th className="px-6 py-4 text-[10px] font-black text-white/30 uppercase tracking-[0.2em]">目标船舶</th>
-                                <th className="px-6 py-4 text-[10px] font-black text-white/30 uppercase tracking-[0.2em]">风险类型</th>
+                                <th className="px-6 py-4 text-[10px] font-black text-white/30 uppercase tracking-[0.2em]">船舶类型</th>
+                                <th className="px-6 py-4 text-[10px] font-black text-white/30 uppercase tracking-[0.2em]">是否误报</th>
                                 <th className="px-6 py-4 text-[10px] font-black text-white/30 uppercase tracking-[0.2em]">风险等级</th>
                                 <th className="px-6 py-4 text-[10px] font-black text-white/30 uppercase tracking-[0.2em]">发生区域</th>                                <th className="px-6 py-4 text-[10px] font-black text-white/30 uppercase tracking-[0.2em]">状态</th>
                                 <th className="px-6 py-4 text-[10px] font-black text-white/30 uppercase tracking-[0.2em] text-right">操作</th>
@@ -3422,7 +3450,18 @@ const AdminPanel = ({
                                     </div>
                                   </td>
                                   <td className="px-6 py-4">
-                                    <span className="text-[11px] text-white/60 font-medium">{ship.risk}</span>
+                                    <span className="px-2 py-0.5 bg-white/5 border border-white/10 rounded-md text-[10px] text-white/60 whitespace-nowrap">
+                                      { (ship as any).type || '油轮' }
+                                    </span>
+                                  </td>
+                                  <td className="px-6 py-4">
+                                    <span className={`px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-widest border ${
+                                      Number(ship.id) % 3 === 0
+                                        ? 'bg-rose-500/10 text-rose-400 border-rose-500/20'
+                                        : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
+                                    }`}>
+                                      {Number(ship.id) % 3 === 0 ? '是' : '否'}
+                                    </span>
                                   </td>
                                   <td className="px-6 py-4">
                                     <div className="flex items-center gap-3">
@@ -3441,8 +3480,8 @@ const AdminPanel = ({
                                   </td>
                                   <td className="px-6 py-4">
                                     <div className="flex items-center gap-2">
-                                      <div className={`w-1.5 h-1.5 rounded-full ${ship.id.includes('1') ? 'bg-amber-500 animate-pulse' : 'bg-emerald-500'}`} />
-                                      <span className="text-[11px] text-white/60 font-medium">{ship.id.includes('1') ? '待核实' : '已关闭'}</span>
+                                      <div className={`w-1.5 h-1.5 rounded-full ${ship.id.includes('1') ? 'bg-red-500 animate-pulse' : 'bg-emerald-500'}`} />
+                                      <span className="text-[11px] text-white/60 font-medium">{ship.id.includes('1') ? '报警中' : '已关闭'}</span>
                                     </div>
                                   </td>
                                   <td className="px-6 py-4 text-right">
@@ -3453,8 +3492,11 @@ const AdminPanel = ({
                                       >
                                         回放
                                       </button>
-                                      <button className="px-3 py-1 bg-white/5 hover:bg-white/10 text-white/40 hover:text-white text-[10px] font-black uppercase tracking-widest rounded-lg border border-white/10 transition-all">
-                                        处置
+                                      <button className="px-3 py-1 bg-rose-500/10 hover:bg-rose-500 text-rose-400 hover:text-white text-[10px] font-black uppercase tracking-widest rounded-lg border border-rose-500/20 transition-all">
+                                        无效
+                                      </button>
+                                      <button className="px-3 py-1 bg-emerald-500/10 hover:bg-emerald-500 text-emerald-400 hover:text-white text-[10px] font-black uppercase tracking-widest rounded-lg border border-emerald-500/20 transition-all">
+                                        有效
                                       </button>
                                     </div>
                                   </td>
@@ -3731,15 +3773,16 @@ const AdminPanel = ({
                             <div className="w-1 h-4 bg-red-500 rounded-full" />
                             <h3 className="text-xs font-black text-white/90 uppercase tracking-widest">高风险关注名单</h3>
                           </div>
-                          <button className="text-[10px] font-black text-sky-400 uppercase tracking-widest hover:text-sky-300 transition-colors">查看全部</button>
                         </div>
                         <div className="overflow-x-auto">
                           <table className="w-full text-left border-collapse">
                             <thead>
                               <tr className="bg-white/5">
                                 <th className="px-6 py-4 text-[10px] font-black text-white/30 uppercase tracking-widest">船舶名称</th>
-                                <th className="px-6 py-4 text-[10px] font-black text-white/30 uppercase tracking-widest">风险类型</th>
-                                <th className="px-6 py-4 text-[10px] font-black text-white/30 uppercase tracking-widest">发生区域</th>                                <th className="px-6 py-4 text-[10px] font-black text-white/30 uppercase tracking-widest">风险等级</th>
+                                <th className="px-6 py-4 text-[10px] font-black text-white/30 uppercase tracking-widest">船籍</th>
+                                <th className="px-6 py-4 text-[10px] font-black text-white/30 uppercase tracking-widest">船舶类型</th>
+                                <th className="px-6 py-4 text-[10px] font-black text-white/30 uppercase tracking-widest">高频预警类型</th>
+                                <th className="px-6 py-4 text-[10px] font-black text-white/30 uppercase tracking-widest">风险次数</th>
                                 <th className="px-6 py-4 text-[10px] font-black text-white/30 uppercase tracking-widest text-right">快速操作</th>
                               </tr>
                             </thead>
@@ -3762,31 +3805,50 @@ const AdminPanel = ({
                                     </div>
                                   </td>
                                   <td className="px-6 py-4">
-                                    <span className="text-[11px] text-white/70">{ship.risk}</span>
-                                  </td>
-                                  <td className="px-6 py-4">
-                                    <span className="text-[11px] text-white/40">{ship.snapshot.location}</span>
-                                  </td>
-                                  <td className="px-6 py-4">
-                                    <div className="flex items-center gap-3">
-                                      <span className={`px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-widest border ${
-                                        ship.riskScore > 85 ? 'bg-red-500/10 text-red-400 border-red-500/20' :
-                                        ship.riskScore > 65 ? 'bg-orange-500/10 text-orange-400 border-orange-500/20' :
-                                        ship.riskScore > 40 ? 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20' :
-                                        'bg-sky-500/10 text-sky-400 border-sky-500/20'
-                                      }`}>
-                                        {ship.riskScore > 85 ? '紧急' : ship.riskScore > 65 ? '警报' : ship.riskScore > 40 ? '警告' : '注意'}
+                                    <div className="flex items-center gap-2">
+                                      <span className="px-2 py-0.5 bg-white/5 border border-white/10 rounded-md text-[10px] text-white/60 whitespace-nowrap">
+                                        { (ship as any).flag || '中国 (CHINA)' }
                                       </span>
                                     </div>
                                   </td>
+                                  <td className="px-6 py-4">
+                                    <span className="px-2 py-0.5 bg-white/5 border border-white/10 rounded-md text-[10px] text-white/60 whitespace-nowrap">
+                                      { (ship as any).type || '油轮' }
+                                    </span>
+                                  </td>
+                                  <td className="px-6 py-4">
+                                    <div className="flex flex-wrap gap-1.5 max-w-[200px]">
+                                      {['超速', '偏航', '违停'].slice(0, 2).map((name, idx) => (
+                                        <span key={idx} className="px-2 py-0.5 bg-white/5 border border-white/10 rounded-md text-[10px] text-white/60 whitespace-nowrap">
+                                          {name}
+                                        </span>
+                                      ))}
+                                      {3 > 2 && (
+                                        <div className="relative group/tooltip">
+                                          <span className="px-2 py-0.5 bg-sky-500/5 border border-sky-500/10 rounded-md text-[10px] text-sky-400 font-bold whitespace-nowrap cursor-help">
+                                            +1
+                                          </span>
+                                          {/* 悬浮气泡框 */}
+                                          <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-32 p-2 bg-[#0a1420] border border-white/10 rounded-xl shadow-2xl opacity-0 invisible group-hover/tooltip:opacity-100 group-hover/tooltip:visible transition-all z-50 pointer-events-none">
+                                            <div className="text-[10px] font-bold text-white/30 uppercase tracking-widest mb-1.5 border-b border-white/5 pb-1">全部风险类型</div>
+                                            <div className="flex flex-wrap gap-1">
+                                              {['超速', '偏航', '违停'].map((name, idx) => (
+                                                <span key={idx} className="px-1.5 py-0.5 bg-white/5 rounded text-[9px] text-white/70">
+                                                  {name}
+                                                </span>
+                                              ))}
+                                            </div>
+                                            <div className="absolute top-full left-1/2 -translate-x-1/2 border-8 border-transparent border-t-[#0a1420] z-10" />
+                                          </div>
+                                        </div>
+                                      )}
+                                    </div>
+                                  </td>
+                                  <td className="px-6 py-4">
+                                    <span className="text-[11px] font-mono font-bold text-sky-400">{(Number(ship.id) * 2 + 1)} 次</span>
+                                  </td>
                                   <td className="px-6 py-4 text-right">
                                     <div className="flex items-center justify-end gap-2">
-                                      <button 
-                                        onClick={() => setDynamicPlaybackSession(getRiskPlaybackSession(ship))}
-                                        className="px-3 py-1 bg-sky-500/10 hover:bg-sky-500 text-sky-400 hover:text-white text-[10px] font-black uppercase tracking-widest rounded-lg border border-sky-500/20 transition-all"
-                                      >
-                                        回放
-                                      </button>
                                       <button className="px-3 py-1 bg-white/5 hover:bg-white/10 text-white/40 hover:text-white text-[10px] font-black uppercase tracking-widest rounded-lg border border-white/10 transition-all">核实</button>
                                     </div>
                                   </td>
@@ -3794,6 +3856,15 @@ const AdminPanel = ({
                               ))}
                             </tbody>
                           </table>
+                        </div>
+                        <div className="p-4 border-t border-white/5 flex justify-between items-center bg-white/[0.01]">
+                          <span className="text-[10px] font-bold text-white/20 uppercase tracking-widest">共 24 条高风险关注记录</span>
+                          <div className="flex gap-2">
+                            <button className="p-1.5 rounded-lg border border-white/10 text-white/30 hover:text-white transition-all"><ChevronLeft size={16} /></button>
+                            <button className="w-8 h-8 rounded-lg bg-sky-500 text-white text-[10px] font-black">1</button>
+                            <button className="w-8 h-8 rounded-lg bg-white/5 text-white/40 text-[10px] font-black hover:bg-white/10 transition-all">2</button>
+                            <button className="p-1.5 rounded-lg border border-white/10 text-white/30 hover:text-white transition-all"><ChevronRight size={16} /></button>
+                          </div>
                         </div>
                       </div>
                     </motion.div>
@@ -4930,7 +5001,17 @@ const DynamicPlaybackView = ({
     return points;
   }, [session]);
 
-  const currentPos = trajectory[Math.floor((progress / 100) * (trajectory.length - 1))];
+  const currentIndex = Math.floor((progress / 100) * (trajectory.length - 1));
+  const currentPos = trajectory[currentIndex];
+  
+  const currentSpeed = 12.5 + Math.sin(progress / 10) * 2;
+  const currentHeading = useMemo(() => {
+    if (trajectory.length < 2) return 0;
+    const p1 = currentIndex < trajectory.length - 1 ? trajectory[currentIndex] : trajectory[currentIndex - 1];
+    const p2 = currentIndex < trajectory.length - 1 ? trajectory[currentIndex + 1] : trajectory[currentIndex];
+    const angle = Math.atan2(p2[1] - p1[1], p2[0] - p1[0]) * (180 / Math.PI);
+    return (angle + 360) % 360;
+  }, [trajectory, currentIndex]);
 
   useEffect(() => {
     let interval: any;
@@ -5098,24 +5179,82 @@ const DynamicPlaybackView = ({
               <History size={16} className="text-sky-400" />
               <h3 className="text-xs font-black text-white uppercase tracking-wider">风险回放信息</h3>
             </div>
-            <p className="mt-2 text-[10px] text-white/35 leading-relaxed">
-              {session.event.desc || '支持风险轨迹回放、环境信息与天气信息联动查看。'}
-            </p>
+            <div className="flex flex-col gap-3 mt-4">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-bold text-white/30 uppercase tracking-widest">风险名称</span>
+                <span className="text-[11px] font-black text-rose-400 bg-rose-500/10 px-2 py-0.5 rounded border border-rose-500/20">{session.event.label}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-bold text-white/30 uppercase tracking-widest">风险类型</span>
+                <span className="text-[11px] font-black text-sky-400 bg-sky-500/10 px-2 py-0.5 rounded border border-sky-500/20 uppercase tracking-wider">{session.vessel.category || '单船风险'}</span>
+              </div>
+            </div>
           </div>
 
           <div className="flex-1 overflow-y-auto custom-scrollbar p-3 space-y-3">
+            {/* 船舶信息 */}
             <section className="bg-white/[0.03] border border-white/5 rounded-2xl p-3 space-y-3">
               <div className="flex items-center gap-2">
-                <Compass size={14} className="text-sky-400" />
-                <span className="text-[10px] font-black text-white/55 uppercase tracking-widest">环境信息</span>
+                <Ship size={14} className="text-sky-400" />
+                <span className="text-[10px] font-black text-white/55 uppercase tracking-widest">船舶信息</span>
+              </div>
+              <div className="space-y-3">
+                <div className="flex flex-col">
+                  <span className="text-sm font-black text-white">{session.vessel.name}</span>
+                  <span className="text-[10px] font-bold text-white/40 uppercase tracking-widest">
+                    {session.vessel.englishName || "MOCK VESSEL NAME"}
+                  </span>
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="rounded-xl border border-white/5 bg-black/20 px-2.5 py-2">
+                    <div className="text-[8px] font-black text-white/25 uppercase tracking-widest">长宽</div>
+                    <div className="mt-1 text-[10px] font-semibold text-white/75 leading-snug">
+                      {session.vessel.length && session.vessel.width 
+                        ? `${session.vessel.length}m x ${session.vessel.width}m` 
+                        : '299m x 48m'}
+                    </div>
+                  </div>
+                  <div className="rounded-xl border border-white/5 bg-black/20 px-2.5 py-2">
+                    <div className="text-[8px] font-black text-white/25 uppercase tracking-widest">吃水</div>
+                    <div className="mt-1 text-[10px] font-semibold text-white/75 leading-snug">
+                      {session.vessel.draft ? (typeof session.vessel.draft === 'number' ? `${session.vessel.draft}m` : session.vessel.draft) : '14.5m'}
+                    </div>
+                  </div>
+                  <div className="rounded-xl border border-white/5 bg-black/20 px-2.5 py-2">
+                    <div className="text-[8px] font-black text-white/25 uppercase tracking-widest">类型</div>
+                    <div className="mt-1 text-[10px] font-semibold text-white/75 leading-snug">
+                      {session.vessel.type || '货轮'}
+                    </div>
+                  </div>
+                  <div className="rounded-xl border border-white/5 bg-black/20 px-2.5 py-2">
+                    <div className="text-[8px] font-black text-white/25 uppercase tracking-widest">货物</div>
+                    <div className="mt-1 text-[10px] font-semibold text-white/75 leading-snug">
+                      {session.vessel.cargo || '原油'}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            {/* 动态信息 */}
+            <section className="bg-white/[0.03] border border-white/5 rounded-2xl p-3 space-y-3">
+              <div className="flex items-center gap-2">
+                <Activity size={14} className="text-emerald-400" />
+                <span className="text-[10px] font-black text-white/55 uppercase tracking-widest">动态信息</span>
               </div>
               <div className="grid grid-cols-2 gap-2">
-                {(session.event.environment || []).map((item: any) => (
-                  <div key={item.label} className="rounded-xl border border-white/5 bg-black/20 px-2.5 py-2">
-                    <div className="text-[8px] font-black text-white/25 uppercase tracking-widest">{item.label}</div>
-                    <div className="mt-1 text-[10px] font-semibold text-white/75 leading-snug">{item.value}</div>
+                <div className="rounded-xl border border-white/5 bg-black/20 px-2.5 py-2">
+                  <div className="text-[8px] font-black text-white/25 uppercase tracking-widest">航向</div>
+                  <div className="mt-1 text-[10px] font-semibold text-white/75 leading-snug">
+                    {currentHeading.toFixed(1)}°
                   </div>
-                ))}
+                </div>
+                <div className="rounded-xl border border-white/5 bg-black/20 px-2.5 py-2">
+                  <div className="text-[8px] font-black text-white/25 uppercase tracking-widest">航速</div>
+                  <div className="mt-1 text-[10px] font-semibold text-white/75 leading-snug">
+                    {currentSpeed.toFixed(1)} kn
+                  </div>
+                </div>
               </div>
             </section>
 
@@ -5307,7 +5446,7 @@ const DynamicPlaybackView = ({
                 html: `
                   <div class="relative">
                     <div class="w-8 h-8 bg-sky-500 rounded-full flex items-center justify-center border-2 border-white shadow-lg shadow-sky-500/50">
-                      <svg viewBox="0 0 24 24" width="16" height="16" stroke="white" stroke-width="3" fill="none" style="transform: rotate(45deg)">
+                      <svg viewBox="0 0 24 24" width="16" height="16" stroke="white" stroke-width="3" fill="none" style="transform: rotate(${currentHeading}deg)">
                         <path d="M12 2L19 21L12 17L5 21L12 2Z" />
                       </svg>
                     </div>
@@ -5357,7 +5496,7 @@ const DynamicPlaybackView = ({
             <div className="flex flex-col items-end gap-1">
               <span className="text-[10px] font-black text-sky-400 uppercase tracking-widest">实时航速</span>
               <span className="text-xl font-mono font-bold text-white">
-                {(12 + Math.sin(progress / 10) * 2).toFixed(1)} <span className="text-xs text-white/40">KN</span>
+                {currentSpeed.toFixed(1)} <span className="text-xs text-white/40">KN</span>
               </span>
             </div>
           </div>
