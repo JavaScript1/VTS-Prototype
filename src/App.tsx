@@ -5660,6 +5660,8 @@ export default function App() {
   const [selectedHomeShipTrackPointId, setSelectedHomeShipTrackPointId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<SidebarTab>('vhf');
   const [vhfViewMode, setVhfViewMode] = useState<'list' | 'flow'>('list');
+  const [saabLinkageEnabled, setSaabLinkageEnabled] = useState(false);
+  const [selectedStation, setSelectedStation] = useState('10号台');
   const [selectedIntent, setSelectedIntent] = useState<number | null>(null);
   const [selectedAlert, setSelectedAlert] = useState<string | null>(null);
   const [selectedAnchorage, setSelectedAnchorage] = useState<string | null>(null);
@@ -6315,18 +6317,35 @@ export default function App() {
           )}
           {activeTab === 'vhf' && (
             <div className="flex flex-col h-full">
-              {/* VHF 模式信息 + 切换 */}
+              {/* Saab联动开关 */}
               <div className="p-2 border-b border-white/5 flex items-center justify-between gap-3 text-[9px]">
-                <div className="flex items-center gap-2 font-black uppercase tracking-[0.25em] text-white/30">
-                  <span>VHF 模式</span>
-                  <div className="flex items-center gap-1 text-white/45 tracking-normal">
-                    <span className="text-[8px] font-bold px-1.5 py-0.5 rounded bg-white/5 border border-white/10">
-                      进行中 {activeVhfSession ? '1' : '0'}
-                    </span>
-                    <span className="text-[8px] font-bold px-1.5 py-0.5 rounded bg-white/5 border border-white/10">
-                      待接入 {waitingVhfSessions.length}
-                    </span>
+                <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-2">
+                    <span className="font-black uppercase tracking-widest text-white/30 whitespace-nowrap">Saab联动</span>
+                    <button
+                      onClick={() => setSaabLinkageEnabled(!saabLinkageEnabled)}
+                      className={`relative w-7 h-4 rounded-full transition-all duration-300 shrink-0 ${saabLinkageEnabled ? 'bg-sky-500' : 'bg-white/10'}`}
+                    >
+                      <div className={`absolute top-0.5 w-3 h-3 rounded-full bg-white transition-all duration-300 ${saabLinkageEnabled ? 'left-3.5 shadow-[0_0_8px_rgba(255,255,255,0.8)]' : 'left-0.5'}`} />
+                    </button>
                   </div>
+                  {saabLinkageEnabled && (
+                    <motion.div 
+                      initial={{ opacity: 0, x: -5 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      className="flex items-center gap-1 bg-white/5 border border-white/10 rounded px-1.5 py-0.5"
+                    >
+                       <select
+                         value={selectedStation}
+                         onChange={(e) => setSelectedStation(e.target.value)}
+                         className="bg-transparent border-none text-[9px] font-black text-sky-400 focus:outline-none appearance-none cursor-pointer"
+                       >
+                         <option value="10号台" className="bg-[#0a0a0a]">10号台</option>
+                         <option value="外高桥" className="bg-[#0a0a0a]">外高桥</option>
+                       </select>
+                       <ChevronDown size={8} className="text-sky-400/50" />
+                    </motion.div>
+                  )}
                 </div>
                 <div className="flex bg-white/5 p-0.5 rounded-md">
                   <button 
