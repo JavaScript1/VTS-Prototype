@@ -4,19 +4,11 @@
  */
 
 import React, { useState } from 'react';
-import { 
-  Search, 
-  ChevronRight, 
-  Maximize2, 
-  Radio, 
-  LocateFixed, 
-  AlertTriangle, 
-  Anchor 
-} from 'lucide-react';
-import { motion, AnimatePresence } from 'motion/react';
-import { SidebarTab } from '../../types';
+import { Search, Maximize2, Radio, LocateFixed, AlertTriangle, Anchor, Ship, X } from 'lucide-react';
+import { AnimatePresence, motion } from 'motion/react';
+import type { ShipSearchResult, SidebarTab } from '../../types';
 
-interface SidebarPanelProps {
+type SidebarPanelProps = {
   activeTab: SidebarTab;
   onTabChange: (tab: SidebarTab) => void;
   isOpen: boolean;
@@ -24,10 +16,14 @@ interface SidebarPanelProps {
   position?: 'left' | 'right';
   showBars: boolean;
   onToggleBars: () => void;
+  shipSearchQuery: string;
+  onShipSearchQueryChange: (value: string) => void;
+  shipSearchResults: ShipSearchResult[];
+  onShipSearchSelect: (shipId: string) => void;
   children: React.ReactNode;
-}
+};
 
-const SidebarPanel = ({ 
+export default function SidebarPanel({
   activeTab,
   onTabChange,
   isOpen,
@@ -35,9 +31,14 @@ const SidebarPanel = ({
   position = 'left',
   showBars,
   onToggleBars,
-  children
-}: SidebarPanelProps) => {
+  shipSearchQuery,
+  onShipSearchQueryChange,
+  shipSearchResults,
+  onShipSearchSelect,
+  children,
+}: SidebarPanelProps) {
   const tabs = [
+    { id: 'ship' as const, icon: Ship, label: '船舶' },
     { id: 'vhf' as const, icon: Radio, label: 'VHF' },
     { id: 'intent' as const, icon: LocateFixed, label: '意图' },
     { id: 'warning' as const, icon: AlertTriangle, label: '预警' },
@@ -45,66 +46,101 @@ const SidebarPanel = ({
   ];
 
   const isLeft = position === 'left';
-  const [isSearchExpanded, setIsSearchExpanded] = useState(false);
   const isFullscreenView = !showBars;
+  const [isSearchExpanded, setIsSearchExpanded] = useState(false);
+
+  const handleRailShipSelect = (shipId: string) => {
+    onShipSearchSelect(shipId);
+    setIsSearchExpanded(false);
+  };
 
   return (
-    <div className={`flex h-full z-[3000] ${isLeft ? 'flex-row' : 'flex-row-reverse'}`}>
-      {/* 导航侧轨 */}
-      <div className={`w-12 h-full bg-[#050505] border-${isLeft ? 'r' : 'l'} border-white/10 flex flex-col items-center py-4 gap-4`}>
-        {/* 可展开的搜索按钮 */}
-        <div 
-          className="relative flex items-center"
-          onMouseEnter={() => setIsSearchExpanded(true)}
-          onMouseLeave={() => setIsSearchExpanded(false)}
-        >
-          <button className={`p-2 rounded-lg transition-all ${isSearchExpanded ? 'text-sky-400 bg-sky-500/10' : 'text-white/30 hover:text-white/60'}`}>
+    <div className={`z-[3000] flex h-full ${isLeft ? 'flex-row' : 'flex-row-reverse'}`}>
+      <div className={`flex h-full w-12 flex-col items-center gap-4 bg-[#050505] py-4 border-${isLeft ? 'r' : 'l'} border-white/10`}>
+        <div className="relative">
+          <button
+            onClick={() => setIsSearchExpanded((prev) => !prev)}
+            className={`rounded-lg p-2 transition-all ${isSearchExpanded ? 'bg-sky-500/10 text-sky-400' : 'text-white/30 hover:text-white/60'}`}
+            title="搜索船舶"
+          >
             <Search size={18} />
           </button>
           <AnimatePresence>
             {isSearchExpanded && (
-              <motion.div
-                initial={{ width: 0, opacity: 0, x: isLeft ? -10 : 10 }}
-                animate={{ width: 200, opacity: 1, x: 0 }}
-                exit={{ width: 0, opacity: 0, x: isLeft ? -10 : 10 }}
-                className={`absolute ${isLeft ? 'left-full ml-2' : 'right-full mr-2'} z-[4000]`}
-              >
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-white/30" size={14} />
-                  <input 
-                    autoFocus
-                    type="text" 
-                    placeholder="搜索船名/MMSI..." 
-                    className="w-full bg-[#0a0a0a] border border-sky-500/30 rounded-lg py-1.5 pl-9 pr-3 text-xs text-white focus:outline-none focus:border-sky-500 shadow-2xl"
-                  />
-                </div>
-              </motion.div>
+              <>
+                <div className="fixed inset-0 z-40 cursor-pointer" onClick={() => setIsSearchExpanded(false)} />
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.95, y: -10 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.95, y: -10 }}
+                  transition={{ duration: 0.15 }}
+                  className={`absolute z-50 w-64 space-y-2 rounded-2xl border border-white/10 bg-[#05080d]/95 p-3 shadow-2xl backdrop-blur-xl ${isLeft ? 'left-full ml-2' : 'right-full mr-2'}`}
+                >
+                  <div className="flex items-center justify-between text-[10px] font-black uppercase tracking-[0.3em] text-white/40">
+                    搜索历史
+                    <button
+                      onClick={() => setIsSearchExpanded(false)}
+                      className="text-white/40 hover:text-white"
+                    >
+                      <X size={14} />
+                    </button>
+                  </div>
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-white/30" size={14} />
+                    <input
+                      type="text"
+                      value={shipSearchQuery}
+                      onChange={(e) => onShipSearchQueryChange(e.target.value)}
+                      placeholder="输入船名 / MMSI..."
+                      className="w-full rounded-lg border border-white/15 bg-[#0a0a0a] py-2 pl-9 pr-3 text-[12px] text-white placeholder:text-white/30 focus:border-sky-500/40 focus:outline-none"
+                    />
+                  </div>
+                  {shipSearchQuery.trim().length === 0 && (
+                    <div className="text-[10px] text-white/35">
+                      输入关键字或点击下方结果可快速跳转到船舶详情。
+                    </div>
+                  )}
+                  <div className="custom-scrollbar max-h-48 overflow-y-auto rounded-xl border border-white/5 bg-white/[0.02]">
+                    {shipSearchResults.length > 0 ? (
+                      shipSearchResults.slice(0, 6).map((ship) => (
+                        <button
+                          key={ship.id}
+                          onClick={() => handleRailShipSelect(ship.id)}
+                          className="flex w-full items-center justify-between gap-3 border-b border-white/5 px-3 py-2 text-left transition-colors last:border-b-0 hover:bg-white/[0.04]"
+                        >
+                          <div className="min-w-0">
+                            <div className="truncate text-[11px] font-semibold text-white">{ship.name}</div>
+                            <div className="mt-0.5 text-[10px] text-white/35">{ship.mmsi} · {ship.type}</div>
+                          </div>
+                          <span className="truncate text-[10px] text-sky-300/80">{ship.destination}</span>
+                        </button>
+                      ))
+                    ) : (
+                      <div className="px-3 py-3 text-center text-[10px] text-white/35">未匹配到船舶，请继续输入关键字。</div>
+                    )}
+                  </div>
+                </motion.div>
+              </>
             )}
           </AnimatePresence>
         </div>
 
-        {/* 全屏按钮：仅控制顶部/底部栏 */}
-        <button 
+        <button
           onClick={onToggleBars}
-          className={`group relative p-2 rounded-xl transition-all duration-300 ${
+          className={`group relative rounded-xl p-2 transition-all duration-300 hover:scale-105 active:scale-95 ${
             isFullscreenView
               ? 'bg-sky-500/10 text-sky-400 shadow-[0_0_20px_rgba(14,165,233,0.15)]'
               : 'bg-white/5 text-white shadow-[0_0_15px_rgba(255,255,255,0.05)]'
-          } hover:scale-105 active:scale-95`}
-          title={isFullscreenView ? "退出全屏监控" : "进入全屏监控"}
+          }`}
+          title={isFullscreenView ? '退出全屏监控' : '进入全屏监控'}
         >
-          <div className={`absolute inset-0 rounded-xl border transition-colors duration-300 ${
-            isFullscreenView ? 'border-sky-500/30' : 'border-white/10'
-          }`} />
-          <Maximize2 
-            size={18} 
-            className={`transition-transform duration-500 ${isFullscreenView ? 'rotate-180' : 'rotate-0'}`} 
-          />
+          <div className={`absolute inset-0 rounded-xl border transition-colors duration-300 ${isFullscreenView ? 'border-sky-500/30' : 'border-white/10'}`} />
+          <Maximize2 size={18} className={`transition-transform duration-500 ${isFullscreenView ? 'rotate-180' : 'rotate-0'}`} />
         </button>
 
-        <div className="w-8 h-px bg-white/10 my-2" />
-        
-        <div className="flex-1 flex flex-col gap-6">
+        <div className="my-2 h-px w-8 bg-white/10" />
+
+        <div className="flex flex-1 flex-col gap-6">
           {tabs.map((tab) => {
             const isActive = activeTab === tab.id && isOpen;
             return (
@@ -118,15 +154,13 @@ const SidebarPanel = ({
                   onTabChange(tab.id);
                   if (!isOpen) onToggle();
                 }}
-                className={`p-2 rounded-lg transition-all relative group ${
-                  isActive ? 'text-sky-400 bg-sky-500/10' : 'text-white/30 hover:text-white/60'
-                }`}
+                className={`group relative rounded-lg p-2 transition-all ${isActive ? 'bg-sky-500/10 text-sky-400' : 'text-white/30 hover:text-white/60'}`}
               >
                 <tab.icon size={20} />
                 {isActive && (
-                  <motion.div 
+                  <motion.div
                     layoutId="activeTab"
-                    className={`absolute ${isLeft ? 'left-0' : 'right-0'} top-1/2 -translate-y-1/2 w-0.5 h-4 bg-sky-500 rounded-full`}
+                    className={`absolute top-1/2 h-4 w-0.5 -translate-y-1/2 rounded-full bg-sky-500 ${isLeft ? 'left-0' : 'right-0'}`}
                   />
                 )}
               </button>
@@ -135,27 +169,22 @@ const SidebarPanel = ({
         </div>
       </div>
 
-      {/* 内容面板 */}
       <AnimatePresence>
         {isOpen && (
           <motion.div
             initial={{ width: 0, opacity: 0 }}
             animate={{ width: 320, opacity: 1 }}
             exit={{ width: 0, opacity: 0 }}
-            transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-            className={`h-full bg-[#0a0a0a]/95 backdrop-blur-xl border-${isLeft ? 'r' : 'l'} border-white/10 overflow-hidden shadow-2xl relative`}
+            className={`flex flex-col overflow-hidden transition-colors duration-500 h-full border-${isLeft ? 'r' : 'l'} border-white/10 ${
+              activeTab === 'vhf' || activeTab === 'ship'
+                ? 'bg-[#0a0a0a]/90 backdrop-blur-md'
+                : 'bg-transparent backdrop-blur-none'
+            }`}
           >
-            {/* 高光蒙层 */}
-            <div className="absolute inset-0 bg-gradient-to-b from-white/[0.02] to-transparent pointer-events-none" />
-            
-            <div className="w-[320px] h-full relative z-10">
-              {children}
-            </div>
+            <div className="min-h-0 flex-1">{children}</div>
           </motion.div>
         )}
       </AnimatePresence>
     </div>
   );
-};
-
-export default SidebarPanel;
+}

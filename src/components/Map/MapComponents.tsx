@@ -3,8 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useEffect } from 'react';
-import { useMapEvents, useMap, Marker } from 'react-leaflet';
+import { useEffect } from 'react';
+import { Marker, useMap, useMapEvents } from 'react-leaflet';
 import L from 'leaflet';
 
 const safeSetLocalStorage = (key: string, value: string) => {
@@ -15,24 +15,32 @@ const safeSetLocalStorage = (key: string, value: string) => {
   }
 };
 
-// 地图状态持久化组件
-export const MapStatePersister = () => {
+export const MapStatePersister = ({
+  centerStorageKey,
+  zoomStorageKey,
+}: {
+  centerStorageKey: string;
+  zoomStorageKey: string;
+}) => {
   useMapEvents({
     moveend: (e) => {
       const map = e.target;
       const center = map.getCenter();
-      safeSetLocalStorage('vts-map-center', JSON.stringify([center.lat, center.lng]));
+      safeSetLocalStorage(centerStorageKey, JSON.stringify([center.lat, center.lng]));
     },
     zoomend: (e) => {
       const map = e.target;
-      safeSetLocalStorage('vts-map-zoom', map.getZoom().toString());
+      safeSetLocalStorage(zoomStorageKey, map.getZoom().toString());
     },
   });
   return null;
 };
 
-// 鼠标位置追踪组件
-export const MousePositionTracker = ({ onMouseMove }: { onMouseMove: (coords: { lat: number; lng: number }) => void }) => {
+export const MousePositionTracker = ({
+  onMouseMove,
+}: {
+  onMouseMove: (coords: { lat: number; lng: number }) => void;
+}) => {
   useMapEvents({
     mousemove(e) {
       onMouseMove(e.latlng);
@@ -41,15 +49,36 @@ export const MousePositionTracker = ({ onMouseMove }: { onMouseMove: (coords: { 
   return null;
 };
 
-// 历史回放地图控制组件
-export const PlaybackMapController = ({ playbackData }: { playbackData: any }) => {
+export const HomeMapFocusController = ({
+  target,
+}: {
+  target: [number, number] | null;
+}) => {
   const map = useMap();
-  
+
+  useEffect(() => {
+    if (!target) return;
+    map.flyTo(target, Math.max(map.getZoom(), 14), {
+      animate: true,
+      duration: 0.8,
+    });
+  }, [map, target]);
+
+  return null;
+};
+
+export const PlaybackMapController = ({
+  playbackData,
+}: {
+  playbackData: any;
+}) => {
+  const map = useMap();
+
   useEffect(() => {
     if (playbackData?.event?.coords) {
       map.setView(playbackData.event.coords, 14, {
         animate: true,
-        duration: 1
+        duration: 1,
       });
     }
   }, [playbackData, map]);
@@ -59,7 +88,7 @@ export const PlaybackMapController = ({ playbackData }: { playbackData: any }) =
   const latestDialogue = playbackData.event.dialogue?.[playbackData.event.dialogue.length - 1];
 
   return (
-    <Marker 
+    <Marker
       position={playbackData.event.coords}
       icon={L.divIcon({
         className: 'custom-div-icon',
@@ -68,28 +97,25 @@ export const PlaybackMapController = ({ playbackData }: { playbackData: any }) =
             <div class="bg-[#0a0a0a]/90 backdrop-blur-md border border-sky-500/50 rounded-lg p-3 shadow-2xl ring-1 ring-white/10">
               <div class="flex items-center gap-2 mb-2 pb-2 border-b border-white/10">
                 <div class="w-2 h-2 rounded-full bg-sky-500 animate-pulse"></div>
-                <span class="text-[11px] font-black text-sky-400 uppercase tracking-widest">当前意图: ${playbackData.event.label}</span>
+                <span class="text-[10px] font-black text-sky-400 uppercase tracking-widest">当前意图: ${playbackData.event.label}</span>
               </div>
-              
               ${latestDialogue ? `
                 <div class="space-y-1">
                   <div class="flex items-center justify-between">
                     <span class="text-[10px] font-bold text-white/40 uppercase">${latestDialogue.sender}</span>
                     <span class="text-[10px] font-mono text-white/20">${latestDialogue.time}</span>
                   </div>
-                  <p class="text-[12px] text-white/90 leading-relaxed font-medium">"${latestDialogue.content}"</p>
+                  <p class="text-[11px] text-white/90 leading-relaxed font-medium">"${latestDialogue.content}"</p>
                 </div>
               ` : `
-                <p class="text-[11px] text-white/40 italic">暂无实时对话内容</p>
+                <p class="text-[10px] text-white/40 italic">暂无实时对话内容</p>
               `}
-              
-              <!-- 箭头 -->
               <div class="absolute -bottom-2 left-1/2 -translate-x-1/2 w-0 h-0 border-l-[8px] border-l-transparent border-r-[8px] border-r-transparent border-t-[8px] border-t-sky-500/50"></div>
             </div>
           </div>
         `,
         iconSize: [0, 0],
-        iconAnchor: [0, 0]
+        iconAnchor: [0, 0],
       })}
     />
   );
