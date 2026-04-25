@@ -136,8 +136,8 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
       >
         <header className="h-12 border-b border-white/5 bg-[#0a101a] flex items-center justify-between px-4 shrink-0">
           <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2 bg-white/5 border border-white/10 rounded-lg px-3 py-1.5">
-              <span className="text-[10px] font-bold text-white/40 uppercase tracking-widest">名称:</span>
+            <div className="flex items-center gap-2 bg-white/5 border border-white/10 rounded-lg px-3 py-2">
+              <span className="text-[11px] font-bold text-white/40 uppercase tracking-widest">名称:</span>
               <input 
                 type="text" 
                 value={editData.name}
@@ -148,7 +148,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
             </div>
             <div className="h-4 w-px bg-white/10" />
             <div className="flex items-center gap-2">
-              <span className="text-[10px] font-bold text-white/40 uppercase tracking-widest">类型:</span>
+              <span className="text-[11px] font-bold text-white/40 uppercase tracking-widest">类型:</span>
               <select 
                 value={editData.type}
                 onChange={(e) => {
@@ -159,7 +159,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
                   });
                   setEditData({ ...editData, type: newType, fields: newFields });
                 }}
-                className="bg-white/5 border border-white/10 rounded-lg px-2 py-1 text-[10px] text-white font-bold focus:outline-none"
+                className="bg-white/5 border border-white/10 rounded-lg px-2.5 py-2 text-[11px] text-white font-bold focus:outline-none"
               >
                 {Object.keys(AREA_TYPE_MAPPING[editData.category]).map(t => (
                   <option key={t} value={t} className="bg-[#111]">{t}</option>
@@ -170,13 +170,13 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
           <div className="flex items-center gap-2">
             <button 
               onClick={() => setIsEditing(false)}
-              className="px-4 py-1.5 bg-white/5 hover:bg-white/10 text-white/60 text-[10px] font-black uppercase tracking-widest rounded-lg transition-all"
+              className="px-4 py-2 bg-white/5 hover:bg-white/10 text-white/60 text-[11px] font-black uppercase tracking-widest rounded-lg transition-all"
             >
               取消
             </button>
             <button 
               onClick={() => setIsEditing(false)}
-              className="px-4 py-1.5 bg-sky-500 hover:bg-sky-400 text-white text-[10px] font-black uppercase tracking-widest rounded-lg shadow-lg shadow-sky-500/20 transition-all"
+              className="px-4 py-2 bg-sky-500 hover:bg-sky-400 text-white text-[11px] font-black uppercase tracking-widest rounded-lg shadow-lg shadow-sky-500/20 transition-all"
             >
               保存区域
             </button>
@@ -186,11 +186,11 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
         <div className="flex-1 flex overflow-hidden">
           <div className="w-80 border-r border-white/5 bg-[#0a101a] flex flex-col shrink-0">
             <div className="p-4 border-b border-white/5">
-              <h3 className="text-[10px] font-black text-white/40 uppercase tracking-[0.2em] mb-4">属性配置</h3>
+              <h3 className="text-[11px] font-black text-white/40 uppercase tracking-[0.2em] mb-4">属性配置</h3>
               <div className="space-y-4">
                 {AREA_TYPE_MAPPING[editData.category][editData.type].map(field => (
                   <div key={field} className="space-y-1.5">
-                    <label className="text-[10px] font-bold text-white/30 uppercase tracking-wider block">{field}</label>
+                    <label className="text-[11px] font-bold text-white/30 uppercase tracking-wider block">{field}</label>
                     <input 
                       type="text"
                       value={editData.fields[field] || ''}
@@ -205,13 +205,13 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
                 ))}
                 {AREA_TYPE_MAPPING[editData.category][editData.type].length === 0 && (
                   <div className="py-8 text-center">
-                    <p className="text-[10px] text-white/20 font-bold uppercase tracking-widest">该类型无需额外属性</p>
+                    <p className="text-[11px] text-white/20 font-bold uppercase tracking-widest">该类型无需额外属性</p>
                   </div>
                 )}
               </div>
             </div>
             <div className="flex-1 p-4 overflow-y-auto custom-scrollbar">
-              <h3 className="text-[10px] font-black text-white/40 uppercase tracking-[0.2em] mb-4">绘制说明</h3>
+              <h3 className="text-[11px] font-black text-white/40 uppercase tracking-[0.2em] mb-4">绘制说明</h3>
               <div className="space-y-3">
                 {[
                   { step: 1, text: '在地图上点击开始绘制顶点' },
@@ -220,8 +220,8 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
                   { step: 4, text: '拖动顶点可微调形状' }
                 ].map(item => (
                   <div key={item.step} className="flex gap-3 items-start">
-                    <span className="w-5 h-5 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-[10px] font-black text-white/40 shrink-0">{item.step}</span>
-                    <p className="text-[11px] text-white/60 leading-relaxed pt-0.5">{item.text}</p>
+                    <span className="w-5 h-5 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-[11px] font-black text-white/40 shrink-0">{item.step}</span>
+                    <p className="text-[12px] text-white/60 leading-relaxed pt-0.5">{item.text}</p>
                   </div>
                 ))}
               </div>
@@ -250,12 +250,12 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
             <div className="absolute top-4 left-4 z-[1000] bg-[#0a101a]/90 backdrop-blur-md border border-white/10 rounded-2xl p-3 flex items-center gap-4 shadow-2xl">
               <div className="flex items-center gap-2">
                 <div className="w-2 h-2 rounded-full bg-sky-500 animate-pulse" />
-                <span className="text-[10px] font-black text-white uppercase tracking-widest">正在绘制模式</span>
+                <span className="text-[11px] font-black text-white uppercase tracking-widest">正在绘制模式</span>
               </div>
               <div className="h-4 w-px bg-white/10" />
               <div className="flex items-center gap-3">
-                <button className="text-[10px] font-bold text-white/40 hover:text-white transition-colors">撤销上一点</button>
-                <button className="text-[10px] font-bold text-white/40 hover:text-white transition-colors">清除重绘</button>
+                <button className="text-[11px] font-bold text-white/40 hover:text-white transition-colors">撤销上一点</button>
+                <button className="text-[11px] font-bold text-white/40 hover:text-white transition-colors">清除重绘</button>
               </div>
             </div>
           </div>
@@ -280,7 +280,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
             </div>
             <div>
               <h2 className="text-sm font-black text-white uppercase tracking-wider">后台管理系统</h2>
-              <p className="text-[10px] text-white/40 font-bold uppercase tracking-widest">Admin Control</p>
+              <p className="text-[11px] text-white/40 font-bold uppercase tracking-widest">Admin Control</p>
             </div>
           </div>
 
@@ -324,7 +324,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
           <div className="flex items-center gap-4">
             <h3 className="text-lg font-black text-white uppercase tracking-tight">{activeMenu}</h3>
             <div className="h-4 w-px bg-white/10" />
-            <div className="flex items-center gap-2 text-[10px] font-bold text-white/40 uppercase tracking-widest">
+            <div className="flex items-center gap-2 text-[11px] font-bold text-white/40 uppercase tracking-widest">
               <span>系统</span>
               <ChevronRight size={10} />
               <span className="text-white/60">{activeMenu}</span>
@@ -333,7 +333,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-3 px-4 py-2 bg-white/5 border border-white/10 rounded-xl">
               <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-              <span className="text-[10px] font-black text-white/60 uppercase tracking-widest">系统运行正常</span>
+              <span className="text-[11px] font-black text-white/60 uppercase tracking-widest">系统运行正常</span>
             </div>
             <button 
               onClick={onClose}
@@ -377,12 +377,12 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
                   <table className="w-full text-left border-collapse">
                     <thead>
                       <tr className="border-b border-white/5 bg-white/5">
-                        <th className="px-6 py-4 text-[10px] font-black text-white/30 uppercase tracking-[0.2em]">区域名称</th>
-                        <th className="px-6 py-4 text-[10px] font-black text-white/30 uppercase tracking-[0.2em]">类型</th>
-                        <th className="px-6 py-4 text-[10px] font-black text-white/30 uppercase tracking-[0.2em]">状态</th>
-                        <th className="px-6 py-4 text-[10px] font-black text-white/30 uppercase tracking-[0.2em]">规则数</th>
-                        <th className="px-6 py-4 text-[10px] font-black text-white/30 uppercase tracking-[0.2em]">更新时间</th>
-                        <th className="px-6 py-4 text-[10px] font-black text-white/30 uppercase tracking-[0.2em] text-right">操作</th>
+                        <th className="px-6 py-4 text-[11px] font-black text-white/30 uppercase tracking-[0.2em]">区域名称</th>
+                        <th className="px-6 py-4 text-[11px] font-black text-white/30 uppercase tracking-[0.2em]">类型</th>
+                        <th className="px-6 py-4 text-[11px] font-black text-white/30 uppercase tracking-[0.2em]">状态</th>
+                        <th className="px-6 py-4 text-[11px] font-black text-white/30 uppercase tracking-[0.2em]">规则数</th>
+                        <th className="px-6 py-4 text-[11px] font-black text-white/30 uppercase tracking-[0.2em]">更新时间</th>
+                        <th className="px-6 py-4 text-[11px] font-black text-white/30 uppercase tracking-[0.2em] text-right">操作</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-white/5">
@@ -398,10 +398,10 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
                               </div>
                             </td>
                             <td className="px-6 py-4">
-                              <span className="text-[10px] font-bold text-white/40 uppercase tracking-widest">{area.type}</span>
+                              <span className="text-[11px] font-bold text-white/40 uppercase tracking-widest">{area.type}</span>
                             </td>
                             <td className="px-6 py-4">
-                              <span className="px-2 py-1 rounded-md bg-emerald-500/10 text-emerald-400 text-[9px] font-black uppercase tracking-widest border border-emerald-500/20">
+                              <span className="px-2.5 py-1.5 rounded-md bg-emerald-500/10 text-emerald-400 text-[10px] font-black uppercase tracking-widest border border-emerald-500/20">
                                 {area.status}
                               </span>
                             </td>
@@ -409,7 +409,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
                               <span className="text-xs font-mono font-bold text-white/60">{area.rules}</span>
                             </td>
                             <td className="px-6 py-4">
-                              <span className="text-[10px] font-mono text-white/30">{area.time}</span>
+                              <span className="text-[11px] font-mono text-white/30">{area.time}</span>
                             </td>
                             <td className="px-6 py-4 text-right">
                               <div className="flex items-center justify-end gap-2">
@@ -441,13 +441,13 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
                                     <div className="py-6 grid grid-cols-4 gap-6 border-t border-white/5">
                                       {Object.entries(area.fields).map(([key, value]) => (
                                         <div key={key} className="space-y-1">
-                                          <span className="text-[9px] font-black text-white/20 uppercase tracking-widest">{key}</span>
+                                          <span className="text-[10px] font-black text-white/20 uppercase tracking-widest">{key}</span>
                                           <p className="text-xs font-bold text-white/70">{value as string}</p>
                                         </div>
                                       ))}
                                       {Object.keys(area.fields).length === 0 && (
                                         <div className="col-span-4 py-4 text-center">
-                                          <p className="text-[10px] text-white/20 font-bold uppercase tracking-widest">无详细属性信息</p>
+                                          <p className="text-[11px] text-white/20 font-bold uppercase tracking-widest">无详细属性信息</p>
                                         </div>
                                       )}
                                     </div>
@@ -479,10 +479,10 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
                   </div>
                   <button className="flex items-center gap-2 px-4 py-2 bg-white/5 border border-white/10 rounded-xl text-white/60 hover:text-white transition-all">
                     <Filter size={14} />
-                    <span className="text-[10px] font-black uppercase tracking-widest">高级筛选</span>
+                    <span className="text-[11px] font-black uppercase tracking-widest">高级筛选</span>
                   </button>
                 </div>
-                <div className="flex items-center gap-2 text-[10px] font-black text-white/40 uppercase tracking-widest">
+                <div className="flex items-center gap-2 text-[11px] font-black text-white/40 uppercase tracking-widest">
                   <span>共计</span>
                   <span className="text-sky-400 font-mono text-sm">1,248</span>
                   <span>艘在航船舶</span>
@@ -493,13 +493,13 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
                 <table className="w-full text-left border-collapse">
                   <thead>
                     <tr className="border-b border-white/5 bg-white/5">
-                      <th className="px-6 py-4 text-[10px] font-black text-white/30 uppercase tracking-[0.2em]">船舶名称</th>
-                      <th className="px-6 py-4 text-[10px] font-black text-white/30 uppercase tracking-[0.2em]">MMSI</th>
-                      <th className="px-6 py-4 text-[10px] font-black text-white/30 uppercase tracking-[0.2em]">类型</th>
-                      <th className="px-6 py-4 text-[10px] font-black text-white/30 uppercase tracking-[0.2em]">状态</th>
-                      <th className="px-6 py-4 text-[10px] font-black text-white/30 uppercase tracking-[0.2em]">始发港</th>
-                      <th className="px-6 py-4 text-[10px] font-black text-white/30 uppercase tracking-[0.2em]">目的港</th>
-                      <th className="px-6 py-4 text-[10px] font-black text-white/30 uppercase tracking-[0.2em] text-right">操作</th>
+                      <th className="px-6 py-4 text-[11px] font-black text-white/30 uppercase tracking-[0.2em]">船舶名称</th>
+                      <th className="px-6 py-4 text-[11px] font-black text-white/30 uppercase tracking-[0.2em]">MMSI</th>
+                      <th className="px-6 py-4 text-[11px] font-black text-white/30 uppercase tracking-[0.2em]">类型</th>
+                      <th className="px-6 py-4 text-[11px] font-black text-white/30 uppercase tracking-[0.2em]">状态</th>
+                      <th className="px-6 py-4 text-[11px] font-black text-white/30 uppercase tracking-[0.2em]">始发港</th>
+                      <th className="px-6 py-4 text-[11px] font-black text-white/30 uppercase tracking-[0.2em]">目的港</th>
+                      <th className="px-6 py-4 text-[11px] font-black text-white/30 uppercase tracking-[0.2em] text-right">操作</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-white/5">
@@ -514,9 +514,9 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
                           </div>
                         </td>
                         <td className="px-6 py-4 font-mono text-xs text-white/60">{vessel.mmsi}</td>
-                        <td className="px-6 py-4 text-[10px] font-bold text-white/40 uppercase tracking-widest">{vessel.type}</td>
+                        <td className="px-6 py-4 text-[11px] font-bold text-white/40 uppercase tracking-widest">{vessel.type}</td>
                         <td className="px-6 py-4">
-                          <span className={`px-2 py-1 rounded-md text-[9px] font-black uppercase tracking-widest border ${
+                          <span className={`px-2.5 py-1.5 rounded-md text-[10px] font-black uppercase tracking-widest border ${
                             vessel.status === '正在作业' ? 'bg-sky-500/10 text-sky-400 border-sky-500/20' :
                             vessel.status === '正在航行' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' :
                             'bg-amber-500/10 text-amber-400 border-amber-500/20'
@@ -529,7 +529,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
                         <td className="px-6 py-4 text-right">
                           <button 
                             onClick={() => setPlaybackData(vessel)}
-                            className="px-3 py-1.5 bg-sky-500/10 hover:bg-sky-500 text-sky-400 hover:text-white text-[10px] font-black uppercase tracking-widest rounded-lg border border-sky-500/20 transition-all"
+                            className="px-3 py-1.5 bg-sky-500/10 hover:bg-sky-500 text-sky-400 hover:text-white text-[11px] font-black uppercase tracking-widest rounded-lg border border-sky-500/20 transition-all"
                           >
                             查看详情
                           </button>
@@ -591,9 +591,9 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
                     >
                       <div className="h-40 bg-white/5 relative overflow-hidden">
                         <div className="absolute inset-0 bg-gradient-to-t from-[#0a101a] to-transparent z-10" />
-                        <div className="absolute top-4 left-4 z-20 flex items-center gap-2 px-2 py-1 bg-sky-500/20 border border-sky-500/30 rounded-lg">
+                        <div className="absolute top-4 left-4 z-20 flex items-center gap-2 px-2.5 py-2 bg-sky-500/20 border border-sky-500/30 rounded-lg">
                           <Radio size={12} className="text-sky-400 animate-pulse" />
-                          <span className="text-[9px] font-black text-sky-400 uppercase tracking-widest">VHF 实时录音</span>
+                          <span className="text-[10px] font-black text-sky-400 uppercase tracking-widest">VHF 实时录音</span>
                         </div>
                         <div className="absolute inset-0 flex items-center justify-center opacity-20 group-hover:opacity-40 transition-opacity">
                           <Activity size={80} className="text-sky-500" />
@@ -603,21 +603,21 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
                         <div>
                           <h4 className="text-sm font-black text-white mb-1 group-hover:text-sky-400 transition-colors">{scenario.title}</h4>
                           <div className="flex items-center gap-3">
-                            <span className="text-[10px] font-bold text-white/40 uppercase tracking-widest">{scenario.vessel}</span>
+                            <span className="text-[11px] font-bold text-white/40 uppercase tracking-widest">{scenario.vessel}</span>
                             <div className="w-1 h-1 rounded-full bg-white/10" />
-                            <span className="text-[10px] font-mono text-white/30">{scenario.time}</span>
+                            <span className="text-[11px] font-mono text-white/30">{scenario.time}</span>
                           </div>
                         </div>
                         <div className="space-y-2">
                           {scenario.snippets.map((s, idx) => (
-                            <div key={idx} className="flex gap-2 text-[11px] leading-relaxed">
+                            <div key={idx} className="flex gap-2 text-[12px] leading-relaxed">
                               <span className="font-black text-white/30 shrink-0 uppercase">{s.sender}:</span>
                               <span className="text-white/60 line-clamp-1">{s.content}</span>
                             </div>
                           ))}
                         </div>
                         <div className="pt-4 border-t border-white/5 flex items-center justify-between">
-                          <span className="text-[10px] font-black text-sky-500 uppercase tracking-widest">点击查看详情</span>
+                          <span className="text-[11px] font-black text-sky-500 uppercase tracking-widest">点击查看详情</span>
                           <ChevronRight size={14} className="text-white/20 group-hover:text-sky-500 group-hover:translate-x-1 transition-all" />
                         </div>
                       </div>
@@ -649,11 +649,11 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
                       <div className={`w-12 h-12 rounded-2xl bg-${stat.color}-500/10 flex items-center justify-center text-${stat.color}-400 group-hover:scale-110 transition-transform`}>
                         <stat.icon size={24} />
                       </div>
-                      <div className={`flex items-center gap-1 px-2 py-1 rounded-lg ${stat.trend === 'up' ? 'bg-emerald-500/10 text-emerald-400' : 'bg-red-500/10 text-red-400'}`}>
-                        <span className="text-[10px] font-black">{stat.change}</span>
+                      <div className={`flex items-center gap-1 px-2.5 py-2 rounded-lg ${stat.trend === 'up' ? 'bg-emerald-500/10 text-emerald-400' : 'bg-red-500/10 text-red-400'}`}>
+                        <span className="text-[11px] font-black">{stat.change}</span>
                       </div>
                     </div>
-                    <p className="text-[10px] font-black text-white/30 uppercase tracking-[0.2em] mb-1">{stat.label}</p>
+                    <p className="text-[11px] font-black text-white/30 uppercase tracking-[0.2em] mb-1">{stat.label}</p>
                     <h4 className="text-3xl font-black text-white tracking-tighter">{stat.value}</h4>
                   </motion.div>
                 ))}
@@ -667,11 +667,11 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
                     <div className="flex items-center justify-between mb-10">
                       <div>
                         <h4 className="text-lg font-black text-white uppercase tracking-tight">流量与预警趋势分析</h4>
-                        <p className="text-[10px] text-white/30 font-bold uppercase tracking-widest mt-1">24小时全辖区流量及预警态势</p>
+                        <p className="text-[11px] text-white/30 font-bold uppercase tracking-widest mt-1">24小时全辖区流量及预警态势</p>
                       </div>
                       <div className="flex items-center gap-2 bg-white/5 p-1 rounded-xl">
                         {['24H', '7D', '30D'].map(t => (
-                          <button key={t} className={`px-4 py-1.5 rounded-lg text-[10px] font-black transition-all ${t === '24H' ? 'bg-sky-500 text-white shadow-lg' : 'text-white/40 hover:text-white'}`}>{t}</button>
+                          <button key={t} className={`px-4 py-1.5 rounded-lg text-[11px] font-black transition-all ${t === '24H' ? 'bg-sky-500 text-white shadow-lg' : 'text-white/40 hover:text-white'}`}>{t}</button>
                         ))}
                       </div>
                     </div>
@@ -702,16 +702,16 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
                             dataKey="name" 
                             axisLine={false} 
                             tickLine={false} 
-                            tick={{ fill: '#ffffff20', fontSize: 11, fontWeight: 'bold' }} 
+                            tick={{ fill: '#ffffff20', fontSize: 12, fontWeight: 'bold' }} 
                           />
                           <YAxis 
                             axisLine={false} 
                             tickLine={false} 
-                            tick={{ fill: '#ffffff20', fontSize: 11, fontWeight: 'bold' }} 
+                            tick={{ fill: '#ffffff20', fontSize: 12, fontWeight: 'bold' }} 
                           />
                           <Tooltip 
                             contentStyle={{ backgroundColor: '#0a101a', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '16px', backdropFilter: 'blur(12px)' }}
-                            itemStyle={{ fontSize: '12px', fontWeight: 'black', textTransform: 'uppercase' }}
+                            itemStyle={{ fontSize: '13px', fontWeight: 'black', textTransform: 'uppercase' }}
                           />
                           <Area type="monotone" dataKey="flow" stroke="#0ea5e9" strokeWidth={4} fillOpacity={1} fill="url(#colorFlow)" />
                           <Area type="monotone" dataKey="alert" stroke="#f43f5e" strokeWidth={3} fillOpacity={1} fill="url(#colorAlert)" strokeDasharray="10 5" />
@@ -732,7 +732,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
                       { label: '异常停泊', count: 45, color: 'indigo' },
                     ].map((item, idx) => (
                       <div key={idx} className="space-y-3">
-                        <div className="flex items-center justify-between text-[11px] font-black uppercase tracking-widest">
+                        <div className="flex items-center justify-between text-[12px] font-black uppercase tracking-widest">
                           <span className="text-white/40">{item.label}</span>
                           <span className="text-white">{item.count}</span>
                         </div>
@@ -751,12 +751,12 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
                   <div className="mt-12 pt-8 border-t border-white/5">
                     <div className="flex items-center gap-4 text-white/30">
                       <div className="flex flex-col">
-                        <span className="text-[10px] font-black uppercase tracking-widest">本月环比</span>
+                        <span className="text-[11px] font-black uppercase tracking-widest">本月环比</span>
                         <span className="text-lg font-black text-emerald-400">+14.2%</span>
                       </div>
                       <div className="h-8 w-px bg-white/10" />
                       <div className="flex flex-col">
-                        <span className="text-[10px] font-black uppercase tracking-widest">预测下月</span>
+                        <span className="text-[11px] font-black uppercase tracking-widest">预测下月</span>
                         <span className="text-lg font-black text-sky-400">稳中有降</span>
                       </div>
                     </div>
@@ -771,19 +771,19 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
                     <div className="w-1.5 h-6 bg-sky-500 rounded-full" />
                     <h4 className="text-sm font-black text-white uppercase tracking-widest">各区域值班效能统计</h4>
                   </div>
-                  <button className="flex items-center gap-2 px-4 py-2 bg-white/5 border border-white/10 rounded-xl text-[10px] font-black text-white/60 uppercase tracking-widest hover:text-white transition-all">
+                  <button className="flex items-center gap-2 px-4 py-2 bg-white/5 border border-white/10 rounded-xl text-[11px] font-black text-white/60 uppercase tracking-widest hover:text-white transition-all">
                     <FileText size={14} /> 导出报表
                   </button>
                 </div>
                 <table className="w-full text-left border-collapse">
                   <thead>
                     <tr className="bg-white/5">
-                      <th className="px-8 py-5 text-[10px] font-black text-white/20 uppercase tracking-widest">管理区域</th>
-                      <th className="px-8 py-5 text-[10px] font-black text-white/20 uppercase tracking-widest">处理总数</th>
-                      <th className="px-8 py-5 text-[10px] font-black text-white/20 uppercase tracking-widest">平均响应</th>
-                      <th className="px-8 py-5 text-[10px] font-black text-white/20 uppercase tracking-widest">闭环率</th>
-                      <th className="px-8 py-5 text-[10px] font-black text-white/20 uppercase tracking-widest">风险降低率</th>
-                      <th className="px-8 py-5 text-[10px] font-black text-white/20 uppercase tracking-widest text-right">评分</th>
+                      <th className="px-8 py-5 text-[11px] font-black text-white/20 uppercase tracking-widest">管理区域</th>
+                      <th className="px-8 py-5 text-[11px] font-black text-white/20 uppercase tracking-widest">处理总数</th>
+                      <th className="px-8 py-5 text-[11px] font-black text-white/20 uppercase tracking-widest">平均响应</th>
+                      <th className="px-8 py-5 text-[11px] font-black text-white/20 uppercase tracking-widest">闭环率</th>
+                      <th className="px-8 py-5 text-[11px] font-black text-white/20 uppercase tracking-widest">风险降低率</th>
+                      <th className="px-8 py-5 text-[11px] font-black text-white/20 uppercase tracking-widest text-right">评分</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-white/5">
@@ -839,18 +839,18 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
                         </div>
                         <div>
                           <h3 className="text-xl font-black text-white uppercase tracking-tight">{selectedVhfSnippet.title}</h3>
-                          <p className="text-[10px] text-white/40 font-bold uppercase tracking-widest">VHF Communication Details</p>
+                          <p className="text-[11px] text-white/40 font-bold uppercase tracking-widest">VHF Communication Details</p>
                         </div>
                       </div>
                     </div>
                     
                     <div className="grid grid-cols-2 gap-4">
                       <div className="p-4 bg-white/5 rounded-2xl border border-white/5">
-                        <span className="text-[10px] text-white/30 font-bold uppercase tracking-widest block mb-1">目标船舶</span>
+                        <span className="text-[11px] text-white/30 font-bold uppercase tracking-widest block mb-1">目标船舶</span>
                         <span className="text-sm font-bold text-white">{selectedVhfSnippet.vessel}</span>
                       </div>
                       <div className="p-4 bg-white/5 rounded-2xl border border-white/5">
-                        <span className="text-[10px] text-white/30 font-bold uppercase tracking-widest block mb-1">通话时间</span>
+                        <span className="text-[11px] text-white/30 font-bold uppercase tracking-widest block mb-1">通话时间</span>
                         <span className="text-sm font-mono font-bold text-sky-400">{selectedVhfSnippet.time}</span>
                       </div>
                     </div>
@@ -861,8 +861,8 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
                       {selectedVhfSnippet.snippets.map((chat: any, idx: number) => (
                         <div key={idx} className={`flex flex-col gap-2 ${chat.sender.includes('中心') || chat.sender.includes('交管') ? 'items-end' : 'items-start'}`}>
                           <div className="flex items-center gap-2 px-1">
-                            <span className="text-[10px] font-black text-white/30 uppercase tracking-widest">{chat.sender}</span>
-                            <span className="text-[10px] font-mono text-white/20">{chat.time}</span>
+                            <span className="text-[11px] font-black text-white/30 uppercase tracking-widest">{chat.sender}</span>
+                            <span className="text-[11px] font-mono text-white/20">{chat.time}</span>
                           </div>
                           <div className={`max-w-[85%] p-4 rounded-3xl text-sm leading-relaxed ${
                             chat.sender.includes('中心') || chat.sender.includes('交管')
@@ -882,7 +882,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
                         <Pause size={20} />
                       </button>
                       <div className="flex flex-col">
-                        <span className="text-[10px] font-black text-white/40 uppercase tracking-widest">录音长度</span>
+                        <span className="text-[11px] font-black text-white/40 uppercase tracking-widest">录音长度</span>
                         <span className="text-sm font-mono font-bold text-white">00:45</span>
                       </div>
                     </div>
@@ -899,7 +899,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
                   <div className="absolute inset-0 z-0">
                     <div className="absolute top-6 left-6 z-10 flex items-center gap-3 px-4 py-2 bg-[#0a0a0a]/90 backdrop-blur-md border border-white/10 rounded-2xl shadow-2xl">
                       <History size={16} className="text-sky-400" />
-                      <span className="text-[10px] font-black text-white uppercase tracking-widest">历史轨迹同步回放</span>
+                      <span className="text-[11px] font-black text-white uppercase tracking-widest">历史轨迹同步回放</span>
                     </div>
 
                     <div className="h-full w-full">
@@ -950,8 +950,8 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
                         </button>
                         <div className="flex-1">
                           <div className="flex items-center justify-between mb-2">
-                            <span className="text-[10px] font-bold text-white/60">轨迹回放进度</span>
-                            <span className="text-[10px] font-mono text-white/40">10:05:22 / 10:06:35</span>
+                            <span className="text-[11px] font-bold text-white/60">轨迹回放进度</span>
+                            <span className="text-[11px] font-mono text-white/40">10:05:22 / 10:06:35</span>
                           </div>
                           <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
                             <motion.div 
@@ -987,7 +987,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
                       </div>
                       <div>
                         <h3 className="text-sm font-black text-white uppercase tracking-wider">历史回放定位</h3>
-                        <p className="text-[10px] text-white/40 font-bold uppercase tracking-widest">历史数据回溯模式</p>                      </div>
+                        <p className="text-[11px] text-white/40 font-bold uppercase tracking-widest">历史数据回溯模式</p>                      </div>
                     </div>
                     <button 
                       onClick={() => setPlaybackData(null)}
@@ -999,12 +999,12 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
                   
                   <div className="flex items-center justify-between p-3 bg-white/5 rounded-2xl border border-white/5">
                     <div className="flex flex-col">
-                      <span className="text-[10px] text-white/30 font-bold uppercase tracking-widest mb-1">目标船舶</span>
+                      <span className="text-[11px] text-white/30 font-bold uppercase tracking-widest mb-1">目标船舶</span>
                       <span className="text-xs font-bold text-white">{playbackData.name}</span>
                     </div>
                     <div className="h-8 w-px bg-white/10" />
                     <div className="flex flex-col text-right">
-                      <span className="text-[10px] text-white/30 font-bold uppercase tracking-widest mb-1">定位时间</span>
+                      <span className="text-[11px] text-white/30 font-bold uppercase tracking-widest mb-1">定位时间</span>
                       <span className="text-xs font-mono font-bold text-sky-400">{playbackData.startTime}</span>
                     </div>
                   </div>
@@ -1015,7 +1015,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
                     <div className="space-y-4">
                       <div className="flex items-center gap-2">
                         <Clock size={14} className="text-sky-400" />
-                        <span className="text-[10px] font-bold text-white/40 uppercase tracking-widest">船舶上下文事件 (最近)</span>
+                        <span className="text-[11px] font-bold text-white/40 uppercase tracking-widest">船舶上下文事件 (最近)</span>
                       </div>
                       <div className="relative pl-4 space-y-6 before:absolute before:left-[5px] before:top-2 before:bottom-2 before:w-px before:bg-white/10">
                         {playbackData.events.map((item: any, idx: number) => (
@@ -1026,7 +1026,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
                             }`} />
                             
                             <div className="flex flex-col gap-1">
-                              <span className="text-[10px] font-mono text-white/30">{item.time}</span>
+                              <span className="text-[11px] font-mono text-white/30">{item.time}</span>
                               <div className={`text-xs p-2 rounded-lg border ${
                                 item.type === 'risk' ? 'bg-red-500/10 border-red-500/20 text-red-200' :
                                 item.type === 'warning' ? 'bg-amber-500/5 border-amber-500/10 text-amber-200/80' :

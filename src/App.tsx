@@ -599,8 +599,8 @@ const PlaybackMapController = ({ playbackData }: { playbackData: any }) => {
               ${latestDialogue ? `
                 <div class="space-y-1">
                   <div class="flex items-center justify-between">
-                    <span class="text-[9px] font-bold text-white/40 uppercase">${latestDialogue.sender}</span>
-                    <span class="text-[8px] font-mono text-white/20">${latestDialogue.time}</span>
+                    <span class="text-[10px] font-bold text-white/40 uppercase">${latestDialogue.sender}</span>
+                    <span class="text-[10px] font-mono text-white/20">${latestDialogue.time}</span>
                   </div>
                   <p class="text-[11px] text-white/90 leading-relaxed font-medium">"${latestDialogue.content}"</p>
                 </div>
@@ -1818,9 +1818,9 @@ const SidebarPanel = ({
                         >
                           <div className="min-w-0">
                             <div className="truncate text-[11px] font-semibold text-white">{ship.name}</div>
-                            <div className="mt-0.5 text-[9px] text-white/35">{ship.mmsi} · {ship.type}</div>
+                            <div className="mt-0.5 text-[10px] text-white/35">{ship.mmsi} · {ship.type}</div>
                           </div>
-                          <span className="truncate text-[9px] text-sky-300/80">{ship.destination}</span>
+                          <span className="truncate text-[10px] text-sky-300/80">{ship.destination}</span>
                         </button>
                       ))
                     ) : (
@@ -2663,7 +2663,7 @@ const AdminPanel = ({
                 <div className="flex items-center gap-3">
                   <Layout size={14} className="text-white/70" />
                   <div className="w-1 h-4 rounded-full bg-sky-400" />
-                  <span className="text-[15px] font-semibold text-white">区域设置</span>
+                  <span className="text-[14px] font-semibold text-white">区域设置</span>
                 </div>
                 <div className="flex items-center gap-4 text-white/70">
                   <button className="hover:text-white transition-colors">
@@ -2966,7 +2966,7 @@ const AdminPanel = ({
                           </td>
                           <td className="px-6 py-4 text-xs text-white/60">{vessel.type}</td>
                           <td className="px-6 py-4">
-                            <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                            <span className={`px-2 py-1 rounded text-[10px] font-bold ${
                               vessel.status === '正在作业' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' :
                               vessel.status === '正在航行' ? 'bg-sky-500/10 text-sky-400 border border-sky-500/20' :
                               'bg-orange-500/10 text-orange-400 border border-orange-500/20'
@@ -3042,25 +3042,25 @@ const AdminPanel = ({
                                                   <div className="flex items-center gap-3">
                                                     <button 
                                                       onClick={() => setPlaybackData({ vessel, event })}
-                                                      className="text-[9px] font-bold text-sky-400 hover:text-sky-300 transition-colors flex items-center gap-1"
+                                                      className="text-[10px] font-bold text-sky-400 hover:text-sky-300 transition-colors flex items-center gap-1"
                                                     >
                                                       <Play size={10} /> 回放定位
                                                     </button>
-                                                    <div className="text-[9px] font-bold text-emerald-500/50 uppercase tracking-widest">已完成</div>
+                                                    <div className="text-[10px] font-bold text-emerald-500/50 uppercase tracking-widest">已完成</div>
                                                   </div>
                                                 )}
                                                 {event.status === 'current' && (
                                                   <div className="flex items-center gap-3">
                                                     <button 
                                                       onClick={() => setPlaybackData({ vessel, event })}
-                                                      className="text-[9px] font-bold text-sky-400 hover:text-sky-300 transition-colors flex items-center gap-1"
+                                                      className="text-[10px] font-bold text-sky-400 hover:text-sky-300 transition-colors flex items-center gap-1"
                                                     >
                                                       <MapPin size={10} /> 实时定位
                                                     </button>
-                                                    <div className="text-[9px] font-bold text-sky-500 uppercase tracking-widest animate-pulse">进行中</div>
+                                                    <div className="text-[10px] font-bold text-sky-500 uppercase tracking-widest animate-pulse">进行中</div>
                                                   </div>
                                                 )}
-                                                {event.status === 'warning' && <div className="text-[9px] font-bold text-red-500 uppercase tracking-widest">风险/违规</div>}
+                                                {event.status === 'warning' && <div className="text-[10px] font-bold text-red-500 uppercase tracking-widest">风险/违规</div>}
                                               </div>
                                               <p className="text-xs text-white/50 leading-relaxed">{event.desc}</p>
                                               
@@ -3077,7 +3077,7 @@ const AdminPanel = ({
                                                         <span className={`text-[10px] font-black ${chat.sender.includes('VTS') || chat.sender.includes('中心') ? 'text-sky-400' : 'text-white/60'}`}>
                                                           {chat.sender}
                                                         </span>
-                                                        <span className="text-[9px] font-mono text-white/20">{chat.time}</span>
+                                                        <span className="text-[10px] font-mono text-white/20">{chat.time}</span>
                                                       </div>
                                                       <div className={`text-xs p-2 rounded-lg ${
                                                         chat.sender.includes('VTS') || chat.sender.includes('中心') 
@@ -3228,7 +3228,7 @@ const AdminPanel = ({
                                         </div>
                                         <div className="flex flex-col">
                                           <span className="text-[12px] font-bold text-white/90">{rule.name}</span>
-                                          <span className="text-[9px] text-white/30 font-bold uppercase tracking-widest">{rule.category}</span>
+                                          <span className="text-[10px] text-white/30 font-bold uppercase tracking-widest">{rule.category}</span>
                                         </div>
                                       </div>
                                     </td>
@@ -3236,7 +3236,7 @@ const AdminPanel = ({
                                       <span className="text-[11px] text-white/60 font-medium">{rule.category}</span>
                                     </td>
                                     <td className="px-6 py-4">
-                                      <span className={`px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-widest border ${
+                                      <span className={`px-2 py-1 rounded text-[10px] font-black uppercase tracking-widest border ${
                                         rule.severity === '紧急' ? 'bg-red-500/10 text-red-400 border-red-500/20' :
                                         rule.severity === '警报' ? 'bg-orange-500/10 text-orange-400 border-orange-500/20' :
                                         rule.severity === '警告' ? 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20' :
@@ -3250,14 +3250,14 @@ const AdminPanel = ({
                                         {areaNames.length > 0 ? (
                                           <>
                                             {areaNames.slice(0, 2).map((name, idx) => (
-                                              <span key={idx} className="px-2 py-0.5 bg-white/5 border border-white/10 rounded-md text-[10px] text-white/60 whitespace-nowrap">
+                                              <span key={idx} className="px-2 py-1 bg-white/5 border border-white/10 rounded-md text-[10px] text-white/60 whitespace-nowrap">
                                                 {name}
                                               </span>
                                             ))}
                                             {areaNames.length > 2 && (
                                               <div className="relative group/tooltip">
                                                 <span 
-                                                  className="px-2 py-0.5 bg-sky-500/5 border border-sky-500/10 rounded-md text-[10px] text-sky-400 font-bold whitespace-nowrap cursor-help"
+                                                  className="px-2 py-1 bg-sky-500/5 border border-sky-500/10 rounded-md text-[10px] text-sky-400 font-bold whitespace-nowrap cursor-help"
                                                 >
                                                   +{areaNames.length - 2}
                                                 </span>
@@ -3266,7 +3266,7 @@ const AdminPanel = ({
                                                   <div className="text-[10px] font-bold text-white/30 uppercase tracking-widest mb-1.5 border-b border-white/5 pb-1">全部生效区域</div>
                                                   <div className="flex flex-wrap gap-1">
                                                     {areaNames.map((name, idx) => (
-                                                      <span key={idx} className="px-1.5 py-0.5 bg-white/5 rounded text-[9px] text-white/70">
+                                                      <span key={idx} className="px-1.5 py-1 bg-white/5 rounded text-[10px] text-white/70">
                                                         {name}
                                                       </span>
                                                     ))}
@@ -3434,19 +3434,19 @@ const AdminPanel = ({
                                         <div className="text-[12px] font-bold text-white/90">
                                           {ship.name} ({ (ship as any).nameEn || (ship as any).englishName || 'VESSEL NAME' })
                                         </div>
-                                        <div className="text-[9px] text-white/20 font-mono">
+                                        <div className="text-[10px] text-white/20 font-mono">
                                           {ship.mmsi} / { (ship as any).imo || 'IMO9123456' } / { ship.callsign || 'CALLSIGN' }
                                         </div>
                                       </div>
                                     </div>
                                   </td>
                                   <td className="px-6 py-4">
-                                    <span className="px-2 py-0.5 bg-white/5 border border-white/10 rounded-md text-[10px] text-white/60 whitespace-nowrap">
+                                    <span className="px-2 py-1 bg-white/5 border border-white/10 rounded-md text-[10px] text-white/60 whitespace-nowrap">
                                       { (ship as any).type || '油轮' }
                                     </span>
                                   </td>
                                   <td className="px-6 py-4">
-                                    <span className={`px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-widest border ${
+                                    <span className={`px-2 py-1 rounded text-[10px] font-black uppercase tracking-widest border ${
                                       Number(ship.id) % 3 === 0
                                         ? 'bg-rose-500/10 text-rose-400 border-rose-500/20'
                                         : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
@@ -3456,7 +3456,7 @@ const AdminPanel = ({
                                   </td>
                                   <td className="px-6 py-4">
                                     <div className="flex items-center gap-3">
-                                      <span className={`px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-widest border ${
+                                      <span className={`px-2 py-1 rounded text-[10px] font-black uppercase tracking-widest border ${
                                         ship.riskScore > 85 ? 'bg-red-500/10 text-red-400 border-red-500/20' :
                                         ship.riskScore > 65 ? 'bg-orange-500/10 text-orange-400 border-orange-500/20' :
                                         ship.riskScore > 40 ? 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20' :
@@ -3626,16 +3626,16 @@ const AdminPanel = ({
                                       dataKey="time" 
                                       axisLine={{ stroke: '#ffffff10' }} 
                                       tickLine={{ stroke: '#ffffff10' }} 
-                                      tick={{fill: '#ffffff20', fontSize: 10, fontMono: true}} 
+                                      tick={{fill: '#ffffff20', fontSize: 11, fontMono: true}} 
                                     />
                                     <YAxis 
                                       axisLine={{ stroke: '#ffffff10' }} 
                                       tickLine={{ stroke: '#ffffff10' }} 
-                                      tick={{fill: '#ffffff20', fontSize: 10, fontMono: true}} 
+                                      tick={{fill: '#ffffff20', fontSize: 11, fontMono: true}} 
                                     />
                                     <Tooltip 
                                       contentStyle={{ backgroundColor: '#0a101a', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '16px', boxShadow: '0 20px 50px rgba(0,0,0,0.5)' }}
-                                      itemStyle={{ fontSize: '11px', fontWeight: 'bold' }}
+                                      itemStyle={{ fontSize: '12px', fontWeight: 'bold' }}
                                     />
                                     <Line 
                                       type="monotone" 
@@ -3697,7 +3697,7 @@ const AdminPanel = ({
                                       </Pie>
                                       <Tooltip 
                                         contentStyle={{ backgroundColor: '#0a101a', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px' }}
-                                        itemStyle={{ fontSize: '10px', fontWeight: 'bold' }}
+                                        itemStyle={{ fontSize: '11px', fontWeight: 'bold' }}
                                       />
                                     </PieChart>
                                   </ResponsiveContainer>
@@ -3758,7 +3758,7 @@ const AdminPanel = ({
                                       </Pie>
                                       <Tooltip 
                                         contentStyle={{ backgroundColor: '#0a101a', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px' }}
-                                        itemStyle={{ fontSize: '10px', fontWeight: 'bold' }}
+                                        itemStyle={{ fontSize: '11px', fontWeight: 'bold' }}
                                       />
                                     </PieChart>
                                   </ResponsiveContainer>
@@ -3891,7 +3891,7 @@ const AdminPanel = ({
                                         <div className="text-[12px] font-bold text-white/90">
                                           {ship.name} ({ (ship as any).nameEn || (ship as any).englishName || 'VESSEL NAME' })
                                         </div>
-                                        <div className="text-[9px] text-white/20 font-mono">
+                                        <div className="text-[10px] text-white/20 font-mono">
                                           {ship.mmsi} / { (ship as any).imo || 'IMO9123456' } / { ship.callsign || 'CALLSIGN' }
                                         </div>
                                       </div>
@@ -3899,26 +3899,26 @@ const AdminPanel = ({
                                   </td>
                                   <td className="px-6 py-4">
                                     <div className="flex items-center gap-2">
-                                      <span className="px-2 py-0.5 bg-white/5 border border-white/10 rounded-md text-[10px] text-white/60 whitespace-nowrap">
+                                      <span className="px-2 py-1 bg-white/5 border border-white/10 rounded-md text-[10px] text-white/60 whitespace-nowrap">
                                         { (ship as any).flag || '中国 (CHINA)' }
                                       </span>
                                     </div>
                                   </td>
                                   <td className="px-6 py-4">
-                                    <span className="px-2 py-0.5 bg-white/5 border border-white/10 rounded-md text-[10px] text-white/60 whitespace-nowrap">
+                                    <span className="px-2 py-1 bg-white/5 border border-white/10 rounded-md text-[10px] text-white/60 whitespace-nowrap">
                                       { (ship as any).type || '油轮' }
                                     </span>
                                   </td>
                                   <td className="px-6 py-4">
                                     <div className="flex flex-wrap gap-1.5 max-w-[200px]">
                                       {['超速', '偏航', '违停'].slice(0, 2).map((name, idx) => (
-                                        <span key={idx} className="px-2 py-0.5 bg-white/5 border border-white/10 rounded-md text-[10px] text-white/60 whitespace-nowrap">
+                                        <span key={idx} className="px-2 py-1 bg-white/5 border border-white/10 rounded-md text-[10px] text-white/60 whitespace-nowrap">
                                           {name}
                                         </span>
                                       ))}
                                       {3 > 2 && (
                                         <div className="relative group/tooltip">
-                                          <span className="px-2 py-0.5 bg-sky-500/5 border border-sky-500/10 rounded-md text-[10px] text-sky-400 font-bold whitespace-nowrap cursor-help">
+                                          <span className="px-2 py-1 bg-sky-500/5 border border-sky-500/10 rounded-md text-[10px] text-sky-400 font-bold whitespace-nowrap cursor-help">
                                             +1
                                           </span>
                                           {/* 悬浮气泡框 */}
@@ -3926,7 +3926,7 @@ const AdminPanel = ({
                                             <div className="text-[10px] font-bold text-white/30 uppercase tracking-widest mb-1.5 border-b border-white/5 pb-1">全部风险类型</div>
                                             <div className="flex flex-wrap gap-1">
                                               {['超速', '偏航', '违停'].map((name, idx) => (
-                                                <span key={idx} className="px-1.5 py-0.5 bg-white/5 rounded text-[9px] text-white/70">
+                                                <span key={idx} className="px-1.5 py-1 bg-white/5 rounded text-[10px] text-white/70">
                                                   {name}
                                                 </span>
                                               ))}
@@ -4187,7 +4187,7 @@ const AdminPanel = ({
                                       <div className={`text-[11px] font-bold truncate ${isSelected ? 'text-sky-300' : 'text-white/60'}`}>
                                         {area.name}
                                       </div>
-                                      <div className="text-[9px] text-white/20 mt-0.5">{area.type}</div>
+                                      <div className="text-[10px] text-white/20 mt-0.5">{area.type}</div>
                                     </div>
                                     {isSelected && <Check size={10} className="text-sky-400 ml-1.5" strokeWidth={4} />}
                                   </button>
@@ -4556,7 +4556,7 @@ const AdminPanel = ({
                         <div className="w-10 h-10 rounded-xl bg-sky-500/20 flex items-center justify-center group-hover:scale-110 transition-transform">
                           <MessageSquare size={20} className="text-sky-400" />
                         </div>
-                        <span className="text-[10px] font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full">+12%</span>
+                        <span className="text-[10px] font-bold text-emerald-400 bg-emerald-500/10 px-2 py-1 rounded-full">+12%</span>
                       </div>
                       <div className="text-2xl font-black text-white mb-1">1,284</div>
                       <div className="text-[11px] font-bold text-white/30 uppercase tracking-widest">对话次数</div>
@@ -4567,7 +4567,7 @@ const AdminPanel = ({
                         <div className="w-10 h-10 rounded-xl bg-blue-500/20 flex items-center justify-center group-hover:scale-110 transition-transform">
                           <Activity size={20} className="text-blue-400" />
                         </div>
-                        <span className="text-[10px] font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full">+5%</span>
+                        <span className="text-[10px] font-bold text-emerald-400 bg-emerald-500/10 px-2 py-1 rounded-full">+5%</span>
                       </div>
                       <div className="text-2xl font-black text-white mb-1">456</div>
                       <div className="text-[11px] font-bold text-white/30 uppercase tracking-widest">指挥次数</div>
@@ -4578,7 +4578,7 @@ const AdminPanel = ({
                         <div className="w-10 h-10 rounded-xl bg-indigo-500/20 flex items-center justify-center group-hover:scale-110 transition-transform">
                           <Check size={20} className="text-indigo-400" />
                         </div>
-                        <span className="text-[10px] font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full">+8%</span>
+                        <span className="text-[10px] font-bold text-emerald-400 bg-emerald-500/10 px-2 py-1 rounded-full">+8%</span>
                       </div>
                       <div className="text-2xl font-black text-white mb-1">892</div>
                       <div className="text-[11px] font-bold text-white/30 uppercase tracking-widest">回答次数</div>
@@ -4633,20 +4633,20 @@ const AdminPanel = ({
                             dataKey="time" 
                             axisLine={false}
                             tickLine={false}
-                            tick={{ fill: 'rgba(255,255,255,0.3)', fontSize: 12 }}
+                            tick={{ fill: 'rgba(255,255,255,0.3)', fontSize: 13 }}
                             dy={10}
                           />
                           <YAxis 
                             axisLine={false}
                             tickLine={false}
-                            tick={{ fill: 'rgba(255,255,255,0.3)', fontSize: 12 }}
+                            tick={{ fill: 'rgba(255,255,255,0.3)', fontSize: 13 }}
                           />
                           <Tooltip 
                             contentStyle={{ 
                               backgroundColor: '#0a0a0a', 
                               border: '1px solid rgba(255,255,255,0.1)',
                               borderRadius: '8px',
-                              fontSize: '12px'
+                              fontSize: '13px'
                             }}
                             itemStyle={{ color: '#0ea5e9' }}
                           />
@@ -4705,7 +4705,7 @@ const AdminPanel = ({
                               </td>
                               <td className="px-6 py-4 text-[10px] text-white/40 font-mono">{item.time}</td>
                               <td className="px-6 py-4">
-                                <span className={`px-2 py-0.5 border rounded text-[10px] font-bold ${
+                                <span className={`px-2 py-1 border rounded text-[10px] font-bold ${
                                   item.status === '批准' ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' :
                                   item.status === '拒绝' ? 'bg-red-500/10 border-red-500/20 text-red-400' :
                                   item.status === '回复等待' ? 'bg-orange-500/10 border-orange-500/20 text-orange-400' :
@@ -4809,7 +4809,7 @@ const AdminPanel = ({
                           className={`group cursor-pointer p-4 rounded-2xl transition-all ${selectedVhfSnippet?.id === msg.id ? 'bg-sky-500/10 border border-sky-500/30' : 'bg-white/5 border border-transparent hover:border-white/10'}`}
                         >
                           <div className="flex items-center justify-between mb-2">
-                            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${msg.isVts ? 'bg-sky-500/20 text-sky-400' : 'bg-emerald-500/20 text-emerald-400'}`}>
+                            <span className={`text-[10px] font-bold px-2 py-1 rounded-full ${msg.isVts ? 'bg-sky-500/20 text-sky-400' : 'bg-emerald-500/20 text-emerald-400'}`}>
                               {msg.sender}
                             </span>
                             <span className="text-[10px] text-white/20 font-mono">{msg.time}</span>
@@ -5021,8 +5021,8 @@ const AdminPanel = ({
                         {playbackData.event.dialogue.map((chat: any, idx: number) => (
                           <div key={idx} className={`flex flex-col gap-0.5 ${chat.sender.includes('VTS') ? 'items-end' : 'items-start'}`}>
                             <div className="flex items-center gap-2 mb-0.5">
-                              <span className="text-[9px] font-bold text-white/30 uppercase">{chat.sender}</span>
-                              <span className="text-[9px] font-mono text-white/20">{chat.time}</span>
+                              <span className="text-[10px] font-bold text-white/30 uppercase">{chat.sender}</span>
+                              <span className="text-[10px] font-mono text-white/20">{chat.time}</span>
                             </div>
                             <div className={`text-xs p-1.5 rounded-2xl max-w-[90%] ${
                               chat.sender.includes('VTS') 
@@ -5242,7 +5242,7 @@ const DynamicPlaybackView = ({
 
         {/* 顶部时间轴 */}
         <div className="h-8 px-6 flex items-center gap-4 border-t border-white/5 bg-white/[0.02]">
-          <span className="text-[9px] font-bold text-white/30 uppercase tracking-widest">时间轴</span>
+          <span className="text-[10px] font-bold text-white/30 uppercase tracking-widest">时间轴</span>
           <div className="flex-1 h-1 bg-white/10 rounded-full relative">
             <div 
               className="absolute top-0 left-0 h-full bg-sky-500 rounded-full shadow-[0_0_10px_rgba(14,165,233,0.5)]"
@@ -5255,7 +5255,7 @@ const DynamicPlaybackView = ({
                 className="absolute top-[-4px] w-px h-3 bg-white/20"
                 style={{ left: `${p}%` }}
               >
-                <span className="absolute top-4 left-1/2 -translate-x-1/2 text-[8px] font-mono text-white/20 whitespace-nowrap">
+                <span className="absolute top-4 left-1/2 -translate-x-1/2 text-[10px] font-mono text-white/20 whitespace-nowrap">
                   {p === 0 ? 'T-15m' : p === 50 ? 'T-0' : p === 100 ? 'T+15m' : ''}
                 </span>
               </div>
@@ -5275,11 +5275,11 @@ const DynamicPlaybackView = ({
             <div className="flex flex-col gap-3 mt-4">
               <div className="flex items-center justify-between">
                 <span className="text-[10px] font-bold text-white/30 uppercase tracking-widest">风险名称</span>
-                <span className="text-[11px] font-black text-rose-400 bg-rose-500/10 px-2 py-0.5 rounded border border-rose-500/20">{session.event.label}</span>
+                <span className="text-[11px] font-black text-rose-400 bg-rose-500/10 px-2 py-1 rounded border border-rose-500/20">{session.event.label}</span>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-[10px] font-bold text-white/30 uppercase tracking-widest">风险类型</span>
-                <span className="text-[11px] font-black text-sky-400 bg-sky-500/10 px-2 py-0.5 rounded border border-sky-500/20 uppercase tracking-wider">{session.vessel.category || '单船风险'}</span>
+                <span className="text-[11px] font-black text-sky-400 bg-sky-500/10 px-2 py-1 rounded border border-sky-500/20 uppercase tracking-wider">{session.vessel.category || '单船风险'}</span>
               </div>
             </div>
           </div>
@@ -5300,7 +5300,7 @@ const DynamicPlaybackView = ({
                 </div>
                 <div className="grid grid-cols-2 gap-2">
                   <div className="rounded-xl border border-white/5 bg-black/20 px-2.5 py-2">
-                    <div className="text-[8px] font-black text-white/25 uppercase tracking-widest">长宽</div>
+                    <div className="text-[10px] font-black text-white/25 uppercase tracking-widest">长宽</div>
                     <div className="mt-1 text-[10px] font-semibold text-white/75 leading-snug">
                       {session.vessel.length && session.vessel.width 
                         ? `${session.vessel.length}m x ${session.vessel.width}m` 
@@ -5308,19 +5308,19 @@ const DynamicPlaybackView = ({
                     </div>
                   </div>
                   <div className="rounded-xl border border-white/5 bg-black/20 px-2.5 py-2">
-                    <div className="text-[8px] font-black text-white/25 uppercase tracking-widest">吃水</div>
+                    <div className="text-[10px] font-black text-white/25 uppercase tracking-widest">吃水</div>
                     <div className="mt-1 text-[10px] font-semibold text-white/75 leading-snug">
                       {session.vessel.draft ? (typeof session.vessel.draft === 'number' ? `${session.vessel.draft}m` : session.vessel.draft) : '14.5m'}
                     </div>
                   </div>
                   <div className="rounded-xl border border-white/5 bg-black/20 px-2.5 py-2">
-                    <div className="text-[8px] font-black text-white/25 uppercase tracking-widest">类型</div>
+                    <div className="text-[10px] font-black text-white/25 uppercase tracking-widest">类型</div>
                     <div className="mt-1 text-[10px] font-semibold text-white/75 leading-snug">
                       {session.vessel.type || '货轮'}
                     </div>
                   </div>
                   <div className="rounded-xl border border-white/5 bg-black/20 px-2.5 py-2">
-                    <div className="text-[8px] font-black text-white/25 uppercase tracking-widest">货物</div>
+                    <div className="text-[10px] font-black text-white/25 uppercase tracking-widest">货物</div>
                     <div className="mt-1 text-[10px] font-semibold text-white/75 leading-snug">
                       {session.vessel.cargo || '原油'}
                     </div>
@@ -5337,13 +5337,13 @@ const DynamicPlaybackView = ({
               </div>
               <div className="grid grid-cols-2 gap-2">
                 <div className="rounded-xl border border-white/5 bg-black/20 px-2.5 py-2">
-                  <div className="text-[8px] font-black text-white/25 uppercase tracking-widest">航向</div>
+                  <div className="text-[10px] font-black text-white/25 uppercase tracking-widest">航向</div>
                   <div className="mt-1 text-[10px] font-semibold text-white/75 leading-snug">
                     {currentHeading.toFixed(1)}°
                   </div>
                 </div>
                 <div className="rounded-xl border border-white/5 bg-black/20 px-2.5 py-2">
-                  <div className="text-[8px] font-black text-white/25 uppercase tracking-widest">航速</div>
+                  <div className="text-[10px] font-black text-white/25 uppercase tracking-widest">航速</div>
                   <div className="mt-1 text-[10px] font-semibold text-white/75 leading-snug">
                     {currentSpeed.toFixed(1)} kn
                   </div>
@@ -5359,7 +5359,7 @@ const DynamicPlaybackView = ({
               <div className="space-y-2">
                 {(session.event.weather || []).map((item: any) => (
                   <div key={item.label} className="flex items-center justify-between gap-3 rounded-xl border border-white/5 bg-black/20 px-2.5 py-2">
-                    <span className="text-[9px] font-bold text-white/35">{item.label}</span>
+                    <span className="text-[10px] font-bold text-white/35">{item.label}</span>
                     <span className="text-[10px] font-semibold text-white/80 text-right">{item.value}</span>
                   </div>
                 ))}
@@ -5372,7 +5372,7 @@ const DynamicPlaybackView = ({
                   <MapIcon size={14} className="text-sky-400" />
                   <span className="text-[10px] font-black text-white/55 uppercase tracking-wider">关联辖区</span>
                 </div>
-                <span className="text-[9px] font-bold text-sky-400/60 uppercase tracking-widest bg-sky-500/10 px-1.5 py-0.5 rounded">
+                <span className="text-[10px] font-bold text-sky-400/60 uppercase tracking-widest bg-sky-500/10 px-1.5 py-1 rounded">
                   已选 {selectedAreas.size}
                 </span>
               </div>
@@ -5429,7 +5429,7 @@ const DynamicPlaybackView = ({
                                     <span className={`text-[11px] transition-colors ${selectedAreas.has(area.id) ? 'text-white font-bold' : 'text-white/40 group-hover:text-white/60'}`}>
                                       {area.name}
                                     </span>
-                                    <span className="text-[8px] text-white/20">{area.type}</span>
+                                    <span className="text-[10px] text-white/20">{area.type}</span>
                                   </div>
                                 </div>
                               ))}
@@ -5492,7 +5492,7 @@ const DynamicPlaybackView = ({
                   className: 'custom-div-icon',
                   html: `
                     <div class="flex flex-col items-center">
-                      <div class="px-2 py-1 bg-sky-500/80 backdrop-blur-md border border-white/20 rounded text-[9px] font-bold text-white whitespace-nowrap shadow-lg">
+                      <div class="px-2 py-1 bg-sky-500/80 backdrop-blur-md border border-white/20 rounded text-[10px] font-bold text-white whitespace-nowrap shadow-lg">
                         ${element.name}
                       </div>
                       <div class="w-2 h-2 bg-sky-500 rotate-45 -mt-1 border-r border-b border-white/20"></div>
@@ -5543,7 +5543,7 @@ const DynamicPlaybackView = ({
                         <path d="M12 2L19 21L12 17L5 21L12 2Z" />
                       </svg>
                     </div>
-                    <div class="absolute -top-8 left-1/2 -translate-x-1/2 bg-black/80 backdrop-blur-md border border-white/10 px-2 py-1 rounded text-[9px] font-bold text-white whitespace-nowrap">
+                    <div class="absolute -top-8 left-1/2 -translate-x-1/2 bg-black/80 backdrop-blur-md border border-white/10 px-2 py-1 rounded text-[10px] font-bold text-white whitespace-nowrap">
                       ${session.vessel.name}
                     </div>
                   </div>
@@ -5629,8 +5629,8 @@ const DynamicPlaybackView = ({
               {playbackDialogue.map((chat: any, idx: number) => (
                 <div key={idx} className={`space-y-0.5 ${progress < (idx + 1) * 20 ? 'opacity-20' : 'opacity-100 transition-opacity duration-500'}`}>
                   <div className="flex justify-between items-center">
-                    <span className="text-[9px] font-bold text-white/30 uppercase">{chat.sender}</span>
-                    <span className="text-[8px] font-mono text-white/20">{chat.time.split(' ')[1]}</span>
+                    <span className="text-[10px] font-bold text-white/30 uppercase">{chat.sender}</span>
+                    <span className="text-[10px] font-mono text-white/20">{chat.time.split(' ')[1]}</span>
                   </div>
                   <p className="text-[10px] text-white/70 leading-relaxed bg-white/5 p-1 rounded-lg border border-white/5">
                     {chat.content}
@@ -5963,7 +5963,7 @@ export default function App() {
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
-              <h2 className="text-[16px] font-black text-white leading-tight truncate">
+              <h2 className="text-[17px] font-black text-white leading-tight truncate">
                 {selectedHomeShip.name}
               </h2>
               {selectedHomeShip.displayName.split(' / ')[0] && (
@@ -5973,7 +5973,7 @@ export default function App() {
               )}
             </div>
             <div className="mt-1 flex items-center gap-2">
-              <span className={`px-1.5 py-0.5 rounded text-[8px] font-black uppercase tracking-widest ${
+              <span className={`px-1.5 py-1 rounded text-[10px] font-black uppercase tracking-widest ${
                 selectedHomeShip.status === 'warning' ? 'bg-red-500/10 text-red-400 border border-red-500/20' :
                 selectedHomeShip.status === 'caution' ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20' :
                 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
@@ -5984,13 +5984,13 @@ export default function App() {
             </div>
           </div>
           <div className="flex flex-col items-end gap-1.5 shrink-0">
-            <div className="flex items-center gap-1.5 text-[8px] font-black text-sky-400 uppercase tracking-widest bg-sky-500/10 px-1.5 py-0.5 rounded-full border border-sky-500/20">
+            <div className="flex items-center gap-1.5 text-[10px] font-black text-sky-400 uppercase tracking-widest bg-sky-500/10 px-1.5 py-1 rounded-full border border-sky-500/20">
               <div className="h-1 w-1 rounded-full bg-sky-400 animate-pulse" />
               Tracking
             </div>
             <button
               onClick={() => setSelectedHomeShipTrackPointId(selectedHomeShip.track[selectedHomeShip.track.length - 1]?.id ?? null)}
-              className="text-[9px] font-bold text-white/50 hover:text-white transition-colors underline decoration-white/20 underline-offset-2"
+              className="text-[10px] font-bold text-white/50 hover:text-white transition-colors underline decoration-white/20 underline-offset-2"
             >
               定位当前位置
             </button>
@@ -6017,26 +6017,26 @@ export default function App() {
           <div className="rounded-xl border border-white/5 bg-white/[0.02] p-3 shadow-inner">
             <div className="grid grid-cols-3 gap-4">
               <div className="space-y-1">
-                <div className="text-[8px] uppercase tracking-widest text-white/20">实时航速</div>
+                <div className="text-[10px] uppercase tracking-widest text-white/20">实时航速</div>
                 <div className="text-[14px] font-black text-white font-mono">{selectedHomeShip.speed.toFixed(1)} <span className="text-[10px] text-white/30">kn</span></div>
               </div>
               <div className="space-y-1">
-                <div className="text-[8px] uppercase tracking-widest text-white/20">实时航向</div>
+                <div className="text-[10px] uppercase tracking-widest text-white/20">实时航向</div>
                 <div className="text-[14px] font-black text-white font-mono">{selectedHomeShip.heading}°</div>
               </div>
               <div className="space-y-1">
-                <div className="text-[8px] uppercase tracking-widest text-white/20">吃水高度</div>
+                <div className="text-[10px] uppercase tracking-widest text-white/20">吃水高度</div>
                 <div className="text-[14px] font-black text-orange-400 font-mono">{selectedHomeShip.draft}</div>
               </div>
             </div>
             
             <div className="mt-3 pt-3 border-t border-white/5 flex items-center justify-between">
                <div className="flex-1 min-w-0">
-                  <div className="text-[8px] uppercase tracking-widest text-white/20 mb-1">当前位置 / 航段</div>
+                  <div className="text-[10px] uppercase tracking-widest text-white/20 mb-1">当前位置 / 航段</div>
                   <div className="text-[10px] font-bold text-sky-400 truncate">{selectedHomeShip.route.current}</div>
                </div>
                <div className="text-right pl-4">
-                  <div className="text-[8px] uppercase tracking-widest text-white/20 mb-1">目的地</div>
+                  <div className="text-[10px] uppercase tracking-widest text-white/20 mb-1">目的地</div>
                   <div className="text-[10px] font-bold text-white/80 truncate">{selectedHomeShip.destination}</div>
                </div>
             </div>
@@ -6052,29 +6052,29 @@ export default function App() {
           <div className="rounded-xl border border-white/5 bg-white/[0.01] p-3 shadow-inner">
             <div className="grid grid-cols-3 gap-x-2 gap-y-3">
               <div className="space-y-0.5">
-                <div className="text-[7px] uppercase tracking-widest text-white/20">呼号</div>
-                <div className="text-[9px] font-mono text-sky-300 font-bold">{selectedHomeShip.callsign}</div>
+                <div className="text-[8px] uppercase tracking-widest text-white/20">呼号</div>
+                <div className="text-[10px] font-mono text-sky-300 font-bold">{selectedHomeShip.callsign}</div>
               </div>
               <div className="space-y-0.5">
-                <div className="text-[7px] uppercase tracking-widest text-white/20">IMO</div>
-                <div className="text-[9px] font-mono text-white/60">{selectedHomeShip.imo}</div>
+                <div className="text-[8px] uppercase tracking-widest text-white/20">IMO</div>
+                <div className="text-[10px] font-mono text-white/60">{selectedHomeShip.imo}</div>
               </div>
               <div className="space-y-0.5">
-                <div className="text-[7px] uppercase tracking-widest text-white/20">船舶类型</div>
-                <div className="text-[9px] text-white/70 truncate">{selectedHomeShip.type}</div>
+                <div className="text-[8px] uppercase tracking-widest text-white/20">船舶类型</div>
+                <div className="text-[10px] text-white/70 truncate">{selectedHomeShip.type}</div>
               </div>
               
               <div className="space-y-0.5">
-                <div className="text-[7px] uppercase tracking-widest text-white/20">长 / 宽</div>
-                <div className="text-[9px] text-white/70 font-mono">{selectedHomeShip.length} / {selectedHomeShip.width}</div>
+                <div className="text-[8px] uppercase tracking-widest text-white/20">长 / 宽</div>
+                <div className="text-[10px] text-white/70 font-mono">{selectedHomeShip.length} / {selectedHomeShip.width}</div>
               </div>
               <div className="space-y-0.5">
-                <div className="text-[7px] uppercase tracking-widest text-white/20">载重吨位</div>
-                <div className="text-[9px] text-white/70">{selectedHomeShip.grossTonnage} <span className="opacity-40 font-black">GT</span></div>
+                <div className="text-[8px] uppercase tracking-widest text-white/20">载重吨位</div>
+                <div className="text-[10px] text-white/70">{selectedHomeShip.grossTonnage} <span className="opacity-40 font-black">GT</span></div>
               </div>
               <div className="space-y-0.5">
-                <div className="text-[7px] uppercase tracking-widest text-white/20">主要载货</div>
-                <div className="text-[9px] text-white/75 truncate">{selectedHomeShip.cargo}</div>
+                <div className="text-[8px] uppercase tracking-widest text-white/20">主要载货</div>
+                <div className="text-[10px] text-white/75 truncate">{selectedHomeShip.cargo}</div>
               </div>
             </div>
           </div>
@@ -6089,14 +6089,14 @@ export default function App() {
           <div className="rounded-xl border border-white/5 bg-sky-500/[0.02] p-3 shadow-inner">
             <div className="grid grid-cols-2 gap-3">
               <div className="bg-white/5 p-2 rounded-lg">
-                <div className="text-[7px] uppercase tracking-widest text-white/20 mb-1">预计抵港 (ETA)</div>
+                <div className="text-[8px] uppercase tracking-widest text-white/20 mb-1">预计抵港 (ETA)</div>
                 <div className="text-[10px] font-mono font-bold text-emerald-400">{selectedHomeShip.businessInfo.eta}</div>
               </div>
               <div className="bg-white/5 p-2 rounded-lg">
-                <div className="text-[7px] uppercase tracking-widest text-white/20 mb-1">计划靠泊位置</div>
+                <div className="text-[8px] uppercase tracking-widest text-white/20 mb-1">计划靠泊位置</div>
                 <div className="text-[10px] font-bold text-white/70">{selectedHomeShip.businessInfo.plannedBerth}</div>
               </div>
-              <div className="col-span-2 flex items-center justify-between px-1 text-[9px]">
+              <div className="col-span-2 flex items-center justify-between px-1 text-[10px]">
                 <div className="flex items-center gap-2">
                    <span className="text-white/30">所属公司:</span>
                    <span className="text-white/60 font-medium">{selectedHomeShip.businessInfo.operator}</span>
@@ -6120,8 +6120,8 @@ export default function App() {
           </div>
           <div className="rounded-xl border border-white/5 bg-[#12141a] p-3 italic shadow-sm">
             <div className="flex items-center justify-between mb-2">
-               <span className="text-[8px] font-black text-sky-400/50 uppercase tracking-widest">Live Feed</span>
-               <span className="text-[8px] font-mono text-white/20">CH16</span>
+               <span className="text-[10px] font-black text-sky-400/50 uppercase tracking-widest">Live Feed</span>
+               <span className="text-[10px] font-mono text-white/20">CH16</span>
             </div>
             <p className="text-[11px] leading-relaxed text-white/70">
               “{selectedHomeShip.vhfSummary}”
@@ -6136,7 +6136,7 @@ export default function App() {
               <Clock size={12} className="text-sky-400" />
               全生命周期事件轴
             </div>
-            <span className="text-[8px] text-white/30 uppercase">Inbound → Present</span>
+            <span className="text-[10px] text-white/30 uppercase">Inbound → Present</span>
           </div>
           <div className="relative pl-4 space-y-4">
             <div className="absolute left-1.5 top-2 bottom-2 w-px bg-white/10" />
@@ -6154,18 +6154,18 @@ export default function App() {
                   className="flex w-full flex-col items-start gap-1 rounded-lg bg-white/[0.02] hover:bg-white/[0.04] p-2 transition-all text-left border border-white/5"
                 >
                   <div className="flex w-full items-center justify-between gap-2">
-                    <span className={`text-[8px] font-black uppercase tracking-widest px-1 rounded ${
+                    <span className={`text-[10px] font-black uppercase tracking-widest px-1 rounded ${
                       event.type === 'navigation' ? 'bg-emerald-500/10 text-emerald-400' :
                       event.type === 'safety' ? 'bg-red-500/10 text-red-400' :
                       event.type === 'business' ? 'bg-amber-500/10 text-amber-400' : 'bg-sky-500/10 text-sky-400'
                     }`}>
                       {event.type}
                     </span>
-                    <span className="text-[9px] font-mono text-white/20">{event.time.split(' ').pop()}</span>
+                    <span className="text-[10px] font-mono text-white/20">{event.time.split(' ').pop()}</span>
                   </div>
                   <div className="text-[11px] font-bold text-white/80 leading-snug">{event.text}</div>
                   {event.trackPointId && (
-                    <div className="mt-1 flex items-center gap-1 text-[8px] font-bold text-sky-500/40 uppercase">
+                    <div className="mt-1 flex items-center gap-1 text-[10px] font-bold text-sky-500/40 uppercase">
                       <MapPin size={8} /> Linked Track Point
                     </div>
                   )}
@@ -6318,7 +6318,7 @@ export default function App() {
           {activeTab === 'vhf' && (
             <div className="flex flex-col h-full">
               {/* Saab联动开关 */}
-              <div className="p-2 border-b border-white/5 flex items-center justify-between gap-3 text-[9px]">
+              <div className="p-2 border-b border-white/5 flex items-center justify-between gap-3 text-[10px]">
                 <div className="flex items-center gap-3">
                   <div className="flex items-center gap-2">
                     <span className="font-black uppercase tracking-widest text-white/30 whitespace-nowrap">Saab联动</span>
@@ -6333,12 +6333,12 @@ export default function App() {
                     <motion.div 
                       initial={{ opacity: 0, x: -5 }}
                       animate={{ opacity: 1, x: 0 }}
-                      className="flex items-center gap-1 bg-white/5 border border-white/10 rounded px-1.5 py-0.5"
+                      className="flex items-center gap-1 bg-white/5 border border-white/10 rounded px-1.5 py-1"
                     >
                        <select
                          value={selectedStation}
                          onChange={(e) => setSelectedStation(e.target.value)}
-                         className="bg-transparent border-none text-[9px] font-black text-sky-400 focus:outline-none appearance-none cursor-pointer"
+                         className="bg-transparent border-none text-[10px] font-black text-sky-400 focus:outline-none appearance-none cursor-pointer"
                        >
                          <option value="10号台" className="bg-[#0a0a0a]">10号台</option>
                          <option value="外高桥" className="bg-[#0a0a0a]">外高桥</option>
@@ -6350,7 +6350,7 @@ export default function App() {
                 <div className="flex bg-white/5 p-0.5 rounded-md">
                   <button 
                     onClick={() => setVhfViewMode('list')}
-                    className={`px-2 py-1 text-[8px] font-black uppercase tracking-widest rounded transition-all ${
+                    className={`px-2 py-1 text-[10px] font-black uppercase tracking-widest rounded transition-all ${
                       vhfViewMode === 'list' ? 'bg-sky-500 text-white' : 'text-white/40 hover:text-white/60'
                     }`}
                   >
@@ -6358,7 +6358,7 @@ export default function App() {
                   </button>
                   <button 
                     onClick={() => setVhfViewMode('flow')}
-                    className={`px-2 py-1 text-[8px] font-black uppercase tracking-widest rounded transition-all ${
+                    className={`px-2 py-1 text-[10px] font-black uppercase tracking-widest rounded transition-all ${
                       vhfViewMode === 'flow' ? 'bg-sky-500 text-white' : 'text-white/40 hover:text-white/60'
                     }`}
                   >
@@ -6379,10 +6379,10 @@ export default function App() {
                     >
                       {/* 发送者 & 时间 */}
                       <div className={`flex items-center gap-1.5 mb-0.5 px-0.5 ${msg.isVTS ? 'flex-row-reverse' : 'flex-row'}`}>
-                        <span className={`text-[9px] font-black tracking-tight ${msg.isVTS ? 'text-sky-400/80' : 'text-white/30'}`}>
+                        <span className={`text-[10px] font-black tracking-tight ${msg.isVTS ? 'text-sky-400/80' : 'text-white/30'}`}>
                           {msg.sender}
                         </span>
-                        <span className="text-[7px] font-mono text-white/15">{msg.time}</span>
+                        <span className="text-[8px] font-mono text-white/15">{msg.time}</span>
                       </div>
 
                       {/* 消息卡片 */}
@@ -6396,7 +6396,7 @@ export default function App() {
                             <>
                               <div className="inline-flex items-center gap-1 px-1 rounded bg-black/10 shrink-0">
                                 <Radio size={7} className="text-sky-400/60" />
-                                <span className="text-[7px] font-bold font-mono text-white/20">{msg.duration}</span>
+                                <span className="text-[8px] font-bold font-mono text-white/20">{msg.duration}</span>
                               </div>
                               <p className={`text-[10px] leading-snug tracking-wide text-sky-50 text-right ${msg.content.length > 20 ? 'flex-1' : ''}`}>
                                 {msg.content}
@@ -6409,7 +6409,7 @@ export default function App() {
                               </p>
                               <div className="inline-flex items-center gap-1 px-1 rounded bg-black/10 shrink-0">
                                 <Radio size={7} className="text-white/20" />
-                                <span className="text-[7px] font-bold font-mono text-white/20">{msg.duration}</span>
+                                <span className="text-[8px] font-bold font-mono text-white/20">{msg.duration}</span>
                               </div>
                             </>
                           )}
@@ -6433,15 +6433,15 @@ export default function App() {
                                   <div className="flex items-center gap-x-2 gap-y-0.5 flex-wrap">
                                     <h3 className="text-[12px] font-black text-white leading-tight">{activeVhfSession.shipName}</h3>
                                     {activeVhfSession.shipInfo?.englishName && (
-                                      <span className="text-[9px] font-bold text-white/30 uppercase leading-tight">{activeVhfSession.shipInfo.englishName}</span>
+                                      <span className="text-[10px] font-bold text-white/30 uppercase leading-tight">{activeVhfSession.shipInfo.englishName}</span>
                                     )}
                                   </div>
                                   
                                   <div className="mt-0.5 flex items-center gap-2">
-                                    <span className="text-sky-400 text-[8px] font-black uppercase tracking-widest bg-sky-500/10 px-1 py-0.5 rounded border border-sky-500/20 shrink-0">
+                                    <span className="text-sky-400 text-[10px] font-black uppercase tracking-widest bg-sky-500/10 px-1 py-1 rounded border border-sky-500/20 shrink-0">
                                       {activeVhfSession.shipInfo?.shipType || '未知类型'}
                                     </span>
-                                    <span className="text-white/40 flex items-center gap-1.5 text-[9px] font-bold">
+                                    <span className="text-white/40 flex items-center gap-1.5 text-[10px] font-bold">
                                       <span className="w-px h-2 bg-white/10" />
                                       载货: <span className="text-white/60">{activeVhfSession.shipInfo?.cargoType || '--'}</span>
                                     </span>
@@ -6455,12 +6455,12 @@ export default function App() {
                               <div className="grid grid-cols-3 gap-x-2 gap-y-1.5">
                                 {/* 第一行：意图与航程 - 强调色 */}
                                 <div className="col-span-1 pb-1 border-b border-white/5 bg-sky-500/[0.04] -mx-1 pl-1 rounded-sm">
-                                  <div className="text-[7px] uppercase tracking-widest text-sky-400/40">意图</div>
-                                  <div className="text-[9px] font-black text-sky-400 uppercase tracking-tighter truncate">{activeVhfSession.intent}</div>
+                                  <div className="text-[8px] uppercase tracking-widest text-sky-400/40">意图</div>
+                                  <div className="text-[10px] font-black text-sky-400 uppercase tracking-tighter truncate">{activeVhfSession.intent}</div>
                                 </div>
                                 <div className="col-span-2 pb-1 border-b border-white/5 bg-white/[0.01] -mx-1 pr-1 pl-2 rounded-sm">
-                                  <div className="text-[7px] uppercase tracking-widest text-white/10">航程 (上一港 / 下一港)</div>
-                                  <div className="text-[9px] text-white/80 truncate">
+                                  <div className="text-[8px] uppercase tracking-widest text-white/10">航程 (上一港 / 下一港)</div>
+                                  <div className="text-[10px] text-white/80 truncate">
                                     <span className="text-white/40">{activeVhfSession.shipInfo?.lastPort || '--'}</span>
                                     <span className="mx-1 text-sky-500/30">→</span>
                                     <span className="text-sky-400 font-bold">{activeVhfSession.shipInfo?.destination || '--'}</span>
@@ -6469,30 +6469,30 @@ export default function App() {
 
                                 {/* 第二行：身份三要素 - 单等宽强调 */}
                                 <div className="space-y-0 pt-0.5 border-r border-white/5 pr-1">
-                                  <div className="text-[7px] uppercase tracking-widest text-white/20">呼号</div>
-                                  <div className="text-[9px] font-mono font-bold text-sky-300/90">{activeVhfSession.shipInfo?.callSign || '--'}</div>
+                                  <div className="text-[8px] uppercase tracking-widest text-white/20">呼号</div>
+                                  <div className="text-[10px] font-mono font-bold text-sky-300/90">{activeVhfSession.shipInfo?.callSign || '--'}</div>
                                 </div>
                                 <div className="space-y-0 pt-0.5 border-r border-white/5 px-1">
-                                  <div className="text-[7px] uppercase tracking-widest text-white/20">MMSI</div>
-                                  <div className="text-[9px] font-mono font-bold text-sky-300/90">{activeVhfSession.shipInfo?.mmsi || '----'}</div>
+                                  <div className="text-[8px] uppercase tracking-widest text-white/20">MMSI</div>
+                                  <div className="text-[10px] font-mono font-bold text-sky-300/90">{activeVhfSession.shipInfo?.mmsi || '----'}</div>
                                 </div>
                                 <div className="space-y-0 pt-0.5 pl-1">
-                                  <div className="text-[7px] uppercase tracking-widest text-white/20">IMO</div>
-                                  <div className="text-[9px] font-mono text-white/60">{activeVhfSession.shipInfo?.imo || '--'}</div>
+                                  <div className="text-[8px] uppercase tracking-widest text-white/20">IMO</div>
+                                  <div className="text-[10px] font-mono text-white/60">{activeVhfSession.shipInfo?.imo || '--'}</div>
                                 </div>
 
                                 {/* 第三行：物理规格 - 暖色调微调 */}
                                 <div className="space-y-0 border-r border-white/5 pr-1">
-                                  <div className="text-[7px] uppercase tracking-widest text-white/20">船籍</div>
-                                  <div className="text-[9px] text-white/75 font-medium">{activeVhfSession.shipInfo?.flag || '--'}</div>
+                                  <div className="text-[8px] uppercase tracking-widest text-white/20">船籍</div>
+                                  <div className="text-[10px] text-white/75 font-medium">{activeVhfSession.shipInfo?.flag || '--'}</div>
                                 </div>
                                 <div className="space-y-0 border-r border-white/5 px-1">
-                                  <div className="text-[7px] uppercase tracking-widest text-white/20">吃水</div>
-                                  <div className="text-[9px] text-orange-300/90 font-mono font-bold">{activeVhfSession.shipInfo?.draft || '--'}</div>
+                                  <div className="text-[8px] uppercase tracking-widest text-white/20">吃水</div>
+                                  <div className="text-[10px] text-orange-300/90 font-mono font-bold">{activeVhfSession.shipInfo?.draft || '--'}</div>
                                 </div>
                                 <div className="space-y-0 pl-1">
-                                  <div className="text-[7px] uppercase tracking-widest text-white/20">长 / 宽</div>
-                                  <div className="text-[9px] text-orange-200/80 font-mono">
+                                  <div className="text-[8px] uppercase tracking-widest text-white/20">长 / 宽</div>
+                                  <div className="text-[10px] text-orange-200/80 font-mono">
                                     {activeVhfSession.shipInfo?.length || '--'} <span className="text-white/20">/</span> {activeVhfSession.shipInfo?.width || '--'}
                                   </div>
                                 </div>
@@ -6512,10 +6512,10 @@ export default function App() {
                               >
                                 {/* 发送者 & 时间 */}
                                 <div className={`flex items-center gap-1.5 mb-0.5 px-0.5 ${msg.isVTS ? 'flex-row-reverse' : 'flex-row'}`}>
-                                  <span className={`text-[9px] font-black tracking-tight ${msg.isVTS ? 'text-sky-400/80' : 'text-white/30'}`}>
+                                  <span className={`text-[10px] font-black tracking-tight ${msg.isVTS ? 'text-sky-400/80' : 'text-white/30'}`}>
                                     {msg.sender}
                                   </span>
-                                  <span className="text-[7px] font-mono text-white/15">{msg.time}</span>
+                                  <span className="text-[8px] font-mono text-white/15">{msg.time}</span>
                                 </div>
 
                                 {/* 消息卡片 */}
@@ -6529,7 +6529,7 @@ export default function App() {
                                       <>
                                         <div className="inline-flex items-center gap-1 px-1 rounded bg-black/20 shrink-0">
                                           <Radio size={7} className="text-sky-400/60" />
-                                          <span className="text-[7px] font-bold font-mono text-white/20">{msg.duration}</span>
+                                          <span className="text-[8px] font-bold font-mono text-white/20">{msg.duration}</span>
                                         </div>
                                         <p className={`text-[10px] leading-snug tracking-wide text-sky-50 text-right ${msg.content.length > 20 ? 'flex-1' : ''}`}>
                                           {msg.content}
@@ -6542,7 +6542,7 @@ export default function App() {
                                         </p>
                                         <div className="inline-flex items-center gap-1 px-1 rounded bg-black/20 shrink-0">
                                           <Radio size={7} className="text-white/20" />
-                                          <span className="text-[7px] font-bold font-mono text-white/20">{msg.duration}</span>
+                                          <span className="text-[8px] font-bold font-mono text-white/20">{msg.duration}</span>
                                         </div>
                                       </>
                                     )}
@@ -6562,9 +6562,9 @@ export default function App() {
                     <section className="min-h-0 flex-[0.4] bg-[#080808] overflow-hidden border-t border-white/6">
                       <div className="px-3 py-1 border-b border-white/5 bg-[#0a0a0a] flex items-center justify-between">
                         <div className="flex items-center gap-2">
-                          <span className="text-[9px] font-black text-white/20 tracking-[0.06em]">等待对话船舶</span>
+                          <span className="text-[10px] font-black text-white/20 tracking-[0.06em]">等待对话船舶</span>
                         </div>
-                        <span className="text-[8px] font-black text-white/15">共 {waitingVhfSessions.length} 条</span>
+                        <span className="text-[10px] font-black text-white/15">共 {waitingVhfSessions.length} 条</span>
                       </div>
 
                       <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar">
@@ -6584,15 +6584,15 @@ export default function App() {
                                   <div className="flex items-baseline gap-1.5">
                                     <span className="text-[10px] font-black text-white/80">{session.shipName}</span>
                                     {shipInfo?.englishName && (
-                                      <span className="text-[8px] font-bold text-white/20 truncate">{shipInfo.englishName}</span>
+                                      <span className="text-[10px] font-bold text-white/20 truncate">{shipInfo.englishName}</span>
                                     )}
                                   </div>
-                                  <div className="text-[9px] text-white/30 truncate">
+                                  <div className="text-[10px] text-white/30 truncate">
                                     {session.messages.find((message) => !message.isVTS)?.content || session.messages[session.messages.length - 1]?.content || '暂无内容'}
                                   </div>
                                 </div>
                                 <div className="shrink-0">
-                                  <span className="px-1.5 py-0.5 rounded bg-sky-500/10 border border-sky-500/20 text-[8px] font-black text-sky-400">
+                                  <span className="px-1.5 py-1 rounded bg-sky-500/10 border border-sky-500/20 text-[10px] font-black text-sky-400">
                                     {session.intent}
                                   </span>
                                 </div>
@@ -6673,29 +6673,29 @@ export default function App() {
                         </div>
                         <div className="flex flex-col min-w-0">
                           <div className="flex items-center gap-2 whitespace-nowrap">
-                            <span className="text-[9px] font-bold text-white/40 truncate">{item.ship}</span>
-                            <span className="text-[8px] px-1 bg-white/10 rounded uppercase tracking-wider shrink-0">{item.shipType}</span>
+                            <span className="text-[10px] font-bold text-white/40 truncate">{item.ship}</span>
+                            <span className="text-[10px] px-1 bg-white/10 rounded uppercase tracking-wider shrink-0">{item.shipType}</span>
                             <div className="flex items-center gap-1 ml-auto">
                               <div className="w-1 h-1 rounded-full bg-sky-500 animate-pulse" />
-                              <span className="text-[8px] font-bold text-sky-400 tracking-tighter">S:{item.speed}</span>
+                              <span className="text-[10px] font-bold text-sky-400 tracking-tighter">S:{item.speed}</span>
                             </div>
                           </div>
                           <div className="flex items-center gap-2 opacity-30">
-                            <span className="text-[8px] tracking-tighter">L:{item.length}</span>
-                            <span className="text-[8px] tracking-tighter">W:{item.width}</span>
-                            <span className="text-[8px] tracking-tighter">D:{item.draft}</span>
+                            <span className="text-[10px] tracking-tighter">L:{item.length}</span>
+                            <span className="text-[10px] tracking-tighter">W:{item.width}</span>
+                            <span className="text-[10px] tracking-tighter">D:{item.draft}</span>
                           </div>
                           <div className="flex items-center gap-2 mt-0.5">
                             <span className="text-xs font-black text-white">
                               {item.path.find(p => p.status === 'active')?.action || '正在执行'}
                             </span>
-                            <span className="text-[9px] font-mono text-white/30">{item.occurrenceTime.split(' ')[1]}</span>
+                            <span className="text-[10px] font-mono text-white/30">{item.occurrenceTime.split(' ')[1]}</span>
                           </div>
                         </div>
                       </div>
-                      <div className="flex items-center gap-1 px-1.5 py-0.5 bg-white/5 rounded-full border border-white/5">
+                      <div className="flex items-center gap-1 px-1.5 py-1 bg-white/5 rounded-full border border-white/5">
                         <div className="w-1 h-1 rounded-full bg-emerald-500 animate-pulse" />
-                        <span className="text-[8px] font-black uppercase tracking-widest text-white/60">实时</span>
+                        <span className="text-[10px] font-black uppercase tracking-widest text-white/60">实时</span>
                       </div>
                     </div>
 
@@ -6715,7 +6715,7 @@ export default function App() {
                             <div className="w-1.5 h-1.5 rounded-full bg-sky-500/40 border border-sky-500/60" />
                           </div>
                           <div className="text-center">
-                            <div className="text-[9px] font-bold text-white/40 whitespace-nowrap">{item.past}</div>
+                            <div className="text-[10px] font-bold text-white/40 whitespace-nowrap">{item.past}</div>
                           </div>
                         </div>
                         {/* 当前步骤 */}
@@ -6738,7 +6738,7 @@ export default function App() {
                             <div className="w-1.5 h-1.5 rounded-full bg-white/5 border border-white/10" />
                           </div>
                           <div className="text-center">
-                            <div className="text-[9px] font-bold text-white/40 whitespace-nowrap">{item.destination}</div>
+                            <div className="text-[10px] font-bold text-white/40 whitespace-nowrap">{item.destination}</div>
                           </div>
                         </div>
                       </div>
@@ -6759,35 +6759,35 @@ export default function App() {
                           <div className="rounded-lg border border-white/5 bg-white/[0.02] px-2 py-2">
                             <div className="grid grid-cols-3 gap-x-2 gap-y-1.5">
                               <div className="space-y-0.5">
-                                <div className="text-[8px] uppercase tracking-widest text-white/30">MMSI</div>
-                                <div className="text-[9px] font-mono text-white/75">{item.mmsi || '--'}</div>
+                                <div className="text-[10px] uppercase tracking-widest text-white/30">MMSI</div>
+                                <div className="text-[10px] font-mono text-white/75">{item.mmsi || '--'}</div>
                               </div>
                               <div className="space-y-0.5">
-                                <div className="text-[8px] uppercase tracking-widest text-white/30">呼号</div>
-                                <div className="text-[9px] font-mono text-white/75">{item.callSign || '--'}</div>
+                                <div className="text-[10px] uppercase tracking-widest text-white/30">呼号</div>
+                                <div className="text-[10px] font-mono text-white/75">{item.callSign || '--'}</div>
                               </div>
                               <div className="space-y-0.5">
-                                <div className="text-[8px] uppercase tracking-widest text-white/30">船籍</div>
-                                <div className="text-[9px] text-white/75">{item.flag || '--'}</div>
+                                <div className="text-[10px] uppercase tracking-widest text-white/30">船籍</div>
+                                <div className="text-[10px] text-white/75">{item.flag || '--'}</div>
                               </div>
                               
                               <div className="space-y-0.5">
-                                <div className="text-[8px] uppercase tracking-widest text-white/30">最大吃水</div>
-                                <div className="text-[9px] text-white/75">{item.draft}</div>
+                                <div className="text-[10px] uppercase tracking-widest text-white/30">最大吃水</div>
+                                <div className="text-[10px] text-white/75">{item.draft}</div>
                               </div>
                               <div className="space-y-0.5">
-                                <div className="text-[8px] uppercase tracking-widest text-white/30">长/宽</div>
-                                <div className="text-[9px] text-white/75">{item.length}/{item.width}</div>
+                                <div className="text-[10px] uppercase tracking-widest text-white/30">长/宽</div>
+                                <div className="text-[10px] text-white/75">{item.length}/{item.width}</div>
                               </div>
                               <div className="space-y-0.5">
-                                <div className="text-[8px] uppercase tracking-widest text-white/30">航向/航速</div>
-                                <div className="text-[9px] text-white/75">{item.situation.hdg}/{item.speed}</div>
+                                <div className="text-[10px] uppercase tracking-widest text-white/30">航向/航速</div>
+                                <div className="text-[10px] text-white/75">{item.situation.hdg}/{item.speed}</div>
                               </div>
                             </div>
                           </div>
 
                           <div className="rounded-lg border border-sky-500/15 bg-sky-500/[0.06] px-2 py-1.5">
-                            <div className="flex items-center gap-1.5 text-[9px] font-bold text-white">
+                            <div className="flex items-center gap-1.5 text-[10px] font-bold text-white">
                               <LocateFixed size={10} className="shrink-0 text-sky-400" />
                               <span className="shrink-0 text-sky-300/90">意图：</span>
                               <span className="truncate">{getCompactIntentLine(item)}</span>
@@ -6795,7 +6795,7 @@ export default function App() {
                           </div>
 
                           <div className="rounded-lg border border-red-500/15 bg-red-500/[0.04] px-2 py-1.5">
-                            <div className="space-y-1 text-[9px] font-bold text-white">
+                            <div className="space-y-1 text-[10px] font-bold text-white">
                               {getCompactRiskLines(item).map((risk, idx) => (
                                 <div key={idx} className="flex items-center gap-1.5">
                                   {idx === 0 ? (
@@ -6813,7 +6813,7 @@ export default function App() {
                           </div>
 
                           <div className="rounded-lg border border-emerald-500/15 bg-emerald-500/[0.05] px-2 py-1.5">
-                            <div className="flex items-start gap-1.5 text-[9px] font-bold text-white/92">
+                            <div className="flex items-start gap-1.5 text-[10px] font-bold text-white/92">
                               <Shield size={10} className="mt-[1px] shrink-0 text-emerald-400" />
                               <span className="shrink-0 text-emerald-300/90">建议：</span>
                               <span className="min-w-0 whitespace-normal break-words leading-relaxed">
@@ -6828,7 +6828,7 @@ export default function App() {
                                 e.stopPropagation();
                                 setSelectedIntent(null);
                               }}
-                              className="flex items-center gap-1.5 text-[9px] font-black uppercase tracking-[0.2em] text-sky-500/60 hover:text-sky-400 transition-colors"
+                              className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-[0.2em] text-sky-500/60 hover:text-sky-400 transition-colors"
                             >
                               收起详情 <ChevronDown size={8} className="rotate-180" />
                             </button>
@@ -6852,19 +6852,19 @@ export default function App() {
                   <div className="grid grid-cols-4 gap-1">
                     <div className="bg-red-500/10 border border-red-500/20 rounded-md p-1 text-center">
                       <div className="text-sm font-bold text-red-500">{MOCK_ALERTS.filter(a => a.level === 'emergency').length}</div>
-                      <div className="text-[6px] font-bold uppercase text-red-500/70">紧急</div>
+                      <div className="text-[7px] font-bold uppercase text-red-500/70">紧急</div>
                     </div>
                     <div className="bg-orange-500/10 border border-orange-500/20 rounded-md p-1 text-center">
                       <div className="text-sm font-bold text-orange-500">{MOCK_ALERTS.filter(a => a.level === 'alarm').length}</div>
-                      <div className="text-[6px] font-bold uppercase text-orange-500/70">警报</div>
+                      <div className="text-[7px] font-bold uppercase text-orange-500/70">警报</div>
                     </div>
                     <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-md p-1 text-center">
                       <div className="text-sm font-bold text-yellow-500">{MOCK_ALERTS.filter(a => a.level === 'warning').length}</div>
-                      <div className="text-[6px] font-bold uppercase text-yellow-500/70">警告</div>
+                      <div className="text-[7px] font-bold uppercase text-yellow-500/70">警告</div>
                     </div>
                     <div className="bg-blue-500/10 border border-blue-500/20 rounded-md p-1 text-center">
                       <div className="text-sm font-bold text-blue-500">{MOCK_ALERTS.filter(a => a.level === 'caution').length}</div>
-                      <div className="text-[6px] font-bold uppercase text-blue-500/70">注意</div>
+                      <div className="text-[7px] font-bold uppercase text-blue-500/70">注意</div>
                     </div>
                   </div>
                 </div>
@@ -6906,17 +6906,17 @@ export default function App() {
                           </div>
                           <div className="flex flex-col min-w-0">
                             <div className="flex items-center gap-2 whitespace-nowrap">
-                              <span className="text-[9px] font-bold text-white/40 truncate">{alert.ship}</span>
-                              <span className="text-[8px] px-1 bg-white/10 rounded uppercase tracking-wider shrink-0">{alert.shipType}</span>
+                              <span className="text-[10px] font-bold text-white/40 truncate">{alert.ship}</span>
+                              <span className="text-[10px] px-1 bg-white/10 rounded uppercase tracking-wider shrink-0">{alert.shipType}</span>
                               <div className="flex items-center gap-1 ml-auto">
                                 <div className="w-1 h-1 rounded-full bg-sky-500 animate-pulse" />
-                                <span className="text-[8px] font-bold text-sky-400 tracking-tighter">S:{alert.speed}</span>
+                                <span className="text-[10px] font-bold text-sky-400 tracking-tighter">S:{alert.speed}</span>
                               </div>
                             </div>
                             <div className="flex items-center gap-2 opacity-30">
-                              <span className="text-[8px] tracking-tighter">L:{alert.length}</span>
-                              <span className="text-[8px] tracking-tighter">W:{alert.width}</span>
-                              <span className="text-[8px] tracking-tighter">D:{alert.draft}</span>
+                              <span className="text-[10px] tracking-tighter">L:{alert.length}</span>
+                              <span className="text-[10px] tracking-tighter">W:{alert.width}</span>
+                              <span className="text-[10px] tracking-tighter">D:{alert.draft}</span>
                             </div>
                             <div className="flex items-center gap-2 mt-0.5">
                               <span className={`text-xs font-black ${
@@ -6926,11 +6926,11 @@ export default function App() {
                               }`}>
                                 {alert.type}
                               </span>
-                              <span className="text-[9px] font-mono text-white/30">{alert.time}</span>
+                              <span className="text-[10px] font-mono text-white/30">{alert.time}</span>
                             </div>
                           </div>
                         </div>
-                        <div className={`flex items-center gap-1 px-1.5 py-0.5 rounded-full border ${
+                        <div className={`flex items-center gap-1 px-1.5 py-1 rounded-full border ${
                           alert.level === 'emergency' ? 'bg-red-500/10 border-red-500/20 text-red-400' : 
                           alert.level === 'alarm' ? 'bg-orange-500/10 border-orange-500/20 text-orange-400' : 
                           alert.level === 'warning' ? 'bg-yellow-500/10 border-yellow-500/20 text-yellow-400' : 'bg-blue-500/10 border-blue-500/20 text-blue-400'
@@ -6940,7 +6940,7 @@ export default function App() {
                             alert.level === 'alarm' ? 'bg-orange-500' : 
                             alert.level === 'warning' ? 'bg-yellow-500' : 'bg-blue-500'
                           }`} />
-                          <span className="text-[8px] font-black uppercase tracking-widest opacity-80">
+                          <span className="text-[10px] font-black uppercase tracking-widest opacity-80">
                             {alert.level === 'emergency' ? '紧急' : alert.level === 'alarm' ? '警报' : alert.level === 'warning' ? '警告' : '注意'}
                           </span>
                         </div>
@@ -6955,10 +6955,10 @@ export default function App() {
 
                       {/* 操作按钮区 */}
                       <div className="flex gap-1.5 px-1 mt-2">
-                        <button className="flex-1 py-1 bg-white/5 hover:bg-white/10 border border-white/5 rounded-lg text-[9px] font-bold text-white/60 transition-colors">
+                        <button className="flex-1 py-1 bg-white/5 hover:bg-white/10 border border-white/5 rounded-lg text-[10px] font-bold text-white/60 transition-colors">
                           定位船舶
                         </button>
-                        <button className="flex-1 py-1 bg-white/5 hover:bg-white/10 border border-white/5 rounded-lg text-[9px] font-bold text-white/60 transition-colors">
+                        <button className="flex-1 py-1 bg-white/5 hover:bg-white/10 border border-white/5 rounded-lg text-[10px] font-bold text-white/60 transition-colors">
                           忽略预警
                         </button>
                       </div>
@@ -6978,38 +6978,38 @@ export default function App() {
                             <div className="rounded-lg border border-white/5 bg-white/[0.02] px-2 py-2">
                               <div className="grid grid-cols-3 gap-x-2 gap-y-1.5">
                                 <div className="space-y-0.5">
-                                  <div className="text-[8px] uppercase tracking-widest text-white/30">MMSI</div>
-                                  <div className="text-[9px] font-mono text-white/75">{alert.mmsi || '--'}</div>
+                                  <div className="text-[10px] uppercase tracking-widest text-white/30">MMSI</div>
+                                  <div className="text-[10px] font-mono text-white/75">{alert.mmsi || '--'}</div>
                                 </div>
                                 <div className="space-y-0.5">
-                                  <div className="text-[8px] uppercase tracking-widest text-white/30">呼号</div>
-                                  <div className="text-[9px] font-mono text-white/75">{alert.callsign || '--'}</div>
+                                  <div className="text-[10px] uppercase tracking-widest text-white/30">呼号</div>
+                                  <div className="text-[10px] font-mono text-white/75">{alert.callsign || '--'}</div>
                                 </div>
                                 <div className="space-y-0.5">
-                                  <div className="text-[8px] uppercase tracking-widest text-white/30">船籍</div>
-                                  <div className="text-[9px] text-white/75">{alert.flag || '--'}</div>
+                                  <div className="text-[10px] uppercase tracking-widest text-white/30">船籍</div>
+                                  <div className="text-[10px] text-white/75">{alert.flag || '--'}</div>
                                 </div>
                                 
                                 <div className="space-y-0.5">
-                                  <div className="text-[8px] uppercase tracking-widest text-white/30">最大吃水</div>
-                                  <div className="text-[9px] text-white/75">{alert.draft}</div>
+                                  <div className="text-[10px] uppercase tracking-widest text-white/30">最大吃水</div>
+                                  <div className="text-[10px] text-white/75">{alert.draft}</div>
                                 </div>
                                 <div className="space-y-0.5">
-                                  <div className="text-[8px] uppercase tracking-widest text-white/30">长/宽</div>
-                                  <div className="text-[9px] text-white/75">{alert.length}/{alert.width}</div>
+                                  <div className="text-[10px] uppercase tracking-widest text-white/30">长/宽</div>
+                                  <div className="text-[10px] text-white/75">{alert.length}/{alert.width}</div>
                                 </div>
                                 <div className="space-y-0.5">
-                                  <div className="text-[8px] uppercase tracking-widest text-white/30">代理</div>
-                                  <div className="text-[9px] text-white/75 truncate">{alert.agent || '--'}</div>
+                                  <div className="text-[10px] uppercase tracking-widest text-white/30">代理</div>
+                                  <div className="text-[10px] text-white/75 truncate">{alert.agent || '--'}</div>
                                 </div>
 
                                 <div className="col-span-2 space-y-0.5">
-                                  <div className="text-[8px] uppercase tracking-widest text-white/30">目的港</div>
-                                  <div className="text-[9px] text-white/75">{alert.destination}</div>
+                                  <div className="text-[10px] uppercase tracking-widest text-white/30">目的港</div>
+                                  <div className="text-[10px] text-white/75">{alert.destination}</div>
                                 </div>
                                 <div className="space-y-0.5">
-                                  <div className="text-[8px] uppercase tracking-widest text-white/30">风险指数</div>
-                                  <div className="text-[9px] font-bold text-red-400">{alert.riskScore}</div>
+                                  <div className="text-[10px] uppercase tracking-widest text-white/30">风险指数</div>
+                                  <div className="text-[10px] font-bold text-red-400">{alert.riskScore}</div>
                                 </div>
                               </div>
                             </div>
@@ -7017,7 +7017,7 @@ export default function App() {
                             <div className="h-px bg-white/5" />
 
                             <div className="space-y-1.5">
-                              <div className="text-[9px] font-bold text-white/40 uppercase tracking-widest mb-2">预警时间轴</div>
+                              <div className="text-[10px] font-bold text-white/40 uppercase tracking-widest mb-2">预警时间轴</div>
                               {alert.timeline.map((event, idx) => (
                               <div key={idx} className="relative pl-3.5 group/item">
                                 {/* 时间轴连线 */}
@@ -7034,8 +7034,8 @@ export default function App() {
 
                                 <div className="space-y-0.5">
                                   <div className="flex items-center gap-1">
-                                    <span className="text-[7px] font-mono text-white/30">{event.time}</span>
-                                    <div className={`px-1 py-0.5 rounded text-[6px] font-black uppercase tracking-widest ${
+                                    <span className="text-[8px] font-mono text-white/30">{event.time}</span>
+                                    <div className={`px-1 py-1 rounded text-[7px] font-black uppercase tracking-widest ${
                                       event.type === 'risk' ? 'bg-red-500/10 text-red-400 border border-red-500/20' :
                                       event.type === 'warning' ? 'bg-orange-500/10 text-orange-400 border border-orange-500/20' :
                                       'bg-white/5 text-white/40 border border-white/5'
@@ -7043,7 +7043,7 @@ export default function App() {
                                       {event.type === 'risk' ? '风险触发' : event.type === 'warning' ? '异常检测' : '常规记录'}
                                     </div>
                                   </div>
-                                  <p className={`text-[8px] leading-relaxed transition-colors ${
+                                  <p className={`text-[10px] leading-relaxed transition-colors ${
                                     event.type === 'risk' ? 'text-white/80' : 'text-white/40'
                                   }`}>
                                     {event.event}
@@ -7059,7 +7059,7 @@ export default function App() {
                                   e.stopPropagation();
                                   setSelectedAlert(null);
                                 }}
-                                className="flex items-center gap-1.5 text-[9px] font-black uppercase tracking-[0.2em] text-sky-500/60 hover:text-sky-400 transition-colors"
+                                className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-[0.2em] text-sky-500/60 hover:text-sky-400 transition-colors"
                               >
                                 收起详情 <ChevronDown size={8} className="rotate-180" />
                               </button>
@@ -7120,7 +7120,7 @@ export default function App() {
                           setSelectedExpiringShip(next ? item.expiringShips?.[0]?.id ?? null : null);
                           setSelectedOvertimeShip(null);
                         }}
-                        className="border-b border-white/5 px-3 py-2.5 transition-all cursor-pointer hover:bg-white/[0.02]"
+                        className="border-b border-white/5 px-3 py-1.5 transition-all cursor-pointer hover:bg-white/[0.02]"
                       >
                         <div className="flex items-center justify-between gap-2 transition-all">
                           <div className="flex min-w-0 flex-1 items-center gap-2 transition-all">
@@ -7128,7 +7128,7 @@ export default function App() {
                               <Anchor size={16} className="text-[#4DFF88]" />
                             </div>
                             <div className="min-w-0 flex-1">
-                              <div className="truncate text-xs font-bold leading-none tracking-tight text-white transition-all">{item.name}</div>
+                              <div className="truncate text-[10px] font-bold leading-none tracking-tight text-white transition-all">{item.name}</div>
                               <div className="mt-1.5 flex items-center gap-2">
                                 <div className="h-[3px] w-[54px] overflow-hidden rounded-full bg-white/10">
                                   <div
@@ -7136,7 +7136,7 @@ export default function App() {
                                     style={{ width: `${Math.max(availabilityPercent, availabilityPercent > 0 ? 8 : 0)}%` }}
                                   />
                                 </div>
-                                <div className="shrink-0 text-[9px] font-bold leading-none text-white/65">
+                                <div className="shrink-0 text-[10px] font-bold leading-none text-white/65">
                                   {availabilityPercent}%
                                 </div>
                               </div>
@@ -7144,12 +7144,12 @@ export default function App() {
                           </div>
                           <div className="flex shrink-0 items-center gap-1.5 transition-all">
                             {item.expiringCount > 0 && (
-                              <span className="shrink-0 rounded-full border border-[#FF9F43]/20 bg-[#3D2616] px-1.5 py-0.5 text-[9px] font-bold leading-none text-[#FF9F43] transition-all">
+                              <span className="shrink-0 rounded-full border border-[#FF9F43]/20 bg-[#3D2616] px-1.5 py-1 text-[10px] font-bold leading-none text-[#FF9F43] transition-all">
                                 临期 {item.expiringCount}
                               </span>
                             )}
                             {item.overtimeCount > 0 && (
-                              <span className="shrink-0 rounded-full border border-[#FF4D4D]/20 bg-[#3D1D1D] px-1.5 py-0.5 text-[9px] font-bold leading-none text-[#FF4D4D] transition-all">
+                              <span className="shrink-0 rounded-full border border-[#FF4D4D]/20 bg-[#3D1D1D] px-1.5 py-1 text-[10px] font-bold leading-none text-[#FF4D4D] transition-all">
                                 超时 {item.overtimeCount}
                               </span>
                             )}
@@ -7166,10 +7166,10 @@ export default function App() {
                           exit={{ height: 0, opacity: 0 }}
                           className="overflow-hidden"
                         >
-                            <div className="space-y-3 px-3 py-2.5">
+                            <div className="space-y-2 px-3 py-1.5">
                             <div className="space-y-2.5">
                               <div className="flex items-center justify-between">
-                                <div className="text-[10px] font-bold uppercase tracking-wider text-gray-500">船舶类型分布</div>
+                                <div className="text-[9px] font-bold uppercase tracking-wider text-gray-500">船舶类型分布</div>
                                 <div className="flex rounded-lg border border-white/5 bg-[#1A1D23] p-0.5">
                                   <button
                                     type="button"
@@ -7217,13 +7217,13 @@ export default function App() {
                                             <span 
                                               className="text-[#4DABFF]/60 font-medium truncate w-full text-center leading-tight mb-0.5"
                                               style={{ 
-                                                fontSize: hoveredShipType.length > 5 ? '6px' : '8px'
+                                                fontSize: hoveredShipType.length > 5 ? '7px' : '9px'
                                               }}
                                             >
                                               {hoveredShipType}
                                             </span>
                                           )}
-                                          <span className="text-[8px] font-bold text-[#4DABFF] leading-tight">
+                                          <span className="text-[10px] font-bold text-[#4DABFF] leading-tight">
                                             {hoveredShipType 
                                               ? `${chartStats.find(s => s.type === hoveredShipType)?.count ?? 0}艘`
                                               : `${chartTotal}艘`}
@@ -7282,7 +7282,7 @@ export default function App() {
                                             transition={{ delay: idx * 0.05 }}
                                             onMouseEnter={() => setHoveredShipType(ship.type)}
                                             onMouseLeave={() => setHoveredShipType(null)}
-                                            className={`flex items-center gap-2 rounded-md px-1 py-0.5 transition-all hover:bg-white/5 cursor-pointer ${
+                                            className={`flex items-center gap-2 rounded-md px-1 py-1 transition-all hover:bg-white/5 cursor-pointer ${
                                               hoveredShipType === ship.type ? 'bg-white/5' : ''
                                             }`}
                                           >
@@ -7296,10 +7296,10 @@ export default function App() {
                                             <MarqueeText 
                                               text={ship.type} 
                                               isHovered={hoveredShipType === ship.type} 
-                                              className="text-[9px] leading-none text-gray-400" 
+                                              className="text-[10px] leading-none text-gray-400" 
                                             />
-                                            <span className="text-[9px] font-bold text-[#4DABFF]">{ratio}%</span>
-                                            <span className="text-[9px] text-gray-600 ml-1">{ship.count}艘</span>
+                                            <span className="text-[10px] font-bold text-[#4DABFF]">{ratio}%</span>
+                                            <span className="text-[10px] text-gray-600 ml-1">{ship.count}艘</span>
                                           </motion.div>
                                         );
                                       })}
@@ -7324,9 +7324,9 @@ export default function App() {
                               )}
                             </div>
 
-                            <div className="space-y-3">
+                            <div className="space-y-2">
                               <div className="flex items-center justify-between">
-                                <div className="text-[10px] font-bold uppercase tracking-wider text-gray-500">船舶锚泊分布</div>
+                                <div className="text-[9px] font-bold uppercase tracking-wider text-gray-500">船舶锚泊分布</div>
                               </div>
                               <div className="space-y-2 rounded-xl border border-white/5 bg-[#1A1D23]/50 p-3 overflow-x-hidden shadow-[inset_0_0_20px_rgba(0,0,0,0.2)]">
                                 <div className="flex gap-4 items-center">
@@ -7344,13 +7344,13 @@ export default function App() {
                                             <span 
                                               className="text-[#4DABFF]/60 font-medium truncate w-full text-center leading-tight mb-0.5"
                                               style={{ 
-                                                fontSize: hoveredDurationType.length > 5 ? '6px' : '8px'
+                                                fontSize: hoveredDurationType.length > 5 ? '7px' : '9px'
                                               }}
                                             >
                                               {hoveredDurationType}
                                             </span>
                                           )}
-                                          <span className="text-[8px] font-bold text-[#4DABFF] leading-tight">
+                                          <span className="text-[10px] font-bold text-[#4DABFF] leading-tight">
                                             {hoveredDurationType 
                                               ? `${durationChartStats.find(b => b.type === hoveredDurationType)?.count ?? 0}艘`
                                               : `${durationChartTotal}艘`}
@@ -7406,7 +7406,7 @@ export default function App() {
                                           key={`${bucket.type}-${idx}-legend`}
                                           onMouseEnter={() => setHoveredDurationType(bucket.type)}
                                           onMouseLeave={() => setHoveredDurationType(null)}
-                                          className={`flex items-center gap-2 rounded-md px-1 py-0.5 transition-all hover:bg-white/5 cursor-pointer ${
+                                          className={`flex items-center gap-2 rounded-md px-1 py-1 transition-all hover:bg-white/5 cursor-pointer ${
                                             hoveredDurationType === bucket.type ? 'bg-white/5' : ''
                                           }`}
                                         >
@@ -7417,9 +7417,9 @@ export default function App() {
                                               boxShadow: hoveredDurationType === bucket.type ? `0 0 8px ${ANCHORAGE_TYPE_CHART_COLORS[idx % ANCHORAGE_TYPE_CHART_COLORS.length]}` : 'none'
                                             }}
                                           />
-                                          <span className="min-w-0 flex-1 truncate text-[9px] leading-none text-gray-400">{bucket.type}</span>
-                                          <span className="text-[9px] font-bold text-[#4DABFF]">{ratio}%</span>
-                                          <span className="text-[9px] text-gray-600 ml-1">{bucket.count}艘</span>
+                                          <span className="min-w-0 flex-1 truncate text-[10px] leading-none text-gray-400">{bucket.type}</span>
+                                          <span className="text-[10px] font-bold text-[#4DABFF]">{ratio}%</span>
+                                          <span className="text-[10px] text-gray-600 ml-1">{bucket.count}艘</span>
                                         </motion.div>
                                       );
                                     })}
@@ -7429,15 +7429,14 @@ export default function App() {
                             </div>
 
                             {item.expiringCount > 0 && (
-                               <div className="space-y-1.5 border-t border-white/5 pt-2">
+                               <div className="space-y-1 border-t border-white/5 pt-1.5">
                                  <div className="flex items-center justify-between">
                                    <div className="flex items-center gap-1.5">
-                                     <Clock size={9} className="text-[#4DABFF]" />
-                                     <span className="text-[10px] font-bold leading-none text-[#f7a52c]">
+                                     <span className="text-[9px] font-bold leading-none text-[#f7a52c]">
                                        {item.expiringCount} 艘船舶锚泊临期
                                      </span>
                                    </div>
-                                   <div className="text-[9px] font-bold leading-none text-[#4DABFF]">
+                                   <div className="text-[10px] font-bold leading-none text-[#4DABFF]">
                                      限时 48H
                                    </div>
                                  </div>
@@ -7458,32 +7457,29 @@ export default function App() {
                                               }}
                                               className="flex flex-1 cursor-pointer items-center gap-2"
                                             >
-                                              <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-[#252A33]">
-                                                <Ship size={14} className="text-white/40" />
-                                              </div>
-                                              <div className="min-w-0">
+                                              <div className="min-w-0 flex-1">
                                                 <div className="text-[10px] font-bold leading-none text-white/92">
                                                   {ship.name}
                                                   {ship.englishName ? (
-                                                    <span className="ml-1 text-[8px] font-semibold text-white/45">{ship.englishName}</span>
+                                                    <span className="ml-1 text-[10px] font-semibold text-white/45">{ship.englishName}</span>
                                                   ) : null}
                                                 </div>
-                                                <div className="mt-1 text-[9px] leading-none text-white/28">到期: {expiryMeta.date} {expiryMeta.time}</div>
-                                                <div className="mt-1 text-[9px] font-medium leading-none text-[#f7a52c]">
+                                                <div className="mt-1 text-[10px] leading-none text-white/28">到期: {expiryMeta.date} {expiryMeta.time}</div>
+                                                <div className="mt-1 text-[10px] font-medium leading-none text-[#f7a52c]">
                                                   {formatAnchorageRemainingDuration(ship.expiryTime, currentTime)}
                                                 </div>                                              </div>
                                             </div>                                            <div className={`flex flex-col gap-1 transition-opacity ${isExpanded ? 'opacity-100' : 'opacity-0 group-hover/ship:opacity-100'}`}>
                                               <button
                                                 type="button"
                                                 onClick={(e) => e.stopPropagation()}
-                                                className="rounded-md bg-[#30343d] px-1.5 py-0.5 text-[9px] font-black leading-none text-white/45 transition-colors hover:text-white/80"
+                                                className="rounded-md bg-[#30343d] px-1.5 py-1 text-[10px] font-black leading-none text-white/45 transition-colors hover:text-white/80"
                                               >
                                                 忽略
                                               </button>
                                               <button
                                                 type="button"
                                                 onClick={(e) => e.stopPropagation()}
-                                                className="rounded-md bg-[#3D2616] px-1.5 py-0.5 text-[9px] font-black leading-none text-[#FF9F43] transition-colors hover:bg-[#4D321D]"
+                                                className="rounded-md bg-[#3D2616] px-1.5 py-1 text-[10px] font-black leading-none text-[#FF9F43] transition-colors hover:bg-[#4D321D]"
                                               >
                                                 提醒
                                               </button>
@@ -7510,52 +7506,52 @@ export default function App() {
                                               >
                                                 <div className="mt-1.5 grid grid-cols-3 gap-x-2 gap-y-1 border-t border-white/5 pt-1.5">
                                                   <div className="space-y-0.5">
-                                                    <div className="text-[8px] uppercase tracking-widest text-white/30">MMSI</div>
-                                                    <div className="text-[9px] font-mono text-white/75">{ship.mmsi}</div>
+                                                    <div className="text-[10px] uppercase tracking-widest text-white/30">MMSI</div>
+                                                    <div className="text-[10px] font-mono text-white/75">{ship.mmsi}</div>
                                                   </div>
                                                   <div className="space-y-0.5">
-                                                    <div className="text-[8px] uppercase tracking-widest text-white/30">呼号</div>
-                                                    <div className="text-[9px] font-mono text-white/75">{ship.details.callSign}</div>
+                                                    <div className="text-[10px] uppercase tracking-widest text-white/30">呼号</div>
+                                                    <div className="text-[10px] font-mono text-white/75">{ship.details.callSign}</div>
                                                   </div>
                                                   <div className="space-y-0.5">
-                                                    <div className="text-[8px] uppercase tracking-widest text-white/30">船籍</div>
-                                                    <div className="text-[9px] text-white/75">{ship.details.flag}</div>
+                                                    <div className="text-[10px] uppercase tracking-widest text-white/30">船籍</div>
+                                                    <div className="text-[10px] text-white/75">{ship.details.flag}</div>
                                                   </div>
                                                   
                                                   <div className="space-y-0.5">
-                                                    <div className="text-[8px] uppercase tracking-widest text-white/30">最大吃水</div>
-                                                    <div className="text-[9px] text-white/75">{ship.details.draft}m</div>
+                                                    <div className="text-[10px] uppercase tracking-widest text-white/30">最大吃水</div>
+                                                    <div className="text-[10px] text-white/75">{ship.details.draft}m</div>
                                                   </div>
                                                   <div className="space-y-0.5">
-                                                    <div className="text-[8px] uppercase tracking-widest text-white/30">长/宽</div>
-                                                    <div className="text-[9px] text-white/75">{ship.details.length}/{ship.details.width}m</div>
+                                                    <div className="text-[10px] uppercase tracking-widest text-white/30">长/宽</div>
+                                                    <div className="text-[10px] text-white/75">{ship.details.length}/{ship.details.width}m</div>
                                                   </div>
                                                   <div className="space-y-0.5">
-                                                    <div className="text-[8px] uppercase tracking-widest text-white/30">代理</div>
-                                                    <div className="text-[9px] text-white/75 truncate">{ship.details.agent}</div>
+                                                    <div className="text-[10px] uppercase tracking-widest text-white/30">代理</div>
+                                                    <div className="text-[10px] text-white/75 truncate">{ship.details.agent}</div>
                                                   </div>
 
                                                   <div className="col-span-2 space-y-0.5">
-                                                    <div className="text-[8px] uppercase tracking-widest text-white/30">锚泊时间</div>
-                                                    <div className="text-[9px] text-white/75">{ship.details.anchorTime}</div>
+                                                    <div className="text-[10px] uppercase tracking-widest text-white/30">锚泊时间</div>
+                                                    <div className="text-[10px] text-white/75">{ship.details.anchorTime}</div>
                                                   </div>
                                                   <div className="space-y-0.5">
-                                                    <div className="text-[8px] uppercase tracking-widest text-white/30">锚泊目的</div>
-                                                    <div className="text-[9px] text-white/75">{ship.details.anchorPurpose}</div>
+                                                    <div className="text-[10px] uppercase tracking-widest text-white/30">锚泊目的</div>
+                                                    <div className="text-[10px] text-white/75">{ship.details.anchorPurpose}</div>
                                                   </div>
 
                                                   <div className="col-span-2 space-y-0.5">
-                                                    <div className="text-[8px] uppercase tracking-widest text-white/30">航程 (上一港/下一港)</div>
-                                                    <div className="text-[9px] text-white/75">{ship.details.lastPort} → {ship.details.nextPort}</div>
+                                                    <div className="text-[10px] uppercase tracking-widest text-white/30">航程 (上一港/下一港)</div>
+                                                    <div className="text-[10px] text-white/75">{ship.details.lastPort} → {ship.details.nextPort}</div>
                                                   </div>
                                                   <div className="space-y-0.5">
-                                                    <div className="text-[8px] uppercase tracking-widest text-white/30">货物信息</div>
-                                                    <div className="text-[9px] text-white/75 truncate">{ship.details.cargo}</div>
+                                                    <div className="text-[10px] uppercase tracking-widest text-white/30">货物信息</div>
+                                                    <div className="text-[10px] text-white/75 truncate">{ship.details.cargo}</div>
                                                   </div>
 
                                                   <div className="col-span-3 space-y-0.5">
-                                                    <div className="text-[8px] uppercase tracking-widest text-white/30">到期时间</div>
-                                                    <div className="flex items-center gap-1.5 text-[9px]">
+                                                    <div className="text-[10px] uppercase tracking-widest text-white/30">到期时间</div>
+                                                    <div className="flex items-center gap-1.5 text-[10px]">
                                                       <Clock size={8} className="text-orange-400" />
                                                       <span className="font-mono text-orange-400">{ship.expiryTime}</span>
                                                     </div>
@@ -7576,12 +7572,11 @@ export default function App() {
                                <div className="space-y-1.5 border-t border-white/5 pt-2">
                                  <div className="flex items-center justify-between">
                                    <div className="flex items-center gap-1.5">
-                                     <Clock size={9} className="text-[#4DABFF]" />
                                      <span className="text-[10px] font-bold leading-none text-[#ff4d4d]">
                                        {item.overtimeCount} 艘船舶锚泊超时
                                      </span>
                                    </div>
-                                   <div className="text-[9px] font-bold leading-none text-[#4DABFF]">
+                                   <div className="text-[10px] font-bold leading-none text-[#4DABFF]">
                                      实时监测
                                    </div>
                                  </div>
@@ -7599,18 +7594,15 @@ export default function App() {
                                               }}
                                               className="flex flex-1 cursor-pointer items-center gap-2"
                                             >
-                                              <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-[#252A33]">
-                                                <Clock size={14} className="text-white/40" />
-                                              </div>
                                               <div>
                                                 <div className="text-[10px] font-bold leading-none text-white/92">
                                                   {ship.name}
                                                   {ship.englishName ? (
-                                                    <span className="ml-1 text-[8px] font-semibold text-white/45">{ship.englishName}</span>
+                                                    <span className="ml-1 text-[10px] font-semibold text-white/45">{ship.englishName}</span>
                                                   ) : null}
                                                 </div>
-                                                <div className="mt-1 text-[9px] leading-none text-white/28">到期: {getAnchorageExpiryMeta(ship.expiryTime).date} {getAnchorageExpiryMeta(ship.expiryTime).time}</div>
-                                                <div className="mt-1 text-[9px] font-medium leading-none text-[#ff6269]">
+                                                <div className="mt-1 text-[10px] leading-none text-white/28">到期: {getAnchorageExpiryMeta(ship.expiryTime).date} {getAnchorageExpiryMeta(ship.expiryTime).time}</div>
+                                                <div className="mt-1 text-[10px] font-medium leading-none text-[#ff6269]">
                                                   {ship.overtimeDuration}
                                                 </div>
                                               </div>
@@ -7619,14 +7611,14 @@ export default function App() {
                                               <button
                                                 type="button"
                                                 onClick={(e) => e.stopPropagation()}
-                                                className="rounded-md bg-[#30343d] px-1.5 py-0.5 text-[9px] font-black leading-none text-white/45 transition-colors hover:text-white/80"
+                                                className="rounded-md bg-[#30343d] px-1.5 py-1 text-[10px] font-black leading-none text-white/45 transition-colors hover:text-white/80"
                                               >
                                                 忽略
                                               </button>
                                               <button
                                                 type="button"
                                                 onClick={(e) => e.stopPropagation()}
-                                                className="rounded-md bg-[#3D1D1D] px-1.5 py-0.5 text-[9px] font-black leading-none text-[#FF4D4D] transition-colors hover:bg-[#4D2222]"
+                                                className="rounded-md bg-[#3D1D1D] px-1.5 py-1 text-[10px] font-black leading-none text-[#FF4D4D] transition-colors hover:bg-[#4D2222]"
                                               >
                                                 驱离
                                               </button>
@@ -7653,52 +7645,52 @@ export default function App() {
                                               >
                                                 <div className="mt-1.5 grid grid-cols-3 gap-x-2 gap-y-1 border-t border-white/5 pt-1.5">
                                                   <div className="space-y-0.5">
-                                                    <div className="text-[8px] uppercase tracking-widest text-white/30">MMSI</div>
-                                                    <div className="text-[9px] font-mono text-white/75">{ship.mmsi}</div>
+                                                    <div className="text-[10px] uppercase tracking-widest text-white/30">MMSI</div>
+                                                    <div className="text-[10px] font-mono text-white/75">{ship.mmsi}</div>
                                                   </div>
                                                   <div className="space-y-0.5">
-                                                    <div className="text-[8px] uppercase tracking-widest text-white/30">呼号</div>
-                                                    <div className="text-[9px] font-mono text-white/75">{ship.details.callSign}</div>
+                                                    <div className="text-[10px] uppercase tracking-widest text-white/30">呼号</div>
+                                                    <div className="text-[10px] font-mono text-white/75">{ship.details.callSign}</div>
                                                   </div>
                                                   <div className="space-y-0.5">
-                                                    <div className="text-[8px] uppercase tracking-widest text-white/30">船籍</div>
-                                                    <div className="text-[9px] text-white/75">{ship.details.flag}</div>
+                                                    <div className="text-[10px] uppercase tracking-widest text-white/30">船籍</div>
+                                                    <div className="text-[10px] text-white/75">{ship.details.flag}</div>
                                                   </div>
                                                   
                                                   <div className="space-y-0.5">
-                                                    <div className="text-[8px] uppercase tracking-widest text-white/30">最大吃水</div>
-                                                    <div className="text-[9px] text-white/75">{ship.details.draft}m</div>
+                                                    <div className="text-[10px] uppercase tracking-widest text-white/30">最大吃水</div>
+                                                    <div className="text-[10px] text-white/75">{ship.details.draft}m</div>
                                                   </div>
                                                   <div className="space-y-0.5">
-                                                    <div className="text-[8px] uppercase tracking-widest text-white/30">长/宽</div>
-                                                    <div className="text-[9px] text-white/75">{ship.details.length}/{ship.details.width}m</div>
+                                                    <div className="text-[10px] uppercase tracking-widest text-white/30">长/宽</div>
+                                                    <div className="text-[10px] text-white/75">{ship.details.length}/{ship.details.width}m</div>
                                                   </div>
                                                   <div className="space-y-0.5">
-                                                    <div className="text-[8px] uppercase tracking-widest text-white/30">代理</div>
-                                                    <div className="text-[9px] text-white/75 truncate">{ship.details.agent}</div>
+                                                    <div className="text-[10px] uppercase tracking-widest text-white/30">代理</div>
+                                                    <div className="text-[10px] text-white/75 truncate">{ship.details.agent}</div>
                                                   </div>
 
                                                   <div className="col-span-2 space-y-0.5">
-                                                    <div className="text-[8px] uppercase tracking-widest text-white/30">锚泊时间</div>
-                                                    <div className="text-[9px] text-white/75">{ship.details.anchorTime}</div>
+                                                    <div className="text-[10px] uppercase tracking-widest text-white/30">锚泊时间</div>
+                                                    <div className="text-[10px] text-white/75">{ship.details.anchorTime}</div>
                                                   </div>
                                                   <div className="space-y-0.5">
-                                                    <div className="text-[8px] uppercase tracking-widest text-white/30">锚泊目的</div>
-                                                    <div className="text-[9px] text-white/75">{ship.details.anchorPurpose}</div>
+                                                    <div className="text-[10px] uppercase tracking-widest text-white/30">锚泊目的</div>
+                                                    <div className="text-[10px] text-white/75">{ship.details.anchorPurpose}</div>
                                                   </div>
 
                                                   <div className="col-span-2 space-y-0.5">
-                                                    <div className="text-[8px] uppercase tracking-widest text-white/30">航程 (上一港/下一港)</div>
-                                                    <div className="text-[9px] text-white/75">{ship.details.lastPort} → {ship.details.nextPort}</div>
+                                                    <div className="text-[10px] uppercase tracking-widest text-white/30">航程 (上一港/下一港)</div>
+                                                    <div className="text-[10px] text-white/75">{ship.details.lastPort} → {ship.details.nextPort}</div>
                                                   </div>
                                                   <div className="space-y-0.5">
-                                                    <div className="text-[8px] uppercase tracking-widest text-white/30">货物信息</div>
-                                                    <div className="text-[9px] text-white/75 truncate">{ship.details.cargo}</div>
+                                                    <div className="text-[10px] uppercase tracking-widest text-white/30">货物信息</div>
+                                                    <div className="text-[10px] text-white/75 truncate">{ship.details.cargo}</div>
                                                   </div>
 
                                                   <div className="col-span-3 space-y-0.5">
-                                                    <div className="text-[8px] uppercase tracking-widest text-white/30">状态</div>
-                                                    <div className="flex items-center gap-1.5 text-[9px]">
+                                                    <div className="text-[10px] uppercase tracking-widest text-white/30">状态</div>
+                                                    <div className="flex items-center gap-1.5 text-[10px]">
                                                       <Clock size={8} className="text-red-400" />
                                                       <span className="font-bold text-red-400">{ship.overtimeDuration}</span>
                                                     </div>
@@ -7721,7 +7713,7 @@ export default function App() {
                                   e.stopPropagation();
                                   setSelectedAnchorage(null);
                                 }}
-                                className="flex items-center gap-1.5 text-[9px] font-black uppercase tracking-[0.2em] text-sky-500/60 hover:text-sky-400 transition-colors"
+                                className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-[0.2em] text-sky-500/60 hover:text-sky-400 transition-colors"
                               >
                                 收起详情 <ChevronDown size={8} className="rotate-180" />
                               </button>

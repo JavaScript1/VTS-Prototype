@@ -1,6 +1,10 @@
 @import "tailwindcss";
 @import "leaflet/dist/leaflet.css";
 
+:root {
+  font-size: 18px;
+}
+
 @layer base {
   button, [role="button"], .cursor-pointer {
     cursor: pointer !important;
@@ -104,7 +108,7 @@
 .map-overlay-badge__label {
   position: relative;
   z-index: 2;
-  font-size: 12px;
+  font-size: 13px;
   line-height: 1;
   font-weight: 700;
   letter-spacing: 0.02em;

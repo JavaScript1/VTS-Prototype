@@ -68,19 +68,19 @@ export const PlaybackMapController = ({ playbackData }: { playbackData: any }) =
             <div class="bg-[#0a0a0a]/90 backdrop-blur-md border border-sky-500/50 rounded-lg p-3 shadow-2xl ring-1 ring-white/10">
               <div class="flex items-center gap-2 mb-2 pb-2 border-b border-white/10">
                 <div class="w-2 h-2 rounded-full bg-sky-500 animate-pulse"></div>
-                <span class="text-[10px] font-black text-sky-400 uppercase tracking-widest">当前意图: ${playbackData.event.label}</span>
+                <span class="text-[11px] font-black text-sky-400 uppercase tracking-widest">当前意图: ${playbackData.event.label}</span>
               </div>
               
               ${latestDialogue ? `
                 <div class="space-y-1">
                   <div class="flex items-center justify-between">
-                    <span class="text-[9px] font-bold text-white/40 uppercase">${latestDialogue.sender}</span>
-                    <span class="text-[8px] font-mono text-white/20">${latestDialogue.time}</span>
+                    <span class="text-[10px] font-bold text-white/40 uppercase">${latestDialogue.sender}</span>
+                    <span class="text-[10px] font-mono text-white/20">${latestDialogue.time}</span>
                   </div>
-                  <p class="text-[11px] text-white/90 leading-relaxed font-medium">"${latestDialogue.content}"</p>
+                  <p class="text-[12px] text-white/90 leading-relaxed font-medium">"${latestDialogue.content}"</p>
                 </div>
               ` : `
-                <p class="text-[10px] text-white/40 italic">暂无实时对话内容</p>
+                <p class="text-[11px] text-white/40 italic">暂无实时对话内容</p>
               `}
               
               <!-- 箭头 -->

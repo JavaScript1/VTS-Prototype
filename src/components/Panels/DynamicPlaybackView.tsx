@@ -160,7 +160,7 @@ const DynamicPlaybackView: React.FC<DynamicPlaybackViewProps> = ({
             <div className="h-8 w-px bg-white/10" />
             <div>
               <h2 className="text-sm font-black text-white uppercase tracking-wider">动态轨迹回放: {session.vessel.name}</h2>
-              <p className="text-[10px] text-white/40 font-bold uppercase tracking-widest">
+              <p className="text-[11px] text-white/40 font-bold uppercase tracking-widest">
                 事件时间: {session.event.time} | 风险类型: {session.event.label}
               </p>
             </div>
@@ -184,7 +184,7 @@ const DynamicPlaybackView: React.FC<DynamicPlaybackViewProps> = ({
                 <button
                   key={speed}
                   onClick={() => setPlaybackSpeed(speed)}
-                  className={`px-3 py-1 text-[10px] font-black rounded transition-all ${
+                  className={`px-3 py-2 text-[11px] font-black rounded transition-all ${
                     playbackSpeed === speed ? 'bg-sky-500 text-white' : 'text-white/40 hover:text-white/60'
                   }`}
                 >
@@ -203,7 +203,7 @@ const DynamicPlaybackView: React.FC<DynamicPlaybackViewProps> = ({
 
         {/* 顶部时间轴 */}
         <div className="h-8 px-6 flex items-center gap-4 border-t border-white/5 bg-white/[0.02]">
-          <span className="text-[9px] font-bold text-white/30 uppercase tracking-widest">时间轴</span>
+          <span className="text-[10px] font-bold text-white/30 uppercase tracking-widest">时间轴</span>
           <div className="flex-1 h-1 bg-white/10 rounded-full relative">
             <div 
               className="absolute top-0 left-0 h-full bg-sky-500 rounded-full shadow-[0_0_10px_rgba(14,165,233,0.5)]"
@@ -216,7 +216,7 @@ const DynamicPlaybackView: React.FC<DynamicPlaybackViewProps> = ({
                 className="absolute top-[-4px] w-px h-3 bg-white/20"
                 style={{ left: `${p}%` }}
               >
-                <span className="absolute top-4 left-1/2 -translate-x-1/2 text-[8px] font-mono text-white/20 whitespace-nowrap">
+                <span className="absolute top-4 left-1/2 -translate-x-1/2 text-[10px] font-mono text-white/20 whitespace-nowrap">
                   {p === 0 ? 'T-15m' : p === 50 ? 'T-0' : p === 100 ? 'T+15m' : ''}
                 </span>
               </div>
@@ -233,7 +233,7 @@ const DynamicPlaybackView: React.FC<DynamicPlaybackViewProps> = ({
               <MapIcon size={16} className="text-sky-400" />
               <h3 className="text-xs font-black text-white uppercase tracking-wider">辖区管理面板</h3>
             </div>
-            <span className="text-[9px] font-bold text-sky-400/60 uppercase tracking-widest bg-sky-500/10 px-1.5 py-0.5 rounded">
+            <span className="text-[10px] font-bold text-sky-400/60 uppercase tracking-widest bg-sky-500/10 px-2.5 py-1.5 rounded">
               已选 {selectedAreas.size}
             </span>
           </div>
@@ -250,7 +250,7 @@ const DynamicPlaybackView: React.FC<DynamicPlaybackViewProps> = ({
                     <div className="flex items-center gap-2 p-2 hover:bg-white/5 rounded-lg transition-all group">
                       <button 
                         onClick={() => toggleCategory(category)}
-                        className="p-0.5 hover:bg-white/10 rounded text-white/40 transition-all"
+                        className="p-1 hover:bg-white/10 rounded text-white/40 transition-all"
                       >
                         {isExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
                       </button>
@@ -264,7 +264,7 @@ const DynamicPlaybackView: React.FC<DynamicPlaybackViewProps> = ({
                           {allSelected && <Check size={10} className="text-white" strokeWidth={4} />}
                           {someSelected && <div className="w-1.5 h-0.5 bg-white rounded-full" />}
                         </div>
-                        <span className="text-[11px] font-bold text-white/60 group-hover:text-white transition-colors">{category}</span>
+                        <span className="text-[12px] font-bold text-white/60 group-hover:text-white transition-colors">{category}</span>
                       </div>
                     </div>
 
@@ -289,10 +289,10 @@ const DynamicPlaybackView: React.FC<DynamicPlaybackViewProps> = ({
                                 {selectedAreas.has(area.id) && <Check size={10} className="text-white" strokeWidth={4} />}
                               </div>
                               <div className="flex flex-col">
-                                <span className={`text-[11px] transition-colors ${selectedAreas.has(area.id) ? 'text-white font-bold' : 'text-white/40 group-hover:text-white/60'}`}>
+                                <span className={`text-[12px] transition-colors ${selectedAreas.has(area.id) ? 'text-white font-bold' : 'text-white/40 group-hover:text-white/60'}`}>
                                   {area.name}
                                 </span>
-                                <span className="text-[8px] text-white/20">{area.type}</span>
+                                <span className="text-[10px] text-white/20">{area.type}</span>
                               </div>
                             </div>
                           ))}
@@ -307,7 +307,7 @@ const DynamicPlaybackView: React.FC<DynamicPlaybackViewProps> = ({
           <div className="p-4 border-t border-white/10 bg-white/[0.02]">
             <button 
               onClick={() => setSelectedAreas(new Set())}
-              className="w-full py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-white/40 hover:text-white text-[10px] font-bold transition-all"
+              className="w-full py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-white/40 hover:text-white text-[11px] font-bold transition-all"
             >
               重置选择
             </button>
@@ -343,7 +343,7 @@ const DynamicPlaybackView: React.FC<DynamicPlaybackViewProps> = ({
                 <Popup>
                   <div className="p-2">
                     <h4 className="text-xs font-bold text-sky-500 mb-1">{element.name}</h4>
-                    <p className="text-[10px] text-gray-500">类型: {element.type}</p>
+                    <p className="text-[11px] text-gray-500">类型: {element.type}</p>
                   </div>
                 </Popup>
               </Polygon>
@@ -353,7 +353,7 @@ const DynamicPlaybackView: React.FC<DynamicPlaybackViewProps> = ({
                   className: 'custom-div-icon',
                   html: `
                     <div class="flex flex-col items-center">
-                      <div class="px-2 py-1 bg-sky-500/80 backdrop-blur-md border border-white/20 rounded text-[9px] font-bold text-white whitespace-nowrap shadow-lg">
+                      <div class="px-2.5 py-1.5 bg-sky-500/80 backdrop-blur-md border border-white/20 rounded text-[10px] font-bold text-white whitespace-nowrap shadow-lg">
                         ${element.name}
                       </div>
                       <div class="w-2 h-2 bg-sky-500 rotate-45 -mt-1 border-r border-b border-white/20"></div>
@@ -404,7 +404,7 @@ const DynamicPlaybackView: React.FC<DynamicPlaybackViewProps> = ({
                         <path d="M12 2L19 21L12 17L5 21L12 2Z" />
                       </svg>
                     </div>
-                    <div class="absolute -top-8 left-1/2 -translate-x-1/2 bg-black/80 backdrop-blur-md border border-white/10 px-2 py-1 rounded text-[9px] font-bold text-white whitespace-nowrap">
+                    <div class="absolute -top-8 left-1/2 -translate-x-1/2 bg-black/80 backdrop-blur-md border border-white/10 px-2 py-1 rounded text-[10px] font-bold text-white whitespace-nowrap">
                       ${session.vessel.name}
                     </div>
                   </div>
@@ -427,7 +427,7 @@ const DynamicPlaybackView: React.FC<DynamicPlaybackViewProps> = ({
             </button>
             
             <div className="flex-1 space-y-2">
-              <div className="flex justify-between text-[10px] font-mono text-white/40 uppercase tracking-widest">
+              <div className="flex justify-between text-[11px] font-mono text-white/40 uppercase tracking-widest">
                 <span>回放进度</span>
                 <span>{Math.floor(progress)}%</span>
               </div>
@@ -448,7 +448,7 @@ const DynamicPlaybackView: React.FC<DynamicPlaybackViewProps> = ({
             </div>
 
             <div className="flex flex-col items-end gap-1">
-              <span className="text-[10px] font-black text-sky-400 uppercase tracking-widest">实时航速</span>
+              <span className="text-[11px] font-black text-sky-400 uppercase tracking-widest">实时航速</span>
               <span className="text-xl font-mono font-bold text-white">
                 {(12 + Math.sin(progress / 10) * 2).toFixed(1)} <span className="text-xs text-white/40">KN</span>
               </span>
@@ -465,17 +465,17 @@ const DynamicPlaybackView: React.FC<DynamicPlaybackViewProps> = ({
               <h4 className="text-xs font-black text-white uppercase tracking-wider">实时状态监控</h4>
             </div>
             <div className="space-y-3">
-              <div className="flex justify-between items-center p-2 bg-white/5 rounded-lg border border-white/5">
-                <span className="text-[10px] text-white/40 font-bold uppercase">当前经度</span>
-                <span className="text-[10px] font-mono text-white/80">{currentPos?.[1].toFixed(5)}°E</span>
+              <div className="flex justify-between items-center p-2.5 bg-white/5 rounded-lg border border-white/5">
+                <span className="text-[11px] text-white/40 font-bold uppercase">当前经度</span>
+                <span className="text-[11px] font-mono text-white/80">{currentPos?.[1].toFixed(5)}°E</span>
               </div>
-              <div className="flex justify-between items-center p-2 bg-white/5 rounded-lg border border-white/5">
-                <span className="text-[10px] text-white/40 font-bold uppercase">当前纬度</span>
-                <span className="text-[10px] font-mono text-white/80">{currentPos?.[0].toFixed(5)}°N</span>
+              <div className="flex justify-between items-center p-2.5 bg-white/5 rounded-lg border border-white/5">
+                <span className="text-[11px] text-white/40 font-bold uppercase">当前纬度</span>
+                <span className="text-[11px] font-mono text-white/80">{currentPos?.[0].toFixed(5)}°N</span>
               </div>
-              <div className="flex justify-between items-center p-2 bg-white/5 rounded-lg border border-white/5">
-                <span className="text-[10px] text-white/40 font-bold uppercase">预警状态</span>
-                <span className={`text-[10px] font-bold uppercase ${progress > 80 ? 'text-red-400 animate-pulse' : 'text-emerald-400'}`}>
+              <div className="flex justify-between items-center p-2.5 bg-white/5 rounded-lg border border-white/5">
+                <span className="text-[11px] text-white/40 font-bold uppercase">预警状态</span>
+                <span className={`text-[11px] font-bold uppercase ${progress > 80 ? 'text-red-400 animate-pulse' : 'text-emerald-400'}`}>
                   {progress > 80 ? '风险触发' : '正常航行'}
                 </span>
               </div>
@@ -489,12 +489,12 @@ const DynamicPlaybackView: React.FC<DynamicPlaybackViewProps> = ({
             </div>
             <div className="space-y-2 max-h-48 overflow-y-auto custom-scrollbar pr-2">
               {session.event.dialogue.map((chat: any, idx: number) => (
-                <div key={idx} className={`space-y-0.5 ${progress < (idx + 1) * 20 ? 'opacity-20' : 'opacity-100 transition-opacity duration-500'}`}>
+                <div key={idx} className={`space-y-1 ${progress < (idx + 1) * 20 ? 'opacity-20' : 'opacity-100 transition-opacity duration-500'}`}>
                   <div className="flex justify-between items-center">
-                    <span className="text-[9px] font-bold text-white/30 uppercase">{chat.sender}</span>
-                    <span className="text-[8px] font-mono text-white/20">{chat.time.split(' ')[1]}</span>
+                    <span className="text-[10px] font-bold text-white/30 uppercase">{chat.sender}</span>
+                    <span className="text-[10px] font-mono text-white/20">{chat.time.split(' ')[1]}</span>
                   </div>
-                  <p className="text-[10px] text-white/70 leading-relaxed bg-white/5 p-1 rounded-lg border border-white/5">
+                  <p className="text-[11px] text-white/70 leading-relaxed bg-white/5 p-2 rounded-lg border border-white/5">
                     {chat.content}
                   </p>
                 </div>
