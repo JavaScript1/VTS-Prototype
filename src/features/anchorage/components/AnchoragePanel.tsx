@@ -313,21 +313,53 @@ export default function AnchoragePanel({
                               return (
                                 <div key={ship.id} className="group/ship">
                                   <div className={`rounded-lg border transition-all ${isExpanded ? 'border-[#5c4a2f] bg-[#252A33] p-2' : 'border-white/6 bg-[#1A1D23] px-2 py-1.5 hover:border-[#FF9F43]/30'}`}>
-                                    <div className="flex items-center gap-2">
-                                      <div onClick={(e) => { e.stopPropagation(); onSelectExpiringShip(isExpanded ? null : ship.id); }} className="flex flex-1 cursor-pointer items-center gap-2">
-                                        <div className="min-w-0 flex-1">
-                                          <div className="text-[10px] font-bold leading-none text-white/92">{ship.name}{ship.englishName ? <span className="ml-1 text-[10px] font-semibold text-white/45">{ship.englishName}</span> : null}</div>
-                                          <div className="mt-1 text-[10px] leading-none text-white/28">到期: {expiryMeta.date} {expiryMeta.time}</div>
-                                          <div className="mt-1 text-[10px] font-medium leading-none text-[#f7a52c]">{formatAnchorageRemainingDuration(ship.expiryTime, currentTime)}</div>
+                                    <div className="flex flex-col gap-2">
+                                      <div className="flex items-center gap-2">
+                                        <div onClick={(e) => { e.stopPropagation(); onSelectExpiringShip(isExpanded ? null : ship.id); }} className="flex flex-1 cursor-pointer items-center gap-2">
+                                          <div className="min-w-0 flex-1">
+                                            <div className="text-[10px] font-bold leading-none text-white/92">{ship.name}{ship.englishName ? <span className="ml-1 text-[10px] font-semibold text-white/45">{ship.englishName}</span> : null}</div>
+                                            <div className="mt-1 text-[10px] leading-none text-white/28">到期: {expiryMeta.date} {expiryMeta.time}</div>
+                                            <div className="mt-1 text-[10px] font-medium leading-none text-[#f7a52c]">{formatAnchorageRemainingDuration(ship.expiryTime, currentTime)}</div>
+                                          </div>
                                         </div>
+                                        <div className={`flex flex-col gap-1 transition-opacity ${isExpanded ? 'opacity-100' : 'opacity-0 group-hover/ship:opacity-100'}`}>
+                                          <button type="button" onClick={(e) => e.stopPropagation()} className="rounded-md bg-[#30343d] px-1.5 py-1 text-[10px] font-black leading-none text-white/45 transition-colors hover:text-white/80">忽略</button>
+                                          <button type="button" onClick={(e) => e.stopPropagation()} className="rounded-md bg-[#3D2616] px-1.5 py-1 text-[10px] font-black leading-none text-[#FF9F43] transition-colors hover:bg-[#4D321D]">提醒</button>
+                                        </div>
+                                        <button type="button" onClick={(e) => { e.stopPropagation(); onSelectExpiringShip(isExpanded ? null : ship.id); }} className="rounded-lg p-0.5 text-white/20 transition-colors hover:bg-white/5">
+                                          <ChevronRight size={10} className={`transition-transform ${isExpanded ? 'rotate-90 text-white/55' : ''}`} />
+                                        </button>
                                       </div>
-                                      <div className={`flex flex-col gap-1 transition-opacity ${isExpanded ? 'opacity-100' : 'opacity-0 group-hover/ship:opacity-100'}`}>
-                                        <button type="button" onClick={(e) => e.stopPropagation()} className="rounded-md bg-[#30343d] px-1.5 py-1 text-[10px] font-black leading-none text-white/45 transition-colors hover:text-white/80">忽略</button>
-                                        <button type="button" onClick={(e) => e.stopPropagation()} className="rounded-md bg-[#3D2616] px-1.5 py-1 text-[10px] font-black leading-none text-[#FF9F43] transition-colors hover:bg-[#4D321D]">提醒</button>
-                                      </div>
-                                      <button type="button" onClick={(e) => { e.stopPropagation(); onSelectExpiringShip(isExpanded ? null : ship.id); }} className="rounded-lg p-0.5 text-white/20 transition-colors hover:bg-white/5">
-                                        <ChevronRight size={10} className={`transition-transform ${isExpanded ? 'rotate-90 text-white/55' : ''}`} />
-                                      </button>
+
+                                      <AnimatePresence>
+                                        {isExpanded && (
+                                          <motion.div
+                                            initial={{ height: 0, opacity: 0 }}
+                                            animate={{ height: 'auto', opacity: 1 }}
+                                            exit={{ height: 0, opacity: 0 }}
+                                            className="overflow-hidden border-t border-white/5 pt-2"
+                                          >
+                                            <div className="grid grid-cols-2 gap-x-4 gap-y-2 pb-1">
+                                              <div className="space-y-0.5">
+                                                <div className="text-[9px] uppercase tracking-wider text-white/25">MMSI / 呼号</div>
+                                                <div className="text-[10px] font-medium text-white/70">{ship.mmsi || '--'} / {ship.details?.callSign || '--'}</div>
+                                              </div>
+                                              <div className="space-y-0.5">
+                                                <div className="text-[9px] uppercase tracking-wider text-white/25">船籍 / 类型</div>
+                                                <div className="text-[10px] font-medium text-white/70">{ship.details?.flag || '--'} / {ship.type}</div>
+                                              </div>
+                                              <div className="space-y-0.5">
+                                                <div className="text-[9px] uppercase tracking-wider text-white/25">尺度 (L×W×D)</div>
+                                                <div className="text-[10px] font-medium text-white/70">{ship.details?.length}m × {ship.details?.width}m × {ship.details?.draft}m</div>
+                                              </div>
+                                              <div className="space-y-0.5">
+                                                <div className="text-[9px] uppercase tracking-wider text-white/25">目的港</div>
+                                                <div className="truncate text-[10px] font-medium text-white/70">{ship.details?.destination || '--'}</div>
+                                              </div>
+                                            </div>
+                                          </motion.div>
+                                        )}
+                                      </AnimatePresence>
                                     </div>
                                   </div>
                                 </div>
@@ -349,21 +381,53 @@ export default function AnchoragePanel({
                               return (
                                 <div key={ship.id} className="group/ship">
                                   <div className={`rounded-lg border transition-all ${isExpanded ? 'border-[#5a2a32] bg-[#252A33] p-2' : 'border-white/6 bg-[#1A1D23] px-2 py-1.5 hover:border-[#FF4D4D]/30'}`}>
-                                    <div className="flex items-center gap-2">
-                                      <div onClick={(e) => { e.stopPropagation(); onSelectOvertimeShip(isExpanded ? null : ship.id); }} className="flex flex-1 cursor-pointer items-center gap-2">
-                                        <div>
-                                          <div className="text-[10px] font-bold leading-none text-white/92">{ship.name}{ship.englishName ? <span className="ml-1 text-[10px] font-semibold text-white/45">{ship.englishName}</span> : null}</div>
-                                          <div className="mt-1 text-[10px] leading-none text-white/28">到期: {getAnchorageExpiryMeta(ship.expiryTime).date} {getAnchorageExpiryMeta(ship.expiryTime).time}</div>
-                                          <div className="mt-1 text-[10px] font-medium leading-none text-[#ff6269]">{ship.overtimeDuration}</div>
+                                    <div className="flex flex-col gap-2">
+                                      <div className="flex items-center gap-2">
+                                        <div onClick={(e) => { e.stopPropagation(); onSelectOvertimeShip(isExpanded ? null : ship.id); }} className="flex flex-1 cursor-pointer items-center gap-2">
+                                          <div className="min-w-0 flex-1">
+                                            <div className="text-[10px] font-bold leading-none text-white/92">{ship.name}{ship.englishName ? <span className="ml-1 text-[10px] font-semibold text-white/45">{ship.englishName}</span> : null}</div>
+                                            <div className="mt-1 text-[10px] leading-none text-white/28">到期: {getAnchorageExpiryMeta(ship.expiryTime).date} {getAnchorageExpiryMeta(ship.expiryTime).time}</div>
+                                            <div className="mt-1 text-[10px] font-medium leading-none text-[#ff6269]">{ship.overtimeDuration}</div>
+                                          </div>
                                         </div>
+                                        <div className={`flex flex-col gap-1 transition-opacity ${isExpanded ? 'opacity-100' : 'opacity-0 group-hover/ship:opacity-100'}`}>
+                                          <button type="button" onClick={(e) => e.stopPropagation()} className="rounded-md bg-[#30343d] px-1.5 py-1 text-[10px] font-black leading-none text-white/45 transition-colors hover:text-white/80">忽略</button>
+                                          <button type="button" onClick={(e) => e.stopPropagation()} className="rounded-md bg-[#3D1D1D] px-1.5 py-1 text-[10px] font-black leading-none text-[#FF4D4D] transition-colors hover:bg-[#4D2222]">驱离</button>
+                                        </div>
+                                        <button type="button" onClick={(e) => { e.stopPropagation(); onSelectOvertimeShip(isExpanded ? null : ship.id); }} className="rounded-lg p-0.5 text-white/20 transition-colors hover:bg-white/5">
+                                          <ChevronRight size={10} className={`transition-transform ${isExpanded ? 'rotate-90 text-white/55' : ''}`} />
+                                        </button>
                                       </div>
-                                      <div className={`flex flex-col gap-1 transition-opacity ${isExpanded ? 'opacity-100' : 'opacity-0 group-hover/ship:opacity-100'}`}>
-                                        <button type="button" onClick={(e) => e.stopPropagation()} className="rounded-md bg-[#30343d] px-1.5 py-1 text-[10px] font-black leading-none text-white/45 transition-colors hover:text-white/80">忽略</button>
-                                        <button type="button" onClick={(e) => e.stopPropagation()} className="rounded-md bg-[#3D1D1D] px-1.5 py-1 text-[10px] font-black leading-none text-[#FF4D4D] transition-colors hover:bg-[#4D2222]">驱离</button>
-                                      </div>
-                                      <button type="button" onClick={(e) => { e.stopPropagation(); onSelectOvertimeShip(isExpanded ? null : ship.id); }} className="rounded-lg p-0.5 text-white/20 transition-colors hover:bg-white/5">
-                                        <ChevronRight size={10} className={`transition-transform ${isExpanded ? 'rotate-90 text-white/55' : ''}`} />
-                                      </button>
+
+                                      <AnimatePresence>
+                                        {isExpanded && (
+                                          <motion.div
+                                            initial={{ height: 0, opacity: 0 }}
+                                            animate={{ height: 'auto', opacity: 1 }}
+                                            exit={{ height: 0, opacity: 0 }}
+                                            className="overflow-hidden border-t border-white/5 pt-2"
+                                          >
+                                            <div className="grid grid-cols-2 gap-x-4 gap-y-2 pb-1">
+                                              <div className="space-y-0.5">
+                                                <div className="text-[9px] uppercase tracking-wider text-white/25">MMSI / 呼号</div>
+                                                <div className="text-[10px] font-medium text-white/70">{ship.mmsi || '--'} / {ship.details?.callSign || '--'}</div>
+                                              </div>
+                                              <div className="space-y-0.5">
+                                                <div className="text-[9px] uppercase tracking-wider text-white/25">船籍 / 类型</div>
+                                                <div className="text-[10px] font-medium text-white/70">{ship.details?.flag || '--'} / {ship.type}</div>
+                                              </div>
+                                              <div className="space-y-0.5">
+                                                <div className="text-[9px] uppercase tracking-wider text-white/25">尺度 (L×W×D)</div>
+                                                <div className="text-[10px] font-medium text-white/70">{ship.details?.length}m × {ship.details?.width}m × {ship.details?.draft}m</div>
+                                              </div>
+                                              <div className="space-y-0.5">
+                                                <div className="text-[9px] uppercase tracking-wider text-white/25">目的港</div>
+                                                <div className="truncate text-[10px] font-medium text-white/70">{ship.details?.destination || '--'}</div>
+                                              </div>
+                                            </div>
+                                          </motion.div>
+                                        )}
+                                      </AnimatePresence>
                                     </div>
                                   </div>
                                 </div>
