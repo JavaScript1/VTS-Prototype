@@ -49,6 +49,24 @@ export default function AnchoragePanel({
   chartColors,
   MarqueeText,
 }: AnchoragePanelProps) {
+  React.useEffect(() => {
+    if (hoveredShipType) {
+      const el = document.querySelector(`[data-ship-type="${hoveredShipType}"]`);
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }
+    }
+  }, [hoveredShipType]);
+
+  React.useEffect(() => {
+    if (hoveredDurationType) {
+      const el = document.querySelector(`[data-duration-type="${hoveredDurationType}"]`);
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }
+    }
+  }, [hoveredDurationType]);
+
   return (
     <div className="flex h-full flex-col space-y-2 p-3">
       <div className="custom-scrollbar flex-1 space-y-1 overflow-y-auto pr-1">
@@ -63,20 +81,26 @@ export default function AnchoragePanel({
 
           const chartGradient = chartStats.length
             ? `conic-gradient(${chartStats.map((ship, idx) => {
+                const isHovered = hoveredShipType === ship.type;
+                const baseColor = chartColors[idx % chartColors.length];
+                const color = hoveredShipType && !isHovered ? `${baseColor}33` : baseColor;
                 const start = chartStats.slice(0, idx).reduce((sum, current) => sum + current.count, 0);
                 const end = start + ship.count;
                 const startPct = (start / chartTotal) * 100;
                 const endPct = (end / chartTotal) * 100;
-                return `${chartColors[idx % chartColors.length]} ${startPct}% ${endPct}%`;
+                return `${color} ${startPct}% ${endPct}%`;
               }).join(', ')})`
             : 'conic-gradient(#223043 0% 100%)';
           const durationChartGradient = durationChartStats.length
             ? `conic-gradient(${durationChartStats.map((bucket, idx) => {
+                const isHovered = hoveredDurationType === bucket.type;
+                const baseColor = chartColors[idx % chartColors.length];
+                const color = hoveredDurationType && !isHovered ? `${baseColor}33` : baseColor;
                 const start = durationChartStats.slice(0, idx).reduce((sum, current) => sum + current.count, 0);
                 const end = start + bucket.count;
                 const startPct = durationChartTotal > 0 ? (start / durationChartTotal) * 100 : 0;
                 const endPct = durationChartTotal > 0 ? (end / durationChartTotal) * 100 : 0;
-                return `${chartColors[idx % chartColors.length]} ${startPct}% ${endPct}%`;
+                return `${color} ${startPct}% ${endPct}%`;
               }).join(', ')})`
             : 'conic-gradient(#223043 0% 100%)';
 
@@ -211,12 +235,13 @@ export default function AnchoragePanel({
                                 return (
                                   <motion.div
                                     key={`${ship.type}-${idx}-chart`}
+                                    data-ship-type={ship.type}
                                     initial={{ x: 10, opacity: 0 }}
                                     animate={{ x: 0, opacity: 1 }}
                                     transition={{ delay: idx * 0.05 }}
                                     onMouseEnter={() => onHoveredShipTypeChange(ship.type)}
                                     onMouseLeave={() => onHoveredShipTypeChange(null)}
-                                    className={`flex cursor-pointer items-center gap-1 rounded-md px-1 py-1 transition-all hover:bg-white/5 ${hoveredShipType === ship.type ? 'bg-white/5' : ''}`}
+                                    className={`flex cursor-pointer items-center gap-1 rounded-md px-1 py-1 transition-all hover:bg-white/5 ${hoveredShipType === ship.type ? 'bg-white/5 ring-1 ring-white/10' : ''}`}
                                   >
                                     <span className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ backgroundColor: chartColors[idx % chartColors.length] }} />
                                     <MarqueeText text={ship.type} isHovered={hoveredShipType === ship.type} className="text-[10px] leading-none text-gray-400" />
@@ -288,7 +313,7 @@ export default function AnchoragePanel({
                             {durationChartStats.map((bucket, idx) => {
                               const ratio = durationChartTotal > 0 ? Math.round((bucket.count / durationChartTotal) * 100) : 0;
                               return (
-                                <motion.div key={`${bucket.type}-${idx}-legend`} onMouseEnter={() => onHoveredDurationTypeChange(bucket.type)} onMouseLeave={() => onHoveredDurationTypeChange(null)} className={`flex cursor-pointer items-center gap-1 rounded-md px-1 py-1 transition-all hover:bg-white/5 ${hoveredDurationType === bucket.type ? 'bg-white/5' : ''}`}>
+                                <motion.div key={`${bucket.type}-${idx}-legend`} data-duration-type={bucket.type} onMouseEnter={() => onHoveredDurationTypeChange(bucket.type)} onMouseLeave={() => onHoveredDurationTypeChange(null)} className={`flex cursor-pointer items-center gap-1 rounded-md px-1 py-1 transition-all hover:bg-white/5 ${hoveredDurationType === bucket.type ? 'bg-white/5 ring-1 ring-white/10' : ''}`}>
                                   <span className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ backgroundColor: chartColors[idx % chartColors.length] }} />
                                   <span className="min-w-0 flex-1 truncate text-[10px] leading-none text-gray-400">{bucket.type}</span>
                                   <span className="text-[10px] font-bold text-[#4DABFF]">{ratio}%</span>
