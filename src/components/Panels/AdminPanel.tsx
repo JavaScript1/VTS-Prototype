@@ -1032,7 +1032,6 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
                                 item.type === 'warning' ? 'bg-amber-500/5 border-amber-500/10 text-amber-200/80' :
                                 'bg-white/5 border-white/5 text-white/70'
                               }`}>
-                                {item.desc}
                               </div>
                             </div>
                           </div>

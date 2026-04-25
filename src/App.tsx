@@ -3062,10 +3062,8 @@ const AdminPanel = ({
                                                 )}
                                                 {event.status === 'warning' && <div className="text-[10px] font-bold text-red-500 uppercase tracking-widest">风险/违规</div>}
                                               </div>
-                                              <p className="text-xs text-white/50 leading-relaxed">{event.desc}</p>
-                                              
-                                              {/* 对话细节 */}
-                                              {event.dialogue && event.dialogue.length > 0 && (
+
+                                              {/* 对话细节 */}                                              {event.dialogue && event.dialogue.length > 0 && (
                                                 <div className="mt-4 pt-4 border-t border-white/5 space-y-3">
                                                   <div className="flex items-center gap-2 mb-2">
                                                     <div className="w-1 h-3 bg-sky-500/50 rounded-full" />
@@ -5006,7 +5004,6 @@ const AdminPanel = ({
                           playbackData.event.type === 'risk' ? 'text-red-400' : 'text-sky-400'
                         }`}>{playbackData.event.label}</span>
                       </div>
-                      <p className="text-xs text-white/60 leading-relaxed">{playbackData.event.desc}</p>
                     </div>
                   </div>
 
@@ -6946,14 +6943,6 @@ export default function App() {
                         </div>
                       </div>
 
-                      {/* 预警摘要 */}
-                      <div className="px-1 mb-2">
-                        <p className="text-[10px] text-white/60 leading-relaxed line-clamp-2">
-                          {alert.summary}
-                        </p>
-                      </div>
-
-                      {/* 操作按钮区 */}
                       <div className="flex gap-1.5 px-1 mt-2">
                         <button className="flex-1 py-1 bg-white/5 hover:bg-white/10 border border-white/5 rounded-lg text-[10px] font-bold text-white/60 transition-colors">
                           定位船舶
