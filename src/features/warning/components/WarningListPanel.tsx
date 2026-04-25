@@ -154,8 +154,8 @@ export default function WarningListPanel({
                       exit={{ height: 0, opacity: 0 }}
                       className="overflow-hidden border-t border-white/5"
                     >
-                      <div className="space-y-4 p-3">
-                        <div className="rounded-lg border border-white/5 bg-white/[0.02] px-2 py-2">
+                      <div className="space-y-2.5 px-2 py-2">
+                        <div className="px-1 py-1">
                           <div className="grid grid-cols-3 gap-x-2 gap-y-1.5">
                             <div className="space-y-0.5">
                               <div className="text-[10px] uppercase tracking-widest text-white/30">MMSI</div>
@@ -178,16 +178,8 @@ export default function WarningListPanel({
                               <div className="text-[10px] text-white/75">{alert.length}/{alert.width}</div>
                             </div>
                             <div className="space-y-0.5">
-                              <div className="text-[10px] uppercase tracking-widest text-white/30">代理</div>
-                              <div className="truncate text-[10px] text-white/75">{alert.agent || '--'}</div>
-                            </div>
-                            <div className="col-span-2 space-y-0.5">
                               <div className="text-[10px] uppercase tracking-widest text-white/30">目的港</div>
-                              <div className="text-[10px] text-white/75">{alert.destination}</div>
-                            </div>
-                            <div className="space-y-0.5">
-                              <div className="text-[10px] uppercase tracking-widest text-white/30">风险指数</div>
-                              <div className="text-[10px] font-bold text-red-400">{alert.riskScore}</div>
+                              <div className="truncate text-[10px] text-white/75">{alert.destination}</div>
                             </div>
                           </div>
                         </div>
