@@ -103,7 +103,7 @@ export default function AnchoragePanel({
                       <Anchor size={16} className="text-[#4DFF88]" />
                     </div>
                     <div className="min-w-0 flex-1">
-                      <div className="truncate text-[10px] font-bold leading-none tracking-tight text-white">{item.name}</div>
+                      <div className="truncate text-[11px] font-bold leading-none tracking-tight text-white">{item.name}</div>
                       <div className="mt-1.5 flex items-center gap-2">
                         <div className="h-[3px] w-[54px] overflow-hidden rounded-full bg-white/10">
                           <div className="h-full rounded-full bg-[#4DFF88]" style={{ width: `${Math.max(availabilityPercent, availabilityPercent > 0 ? 8 : 0)}%` }} />
@@ -132,9 +132,9 @@ export default function AnchoragePanel({
                 {selectedAnchorage === item.id && (
                   <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden">
                     <div className="space-y-2 px-3 py-1.5">
-                      <div className="space-y-2.5">
+                      <div className="space-y-1.5">
                         <div className="flex items-center justify-between">
-                          <div className="text-[9px] font-bold uppercase tracking-wider text-gray-500">船舶类型分布</div>
+                          <div className="text-[10px] font-bold uppercase tracking-wider text-gray-500">船舶类型分布</div>
                           <div className="flex rounded-lg border border-white/5 bg-[#1A1D23] p-0.5">
                             <button
                               type="button"
@@ -142,11 +142,11 @@ export default function AnchoragePanel({
                                 e.stopPropagation();
                                 onAnchorageTypeViewModeChange('chart');
                               }}
-                              className={`flex h-6 w-6 items-center justify-center rounded-md transition-colors ${
+                              className={`flex h-5 w-5 items-center justify-center rounded-md transition-colors ${
                                 anchorageTypeViewMode === 'chart' ? 'bg-[#252A33] text-[#4DABFF]' : 'text-gray-500 hover:text-gray-300'
                               }`}
                             >
-                              <BarChart3 size={11} />
+                              <BarChart3 size={10} />
                             </button>
                             <button
                               type="button"
@@ -154,16 +154,16 @@ export default function AnchoragePanel({
                                 e.stopPropagation();
                                 onAnchorageTypeViewModeChange('tags');
                               }}
-                              className={`flex h-6 w-6 items-center justify-center rounded-md transition-colors ${
+                              className={`flex h-5 w-5 items-center justify-center rounded-md transition-colors ${
                                 anchorageTypeViewMode === 'tags' ? 'bg-[#252A33] text-[#4DABFF]' : 'text-gray-500 hover:text-gray-300'
                               }`}
                             >
-                              <LayoutGrid size={11} />
+                              <LayoutGrid size={10} />
                             </button>
                           </div>
                         </div>
                         {anchorageTypeViewMode === 'chart' ? (
-                          <div className="relative flex h-[128px] items-center gap-4 overflow-hidden rounded-xl border border-white/5 bg-[#1A1D23]/50 p-3">
+                          <div className="relative flex h-[128px] items-center gap-2 overflow-hidden px-1">
                             <div className="relative flex h-[88px] w-[88px] shrink-0 items-center justify-center">
                               <div className="pointer-events-none absolute inset-0 z-10 flex flex-col items-center justify-center">
                                 <AnimatePresence mode="wait">
@@ -216,7 +216,7 @@ export default function AnchoragePanel({
                                     transition={{ delay: idx * 0.05 }}
                                     onMouseEnter={() => onHoveredShipTypeChange(ship.type)}
                                     onMouseLeave={() => onHoveredShipTypeChange(null)}
-                                    className={`flex cursor-pointer items-center gap-2 rounded-md px-1 py-1 transition-all hover:bg-white/5 ${hoveredShipType === ship.type ? 'bg-white/5' : ''}`}
+                                    className={`flex cursor-pointer items-center gap-1 rounded-md px-1 py-1 transition-all hover:bg-white/5 ${hoveredShipType === ship.type ? 'bg-white/5' : ''}`}
                                   >
                                     <span className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ backgroundColor: chartColors[idx % chartColors.length] }} />
                                     <MarqueeText text={ship.type} isHovered={hoveredShipType === ship.type} className="text-[10px] leading-none text-gray-400" />
@@ -240,9 +240,9 @@ export default function AnchoragePanel({
                         )}
                       </div>
 
-                      <div className="space-y-2 rounded-xl border border-white/5 bg-[#1A1D23]/50 p-3 shadow-[inset_0_0_20px_rgba(0,0,0,0.2)]">
-                        <div className="text-[9px] font-bold uppercase tracking-wider text-gray-500">船舶锚泊分布</div>
-                        <div className="flex items-center gap-4">
+                      <div className="space-y-1.5 border-t border-white/5 py-1.5">
+                        <div className="text-[10px] font-bold uppercase tracking-wider text-gray-500">船舶锚泊分布</div>
+                        <div className="flex items-center gap-2 px-1">
                           <div className="relative flex h-[88px] w-[88px] shrink-0 items-center justify-center">
                             <div className="pointer-events-none absolute inset-0 z-10 flex flex-col items-center justify-center">
                               <AnimatePresence mode="wait">
@@ -288,7 +288,7 @@ export default function AnchoragePanel({
                             {durationChartStats.map((bucket, idx) => {
                               const ratio = durationChartTotal > 0 ? Math.round((bucket.count / durationChartTotal) * 100) : 0;
                               return (
-                                <motion.div key={`${bucket.type}-${idx}-legend`} onMouseEnter={() => onHoveredDurationTypeChange(bucket.type)} onMouseLeave={() => onHoveredDurationTypeChange(null)} className={`flex cursor-pointer items-center gap-2 rounded-md px-1 py-1 transition-all hover:bg-white/5 ${hoveredDurationType === bucket.type ? 'bg-white/5' : ''}`}>
+                                <motion.div key={`${bucket.type}-${idx}-legend`} onMouseEnter={() => onHoveredDurationTypeChange(bucket.type)} onMouseLeave={() => onHoveredDurationTypeChange(null)} className={`flex cursor-pointer items-center gap-1 rounded-md px-1 py-1 transition-all hover:bg-white/5 ${hoveredDurationType === bucket.type ? 'bg-white/5' : ''}`}>
                                   <span className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ backgroundColor: chartColors[idx % chartColors.length] }} />
                                   <span className="min-w-0 flex-1 truncate text-[10px] leading-none text-gray-400">{bucket.type}</span>
                                   <span className="text-[10px] font-bold text-[#4DABFF]">{ratio}%</span>
@@ -301,9 +301,9 @@ export default function AnchoragePanel({
                       </div>
 
                       {item.expiringCount > 0 && (
-                        <div className="space-y-1 border-t border-white/5 pt-1.5">
+                        <div className="space-y-1">
                           <div className="flex items-center justify-between">
-                            <span className="text-[9px] font-bold leading-none text-[#f7a52c]">{item.expiringCount} 艘船舶锚泊临期</span>
+                            <span className="text-[10px] font-bold leading-none text-[#f7a52c]">{item.expiringCount} 艘锚泊临期</span>
                             <div className="text-[10px] font-bold leading-none text-[#4DABFF]">限时 48H</div>
                           </div>
                           <div className="space-y-1">
@@ -338,9 +338,9 @@ export default function AnchoragePanel({
                       )}
 
                       {item.overtimeCount > 0 && (
-                        <div className="space-y-1.5 border-t border-white/5 pt-2">
+                        <div className="space-y-1.5">
                           <div className="flex items-center justify-between">
-                            <span className="text-[10px] font-bold leading-none text-[#ff4d4d]">{item.overtimeCount} 艘船舶锚泊超时</span>
+                            <span className="text-[10px] font-bold leading-none text-[#ff4d4d]">{item.overtimeCount} 艘锚泊超时</span>
                             <div className="text-[10px] font-bold leading-none text-[#4DABFF]">实时监测</div>
                           </div>
                           <div className="space-y-1">
