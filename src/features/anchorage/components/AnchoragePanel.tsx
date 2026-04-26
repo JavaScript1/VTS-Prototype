@@ -343,10 +343,9 @@ export default function AnchoragePanel({
                                         <div onClick={(e) => { e.stopPropagation(); onSelectExpiringShip(isExpanded ? null : ship.id); }} className="flex flex-1 cursor-pointer items-center gap-2">
                                           <div className="min-w-0 flex-1">
                                             <div className="text-[10px] font-bold leading-none text-white/92">{ship.name}{ship.englishName ? <span className="ml-1 text-[10px] font-semibold text-white/45">{ship.englishName}</span> : null}</div>
-                                            <div className="mt-1 text-[10px] leading-none text-white/28">到期: {expiryMeta.date} {expiryMeta.time}</div>
+                                            <div className="mt-1 text-[10px] leading-none text-white/28">锚泊: {ship.details?.anchorTime || '--'}</div>
                                             <div className="mt-1 text-[10px] font-medium leading-none text-[#f7a52c]">{formatAnchorageRemainingDuration(ship.expiryTime, currentTime)}</div>
-                                          </div>
-                                        </div>
+                                          </div>                                        </div>
                                         <div className={`flex flex-col gap-1 transition-opacity ${isExpanded ? 'opacity-100' : 'opacity-0 group-hover/ship:opacity-100'}`}>
                                           <button type="button" onClick={(e) => e.stopPropagation()} className="rounded-md bg-[#30343d] px-1.5 py-1 text-[10px] font-black leading-none text-white/45 transition-colors hover:text-white/80">忽略</button>
                                           <button type="button" onClick={(e) => e.stopPropagation()} className="rounded-md bg-[#3D2616] px-1.5 py-1 text-[10px] font-black leading-none text-[#FF9F43] transition-colors hover:bg-[#4D321D]">提醒</button>
@@ -411,8 +410,8 @@ export default function AnchoragePanel({
                                         <div onClick={(e) => { e.stopPropagation(); onSelectOvertimeShip(isExpanded ? null : ship.id); }} className="flex flex-1 cursor-pointer items-center gap-2">
                                           <div className="min-w-0 flex-1">
                                             <div className="text-[10px] font-bold leading-none text-white/92">{ship.name}{ship.englishName ? <span className="ml-1 text-[10px] font-semibold text-white/45">{ship.englishName}</span> : null}</div>
-                                            <div className="mt-1 text-[10px] leading-none text-white/28">到期: {getAnchorageExpiryMeta(ship.expiryTime).date} {getAnchorageExpiryMeta(ship.expiryTime).time}</div>
-                                            <div className="mt-1 text-[10px] font-medium leading-none text-[#ff6269]">{ship.overtimeDuration}</div>
+                                            <div className="mt-1 text-[10px] leading-none text-white/28">锚泊: {ship.details?.anchorTime || '--'}</div>
+                                            <div className="mt-1 text-[10px] font-medium leading-none text-[#ff6269]">超时: {ship.overtimeDuration.replace('超时 ', '')}</div>
                                           </div>
                                         </div>
                                         <div className={`flex flex-col gap-1 transition-opacity ${isExpanded ? 'opacity-100' : 'opacity-0 group-hover/ship:opacity-100'}`}>

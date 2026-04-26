@@ -289,10 +289,10 @@ const parseAnchorageExpiryTime = (value: string): Date | null => {
 
 const formatRemainingDuration = (expiryTime: string, currentTime: Date): string => {
   const expiryDate = parseAnchorageExpiryTime(expiryTime);
-  if (!expiryDate) return '剩余时间待确认';
+  if (!expiryDate) return '剩余: 待确认';
 
   const diffMs = expiryDate.getTime() - currentTime.getTime();
-  if (diffMs <= 0) return '剩余时间 00:00';
+  if (diffMs <= 0) return '剩余: 00:00';
 
   const totalMinutes = Math.floor(diffMs / (1000 * 60));
   const days = Math.floor(totalMinutes / (24 * 60));
@@ -300,18 +300,18 @@ const formatRemainingDuration = (expiryTime: string, currentTime: Date): string 
   const minutes = totalMinutes % 60;
 
   if (days > 0) {
-    return `剩余时间 ${days}天${hours}小时`;
+    return `剩余: ${days}天${hours}小时`;
   }
 
   if (hours > 0) {
-    return `剩余时间 ${hours}小时${minutes}分钟`;
+    return `剩余: ${hours}小时${minutes}分钟`;
   }
 
-  return `剩余时间 ${minutes}分钟`;
+  return `剩余: ${minutes}分钟`;
 };
 
 const formatAnchorageRemainingDuration = (expiryTime: string, currentTime: Date) =>
-  formatRemainingDuration(expiryTime, currentTime).replace(/ /g, '');
+  formatRemainingDuration(expiryTime, currentTime).replace(/ /g, '').replace(':', ': ');
 
 const getAnchorageExpiryMeta = (expiryTime: string) => {
   const [date = '--', time = '--:--'] = expiryTime.split(' ');
