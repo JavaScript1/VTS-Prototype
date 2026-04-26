@@ -5554,7 +5554,7 @@ export default function AppView() {
   }, [homeShipDetails, selectedHomeShipId]);
 
   return (
-    <div className="h-screen w-screen bg-[#0a0a0a] text-white font-sans overflow-hidden flex flex-col">
+    <div className="vts-home-shell h-screen w-screen overflow-hidden bg-[#0a0a0a] font-sans text-white flex flex-col">
       <AnimatePresence>
         {dynamicPlaybackSession && (
           <DynamicPlaybackView 
@@ -5587,7 +5587,7 @@ export default function AppView() {
         {showBars && (
           <motion.header 
             initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 40, opacity: 1 }}
+            animate={{ height: 'var(--vts-topbar-height)', opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
             className="border-b border-white/10 bg-[#0a0a0a] flex items-center justify-between px-4 z-[3000] shrink-0"
           >
@@ -5601,7 +5601,7 @@ export default function AppView() {
                 <div className="w-1.5 h-3 bg-sky-500 rounded-full shadow-[0_0_15px_rgba(14,165,233,0.6)]" />
                 <div className="absolute inset-0 bg-sky-400 blur-sm opacity-50 animate-pulse" />
               </div>
-              <h1 className="text-sm font-black uppercase tracking-[0.3em] text-white/90">VTS智能辅助系统</h1>
+              <h1 className="text-base font-black uppercase tracking-[0.24em] text-white/90">VTS智能辅助系统</h1>
             </div>
 
             <div className="flex items-center gap-4">
@@ -5882,7 +5882,7 @@ export default function AppView() {
         {showBars && (
           <motion.footer 
             initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 40, opacity: 1 }}
+            animate={{ height: 'var(--vts-bottombar-height)', opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
             className="border-t border-white/10 bg-[#0a0a0a] flex items-center justify-between px-4 z-[3000] shrink-0"
           >

@@ -56,14 +56,22 @@ export default function SidebarPanel({
 
   return (
     <div className={`z-[3000] flex h-full ${isLeft ? 'flex-row' : 'flex-row-reverse'}`}>
-      <div className={`flex h-full w-12 flex-col items-center gap-4 bg-[#050505] py-4 border-${isLeft ? 'r' : 'l'} border-white/10`}>
+      <div
+        className={`flex h-full flex-col items-center bg-[#050505] border-${isLeft ? 'r' : 'l'} border-white/10`}
+        style={{
+          width: 'var(--vts-sidebar-rail-width)',
+          gap: 'var(--vts-sidebar-gap)',
+          paddingTop: 'var(--vts-sidebar-padding-y)',
+          paddingBottom: 'var(--vts-sidebar-padding-y)',
+        }}
+      >
         <div className="relative">
           <button
             onClick={() => setIsSearchExpanded((prev) => !prev)}
-            className={`rounded-lg p-2 transition-all ${isSearchExpanded ? 'bg-sky-500/10 text-sky-400' : 'text-white/30 hover:text-white/60'}`}
+            className={`rounded-xl p-2.5 transition-all ${isSearchExpanded ? 'bg-sky-500/10 text-sky-400' : 'text-white/30 hover:text-white/60'}`}
             title="搜索船舶"
           >
-            <Search size={18} />
+            <Search size={20} />
           </button>
           <AnimatePresence>
             {isSearchExpanded && (
@@ -74,7 +82,7 @@ export default function SidebarPanel({
                   animate={{ opacity: 1, scale: 1, y: 0 }}
                   exit={{ opacity: 0, scale: 0.95, y: -10 }}
                   transition={{ duration: 0.15 }}
-                  className={`absolute z-50 w-64 space-y-2 rounded-2xl border border-white/10 bg-[#05080d]/95 p-3 shadow-2xl backdrop-blur-xl ${isLeft ? 'left-full ml-2' : 'right-full mr-2'}`}
+                  className={`absolute z-50 w-72 space-y-3 rounded-2xl border border-white/10 bg-[#05080d]/95 p-4 shadow-2xl backdrop-blur-xl ${isLeft ? 'left-full ml-3' : 'right-full mr-3'}`}
                 >
                   <div className="flex items-center justify-between text-[10px] font-black uppercase tracking-[0.3em] text-white/40">
                     搜索历史
@@ -127,7 +135,7 @@ export default function SidebarPanel({
 
         <button
           onClick={onToggleBars}
-          className={`group relative rounded-xl p-2 transition-all duration-300 hover:scale-105 active:scale-95 ${
+          className={`group relative rounded-xl p-2.5 transition-all duration-300 hover:scale-105 active:scale-95 ${
             isFullscreenView
               ? 'bg-sky-500/10 text-sky-400 shadow-[0_0_20px_rgba(14,165,233,0.15)]'
               : 'bg-white/5 text-white shadow-[0_0_15px_rgba(255,255,255,0.05)]'
@@ -135,12 +143,12 @@ export default function SidebarPanel({
           title={isFullscreenView ? '退出全屏监控' : '进入全屏监控'}
         >
           <div className={`absolute inset-0 rounded-xl border transition-colors duration-300 ${isFullscreenView ? 'border-sky-500/30' : 'border-white/10'}`} />
-          <Maximize2 size={18} className={`transition-transform duration-500 ${isFullscreenView ? 'rotate-180' : 'rotate-0'}`} />
+          <Maximize2 size={20} className={`transition-transform duration-500 ${isFullscreenView ? 'rotate-180' : 'rotate-0'}`} />
         </button>
 
-        <div className="my-2 h-px w-8 bg-white/10" />
+        <div className="my-2 h-px w-[60%] bg-white/10" />
 
-        <div className="flex flex-1 flex-col gap-6">
+        <div className="flex flex-1 flex-col justify-start gap-5">
           {tabs.map((tab) => {
             const isActive = activeTab === tab.id && isOpen;
             return (
@@ -154,9 +162,9 @@ export default function SidebarPanel({
                   onTabChange(tab.id);
                   if (!isOpen) onToggle();
                 }}
-                className={`group relative rounded-lg p-2 transition-all ${isActive ? 'bg-sky-500/10 text-sky-400' : 'text-white/30 hover:text-white/60'}`}
+                className={`group relative rounded-xl p-2.5 transition-all ${isActive ? 'bg-sky-500/10 text-sky-400' : 'text-white/30 hover:text-white/60'}`}
               >
-                <tab.icon size={20} />
+                <tab.icon size={22} />
                 {isActive && (
                   <motion.div
                     layoutId="activeTab"
@@ -173,7 +181,7 @@ export default function SidebarPanel({
         {isOpen && (
           <motion.div
             initial={{ width: 0, opacity: 0 }}
-            animate={{ width: 320, opacity: 1 }}
+            animate={{ width: 'var(--vts-sidebar-panel-width)', opacity: 1 }}
             exit={{ width: 0, opacity: 0 }}
             className={`flex flex-col overflow-hidden transition-colors duration-500 h-full border-${isLeft ? 'r' : 'l'} border-white/10 ${
               activeTab === 'vhf' || activeTab === 'ship'
