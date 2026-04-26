@@ -21,6 +21,7 @@ export interface VHFMessage {
 export interface Alert {
   id: string;
   ship: string;
+  englishName?: string;
   shipType: string;
   mmsi: string;
   callsign?: string;

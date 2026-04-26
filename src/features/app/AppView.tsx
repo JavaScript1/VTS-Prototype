@@ -739,6 +739,7 @@ const MOCK_ALERTS: Alert[] = [
   { 
     id: 'a1', 
     ship: '江海通8',
+    englishName: 'Jiang Hai Tong 8',
     shipType: '散货船',
     mmsi: '413000008',
     callsign: 'BHT8',
@@ -767,6 +768,7 @@ const MOCK_ALERTS: Alert[] = [
   { 
     id: 'a2', 
     ship: '新海安',
+    englishName: 'Xin Hai An',
     shipType: '集装箱船',
     mmsi: '413000010',
     callsign: 'XHA10',
@@ -789,12 +791,13 @@ const MOCK_ALERTS: Alert[] = [
       { time: '11:15:00', event: '通过圆圆沙报告线', type: 'info' },
       { time: '11:25:30', event: '进入禁锚区水域', type: 'info' },
       { time: '11:32:15', event: '航速降至 5kn 以下', type: 'warning' },
-      { time: '11:38:10', event: '检测到抛锚准备行为', type: 'risk' }
+      { time: '11:38:10', event: '检测 wood 抛锚准备行为', type: 'risk' }
     ]
   },
   { 
     id: 'a3', 
     ship: '星海',
+    englishName: 'Xing Hai',
     shipType: '油船',
     mmsi: '413000012',
     callsign: 'XH12',
@@ -823,6 +826,7 @@ const MOCK_ALERTS: Alert[] = [
   { 
     id: 'a4', 
     ship: '蓝波',
+    englishName: 'Blue Wave',
     shipType: '拖船',
     mmsi: '413000015',
     destination: '南通',
@@ -1199,6 +1203,7 @@ const createHomeShipDynamicEvents = ({
 const INTENT_DATA: IntentItem[] = [
   {
     ship: '远洋99',
+    englishName: 'Ocean Pioneer 99',
     mmsi: '413000099',
     callSign: 'BYYP9',
     imo: '9123456',
