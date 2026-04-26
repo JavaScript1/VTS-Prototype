@@ -92,19 +92,16 @@ export default function WarningListPanel({
                 transition={{ duration: 0.2, delay: i * 0.03 }}
                 layout
                 onClick={() => onToggleAlert(alert.id)}
-                className={`group relative cursor-pointer overflow-hidden rounded-xl border border-white/5 bg-[#121212] transition-all hover:border-white/10 ${
+                className={`group relative cursor-pointer overflow-hidden rounded-xl border transition-all ${
                   selectedAlert === alert.id
-                    ? 'ring-1 ring-sky-500/30'
-                    : alert.level === 'emergency'
-                      ? 'ring-1 ring-red-500/20'
-                      : alert.level === 'alarm'
-                        ? 'ring-1 ring-orange-500/20'
-                        : alert.level === 'warning'
-                          ? 'ring-1 ring-yellow-500/20'
-                          : ''
-                }`}
+                    ? 'border-white/20'
+                    : 'border-white/5 hover:border-white/10'
+                } bg-[#121212]`}
               >
-                <div className="bg-gradient-to-b from-white/[0.02] to-transparent p-2">
+                {selectedAlert === alert.id && (
+                  <div className={`absolute left-0 top-0 bottom-0 w-1 z-20 ${levelMeta.textClass.replace('text-', 'bg-')}`} />
+                )}
+                <div className="bg-gradient-to-b from-white/[0.02] to-transparent p-2 relative z-10">
                   <div className="mb-2 flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <div className={`flex h-6 w-6 items-center justify-center rounded-full ${levelMeta.iconClass}`}>
@@ -154,9 +151,9 @@ export default function WarningListPanel({
                       exit={{ height: 0, opacity: 0 }}
                       className="overflow-hidden border-t border-white/5"
                     >
-                      <div className="space-y-2.5 px-2 py-2">
-                        <div className="px-1 py-1">
-                          <div className="grid grid-cols-3 gap-x-2 gap-y-1.5">
+                      <div className="space-y-1.5 px-2 py-1.5">
+                        <div className="px-1 py-0">
+                          <div className="grid grid-cols-3 gap-x-2 gap-y-1">
                             <div className="space-y-0.5">
                               <div className="text-[10px] uppercase tracking-widest text-white/30">MMSI</div>
                               <div className="font-mono text-[10px] text-white/75">{alert.mmsi || '--'}</div>
