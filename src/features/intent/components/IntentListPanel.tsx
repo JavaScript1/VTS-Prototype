@@ -82,11 +82,11 @@ export default function IntentListPanel({
                         <Ship size={14} className="text-sky-400" />
                       </div>
                       <div className="flex min-w-0 flex-col">
-                        <div className="flex items-center gap-1.5">
+                        <div className="flex items-center gap-1.5 min-w-0 overflow-hidden">
                           <span className="shrink-0 rounded bg-white/5 border border-white/5 px-1.5 py-0.5 text-[9px] font-normal uppercase tracking-wider text-white/60">{item.shipType}</span>
-                          <span className="flex items-center gap-1 rounded bg-white/5 border border-white/5 px-1.5 py-0.5 text-[10px] font-bold text-white/80 whitespace-nowrap">
-                            {item.ship}
-                            {item.englishName && <span className="text-[9px] font-medium opacity-40">({item.englishName})</span>}
+                          <span className="flex items-center gap-1 rounded bg-white/5 border border-white/5 px-1.5 py-0.5 text-[10px] font-bold text-white/80 min-w-0 overflow-hidden">
+                            <span className="truncate">{item.ship}</span>
+                            {item.englishName && <span className="text-[9px] font-medium opacity-40 truncate">({item.englishName})</span>}
                           </span>
                         </div>
                         <div className="flex items-center gap-x-2 whitespace-nowrap mt-1">
@@ -106,20 +106,9 @@ export default function IntentListPanel({
                         </div>
                       </div>
                     </div>
-                    <div className="flex flex-col gap-1 shrink-0 items-end">
-                      <div className="flex items-center gap-1 rounded-full border border-white/5 bg-white/5 px-1.5 py-0.5 shrink-0 self-start group-hover:hidden transition-all">
-                        <div className="h-1 w-1 animate-pulse rounded-full bg-emerald-500" />
-                        <span className="text-[9px] font-black uppercase tracking-widest text-white/60">实时</span>
-                      </div>
-                      <button 
-                        onClick={(e) => {
-                          e.stopPropagation();
-                        }}
-                        className="p-1 rounded-md bg-red-500/10 text-red-500/60 hover:bg-red-500/20 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all shrink-0 self-start"
-                        title="忽略意图"
-                      >
-                        <X size={14} />
-                      </button>
+                    <div className="flex items-center gap-1 rounded-full border border-white/5 bg-white/5 px-1.5 py-0.5 shrink-0 self-start">
+                      <div className="h-1 w-1 animate-pulse rounded-full bg-emerald-500" />
+                      <span className="text-[9px] font-black uppercase tracking-widest text-white/60">实时</span>
                     </div>
                   </div>
 

@@ -101,10 +101,10 @@ export default function WarningListPanel({
                 {selectedAlert === alert.id && (
                   <div className={`absolute left-0 top-0 bottom-0 w-1 z-20 ${levelMeta.textClass.replace('text-', 'bg-')}`} />
                 )}
-                <div className="bg-gradient-to-b from-white/[0.02] to-transparent pt-2 px-2 pb-1 relative z-10">
+                <div className="bg-gradient-to-b from-white/[0.02] to-transparent pt-1.5 px-2 pb-0.5 relative z-10">
                   <div className="mb-1 flex items-start justify-between gap-3">
                     <div className="flex items-start gap-2 min-w-0 flex-1">
-                      <div className="flex flex-col items-center gap-1.5 shrink-0">
+                      <div className="flex flex-col items-center gap-0.5 shrink-0">
                         <div className={`flex h-6 w-6 items-center justify-center rounded-full ${levelMeta.iconClass}`}>
                           {levelMeta.icon}
                         </div>
@@ -113,26 +113,33 @@ export default function WarningListPanel({
                         </span>
                       </div>
                       
-                      <div className="flex min-w-0 flex-col">
-                        <div className="flex items-center gap-1.5">
-                          <span className="shrink-0 rounded bg-white/5 border border-white/5 px-1.5 py-0.5 text-[9px] font-normal uppercase tracking-wider text-white/60">{alert.shipType}</span>
-                          <span className="flex items-center gap-1 rounded bg-white/5 border border-white/5 px-1.5 py-0.5 text-[10px] font-bold text-white/80 whitespace-nowrap">
-                            {alert.ship}
-                            {alert.englishName && <span className="text-[9px] font-medium opacity-40">({alert.englishName})</span>}
+                      <div className="flex min-w-0 flex-1 flex-col gap-1">
+                        {/* 第一行：船名卡片 */}
+                        <div className="flex items-center min-w-0 overflow-hidden">
+                          <span className="flex items-center gap-1 rounded bg-white/5 border border-white/5 px-1.5 py-0.5 text-[10px] font-bold text-white/80 min-w-0 overflow-hidden">
+                            <span className="truncate">{alert.ship}</span>
+                            {alert.englishName && <span className="text-[9px] font-medium opacity-40 truncate">({alert.englishName})</span>}
                           </span>
                         </div>
-                        <div className="flex items-center gap-x-2 whitespace-nowrap mt-1">
-                          <span className="text-[10px] tracking-tighter text-white/30">L:{alert.length}</span>
-                          <span className="text-[10px] tracking-tighter text-white/30">W:{alert.width}</span>
-                          <span className="text-[10px] tracking-tighter text-white/30">D:{alert.draft}</span>
-                          <div className="flex items-center gap-1 ml-1">
+
+                        {/* 第二行：船舶类型与物理尺寸 */}
+                        <div className="flex items-center gap-x-2 whitespace-nowrap">
+                          <span className="shrink-0 rounded bg-white/5 border border-white/5 px-1 py-0 text-[8px] font-normal uppercase tracking-wider text-white/40">{alert.shipType}</span>
+                          <div className="flex items-center gap-x-1.5 opacity-30">
+                            <span className="text-[10px] tracking-tighter">L:{alert.length}</span>
+                            <span className="text-[10px] tracking-tighter">W:{alert.width}</span>
+                            <span className="text-[10px] tracking-tighter">D:{alert.draft}</span>
+                          </div>
+                        </div>
+
+                        {/* 第三行：预警类型、时间与航速 */}
+                        <div className="flex items-center gap-x-2">
+                          <span className={`text-[11px] font-black tracking-tight ${levelMeta.textClass}`}>{alert.type}</span>
+                          <span className="font-mono text-[10px] text-white/20">{alert.time}</span>
+                          <div className="flex items-center gap-1 ml-auto">
                             <div className="h-1 w-1 animate-pulse rounded-full bg-sky-500" />
                             <span className="text-[10px] font-bold tracking-tighter text-sky-400">S:{alert.speed}</span>
                           </div>
-                        </div>
-                        <div className="mt-0.5 flex items-center gap-2">
-                          <span className={`text-xs font-black ${levelMeta.textClass}`}>{alert.type}</span>
-                          <span className="font-mono text-[10px] text-white/30">{alert.time}</span>
                         </div>
                       </div>
                     </div>
@@ -142,7 +149,7 @@ export default function WarningListPanel({
                         e.stopPropagation();
                         // Add ignore logic here
                       }}
-                      className="p-1 rounded-md bg-red-500/10 text-red-500/60 hover:bg-red-500/20 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all shrink-0 self-start"
+                      className="p-1 rounded-md bg-red-500/10 text-red-500/60 hover:bg-red-500/20 hover:text-red-500 transition-all shrink-0 self-start"
                       title="忽略预警"
                     >
                       <X size={14} />

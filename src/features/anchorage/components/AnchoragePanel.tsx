@@ -340,15 +340,21 @@ export default function AnchoragePanel({
                                   <div className={`rounded-lg border transition-all ${isExpanded ? 'border-[#5c4a2f] bg-[#252A33] p-2' : 'border-white/6 bg-[#1A1D23] px-2 py-1.5 hover:border-[#FF9F43]/30'}`}>
                                     <div className="flex flex-col gap-2">
                                       <div className="flex items-center gap-2">
-                                        <div onClick={(e) => { e.stopPropagation(); onSelectExpiringShip(isExpanded ? null : ship.id); }} className="flex flex-1 cursor-pointer items-center gap-2">
-                                          <div className="min-w-0 flex-1">
-                                            <div className="text-[10px] font-bold leading-none text-white/92">{ship.name}{ship.englishName ? <span className="ml-1 text-[10px] font-semibold text-white/45">{ship.englishName}</span> : null}</div>
-                                            <div className="mt-1 text-[10px] leading-none text-white/28">锚泊: {ship.details?.anchorTime || '--'}</div>
-                                            <div className="mt-1 text-[10px] font-medium leading-none text-[#f7a52c]">{formatAnchorageRemainingDuration(ship.expiryTime, currentTime)}</div>
-                                          </div>                                        </div>
-                                        <div className={`flex flex-col gap-1 transition-opacity ${isExpanded ? 'opacity-100' : 'opacity-0 group-hover/ship:opacity-100'}`}>
-                                          <button type="button" onClick={(e) => e.stopPropagation()} className="rounded-md bg-[#30343d] px-1.5 py-1 text-[10px] font-black leading-none text-white/45 transition-colors hover:text-white/80">忽略</button>
-                                          <button type="button" onClick={(e) => e.stopPropagation()} className="rounded-md bg-[#3D2616] px-1.5 py-1 text-[10px] font-black leading-none text-[#FF9F43] transition-colors hover:bg-[#4D321D]">提醒</button>
+                                        <div onClick={(e) => { e.stopPropagation(); onSelectExpiringShip(isExpanded ? null : ship.id); }} className="flex flex-1 cursor-pointer items-center gap-2 min-w-0 overflow-hidden">
+                                            <div className="min-w-0 flex-1">
+                                              <div className="flex items-center gap-1.5 mb-1 min-w-0 overflow-hidden">
+                                                <span className="shrink-0 rounded bg-white/5 border border-white/5 px-1.5 py-0.5 text-[9px] font-normal uppercase tracking-wider text-white/60">{ship.type}</span>
+                                                <span className="flex items-center gap-1 rounded bg-white/5 border border-white/5 px-1.5 py-0.5 text-[10px] font-bold text-white/80 min-w-0 overflow-hidden">
+                                                  <span className="truncate">{ship.name}</span>
+                                                  {ship.englishName && <span className="text-[9px] font-medium opacity-40 truncate">({ship.englishName})</span>}
+                                                </span>
+                                              </div>
+                                              <div className="mt-1 text-[10px] leading-none text-white/28">锚泊: {ship.details?.anchorTime || '--'}</div>
+                                              <div className="mt-1 text-[10px] font-medium leading-none text-[#f7a52c]">{formatAnchorageRemainingDuration(ship.expiryTime, currentTime)}</div>
+                                            </div>                                        </div>
+                                        <div className={`flex flex-col gap-1 transition-opacity ${isExpanded ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
+                                          <button type="button" onClick={(e) => e.stopPropagation()} className="rounded-md bg-[#30343d] px-1.5 py-1 text-[10px] font-black leading-none text-white/45 transition-colors hover:text-white/80 whitespace-nowrap">忽略</button>
+                                          <button type="button" onClick={(e) => e.stopPropagation()} className="rounded-md bg-[#3D2616] px-1.5 py-1 text-[10px] font-black leading-none text-[#FF9F43] transition-colors hover:bg-[#4D321D] whitespace-nowrap">提醒</button>
                                         </div>
                                         <button type="button" onClick={(e) => { e.stopPropagation(); onSelectExpiringShip(isExpanded ? null : ship.id); }} className="rounded-lg p-0.5 text-white/20 transition-colors hover:bg-white/5">
                                           <ChevronRight size={10} className={`transition-transform ${isExpanded ? 'rotate-90 text-white/55' : ''}`} />
@@ -442,16 +448,22 @@ export default function AnchoragePanel({
                                   <div className={`rounded-lg border transition-all ${isExpanded ? 'border-[#5a2a32] bg-[#252A33] p-2' : 'border-white/6 bg-[#1A1D23] px-2 py-1.5 hover:border-[#FF4D4D]/30'}`}>
                                     <div className="flex flex-col gap-2">
                                       <div className="flex items-center gap-2">
-                                        <div onClick={(e) => { e.stopPropagation(); onSelectOvertimeShip(isExpanded ? null : ship.id); }} className="flex flex-1 cursor-pointer items-center gap-2">
+                                        <div onClick={(e) => { e.stopPropagation(); onSelectOvertimeShip(isExpanded ? null : ship.id); }} className="flex flex-1 cursor-pointer items-center gap-2 min-w-0 overflow-hidden">
                                           <div className="min-w-0 flex-1">
-                                            <div className="text-[10px] font-bold leading-none text-white/92">{ship.name}{ship.englishName ? <span className="ml-1 text-[10px] font-semibold text-white/45">{ship.englishName}</span> : null}</div>
+                                            <div className="flex items-center gap-1.5 mb-1 min-w-0 overflow-hidden">
+                                              <span className="shrink-0 rounded bg-white/5 border border-white/5 px-1.5 py-0.5 text-[9px] font-normal uppercase tracking-wider text-white/60">{ship.type}</span>
+                                              <span className="flex items-center gap-1 rounded bg-white/5 border border-white/5 px-1.5 py-0.5 text-[10px] font-bold text-white/80 min-w-0 overflow-hidden">
+                                                <span className="truncate">{ship.name}</span>
+                                                {ship.englishName && <span className="text-[9px] font-medium opacity-40 truncate">({ship.englishName})</span>}
+                                              </span>
+                                            </div>
                                             <div className="mt-1 text-[10px] leading-none text-white/28">锚泊: {ship.details?.anchorTime || '--'}</div>
                                             <div className="mt-1 text-[10px] font-medium leading-none text-[#ff6269]">超时: {ship.overtimeDuration.replace('超时 ', '')}</div>
                                           </div>
                                         </div>
-                                        <div className={`flex flex-col gap-1 transition-opacity ${isExpanded ? 'opacity-100' : 'opacity-0 group-hover/ship:opacity-100'}`}>
-                                          <button type="button" onClick={(e) => e.stopPropagation()} className="rounded-md bg-[#30343d] px-1.5 py-1 text-[10px] font-black leading-none text-white/45 transition-colors hover:text-white/80">忽略</button>
-                                          <button type="button" onClick={(e) => e.stopPropagation()} className="rounded-md bg-[#3D1D1D] px-1.5 py-1 text-[10px] font-black leading-none text-[#FF4D4D] transition-colors hover:bg-[#4D2222]">驱离</button>
+                                        <div className={`flex flex-col gap-1 transition-opacity ${isExpanded ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
+                                          <button type="button" onClick={(e) => e.stopPropagation()} className="rounded-md bg-[#30343d] px-1.5 py-1 text-[10px] font-black leading-none text-white/45 transition-colors hover:text-white/80 whitespace-nowrap">忽略</button>
+                                          <button type="button" onClick={(e) => e.stopPropagation()} className="rounded-md bg-[#3D1D1D] px-1.5 py-1 text-[10px] font-black leading-none text-[#FF4D4D] transition-colors hover:bg-[#4D2222] whitespace-nowrap">驱离</button>
                                         </div>
                                         <button type="button" onClick={(e) => { e.stopPropagation(); onSelectOvertimeShip(isExpanded ? null : ship.id); }} className="rounded-lg p-0.5 text-white/20 transition-colors hover:bg-white/5">
                                           <ChevronRight size={10} className={`transition-transform ${isExpanded ? 'rotate-90 text-white/55' : ''}`} />
