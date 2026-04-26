@@ -1,5 +1,5 @@
 import { AnimatePresence, motion } from 'motion/react';
-import { AlertCircle, AlertTriangle, ChevronDown, Info } from 'lucide-react';
+import { AlertCircle, AlertTriangle, ChevronDown, Info, X } from 'lucide-react';
 import type { Alert } from '../../../types';
 
 type WarningListPanelProps = {
@@ -101,25 +101,34 @@ export default function WarningListPanel({
                 {selectedAlert === alert.id && (
                   <div className={`absolute left-0 top-0 bottom-0 w-1 z-20 ${levelMeta.textClass.replace('text-', 'bg-')}`} />
                 )}
-                <div className="bg-gradient-to-b from-white/[0.02] to-transparent p-2 relative z-10">
-                  <div className="mb-2 flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <div className={`flex h-6 w-6 items-center justify-center rounded-full ${levelMeta.iconClass}`}>
-                        {levelMeta.icon}
+                <div className="bg-gradient-to-b from-white/[0.02] to-transparent pt-2 px-2 pb-1 relative z-10">
+                  <div className="mb-1 flex items-start justify-between gap-3">
+                    <div className="flex items-start gap-2 min-w-0 flex-1">
+                      <div className="flex flex-col items-center gap-1.5 shrink-0">
+                        <div className={`flex h-6 w-6 items-center justify-center rounded-full ${levelMeta.iconClass}`}>
+                          {levelMeta.icon}
+                        </div>
+                        <span className={`text-[8px] font-black uppercase tracking-tighter px-1 rounded-sm border ${levelMeta.badgeClass}`}>
+                          {levelMeta.badge}
+                        </span>
                       </div>
+                      
                       <div className="flex min-w-0 flex-col">
-                        <div className="flex items-center gap-2 whitespace-nowrap">
-                          <span className="truncate text-[10px] font-bold text-white/40">{alert.ship}</span>
-                          <span className="shrink-0 rounded bg-white/10 px-1 text-[10px] uppercase tracking-wider">{alert.shipType}</span>
-                          <div className="ml-auto flex items-center gap-1">
+                        <div className="flex items-center gap-1.5">
+                          <span className="shrink-0 rounded bg-white/5 border border-white/5 px-1.5 py-0.5 text-[9px] font-normal uppercase tracking-wider text-white/60">{alert.shipType}</span>
+                          <span className="flex items-center gap-1 rounded bg-white/5 border border-white/5 px-1.5 py-0.5 text-[10px] font-bold text-white/80 whitespace-nowrap">
+                            {alert.ship}
+                            {alert.englishName && <span className="text-[9px] font-medium opacity-40">({alert.englishName})</span>}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-x-2 whitespace-nowrap mt-1">
+                          <span className="text-[10px] tracking-tighter text-white/30">L:{alert.length}</span>
+                          <span className="text-[10px] tracking-tighter text-white/30">W:{alert.width}</span>
+                          <span className="text-[10px] tracking-tighter text-white/30">D:{alert.draft}</span>
+                          <div className="flex items-center gap-1 ml-1">
                             <div className="h-1 w-1 animate-pulse rounded-full bg-sky-500" />
                             <span className="text-[10px] font-bold tracking-tighter text-sky-400">S:{alert.speed}</span>
                           </div>
-                        </div>
-                        <div className="flex items-center gap-2 opacity-30">
-                          <span className="text-[10px] tracking-tighter">L:{alert.length}</span>
-                          <span className="text-[10px] tracking-tighter">W:{alert.width}</span>
-                          <span className="text-[10px] tracking-tighter">D:{alert.draft}</span>
                         </div>
                         <div className="mt-0.5 flex items-center gap-2">
                           <span className={`text-xs font-black ${levelMeta.textClass}`}>{alert.type}</span>
@@ -127,18 +136,16 @@ export default function WarningListPanel({
                         </div>
                       </div>
                     </div>
-                    <div className={`flex items-center gap-1 rounded-full border px-1.5 py-1 ${levelMeta.badgeClass}`}>
-                      <div className={`h-1 w-1 animate-pulse rounded-full ${levelMeta.textClass.replace('text-', 'bg-')}`} />
-                      <span className="text-[10px] font-black uppercase tracking-widest opacity-80">{levelMeta.badge}</span>
-                    </div>
-                  </div>
 
-                  <div className="mt-2 flex gap-1.5 px-1">
-                    <button className="flex-1 rounded-lg border border-white/5 bg-white/5 py-1 text-[10px] font-bold text-white/60 transition-colors hover:bg-white/10">
-                      定位船舶
-                    </button>
-                    <button className="flex-1 rounded-lg border border-white/5 bg-white/5 py-1 text-[10px] font-bold text-white/60 transition-colors hover:bg-white/10">
-                      忽略预警
+                    <button 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        // Add ignore logic here
+                      }}
+                      className="p-1 rounded-md bg-red-500/10 text-red-500/60 hover:bg-red-500/20 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all shrink-0 self-start"
+                      title="忽略预警"
+                    >
+                      <X size={14} />
                     </button>
                   </div>
                 </div>
