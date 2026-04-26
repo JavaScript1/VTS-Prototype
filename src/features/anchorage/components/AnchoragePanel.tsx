@@ -363,22 +363,57 @@ export default function AnchoragePanel({
                                             exit={{ height: 0, opacity: 0 }}
                                             className="overflow-hidden border-t border-white/5 pt-2"
                                           >
-                                            <div className="grid grid-cols-2 gap-x-4 gap-y-2 pb-1">
-                                              <div className="space-y-0.5">
-                                                <div className="text-[9px] uppercase tracking-wider text-white/25">MMSI / 呼号</div>
-                                                <div className="text-[10px] font-medium text-white/70">{ship.mmsi || '--'} / {ship.details?.callSign || '--'}</div>
+                                            <div className="space-y-1 py-0.5 px-1">
+                                              {/* 第一行：身份标识 (MMSI | 呼号 | IMO) */}
+                                              <div className="grid grid-cols-3 gap-2">
+                                                <div className="flex flex-col">
+                                                  <span className="text-[8px] uppercase tracking-tighter text-white/20">MMSI</span>
+                                                  <span className="font-mono text-[10px] leading-tight text-white/80">{ship.mmsi || '--'}</span>
+                                                </div>
+                                                <div className="flex flex-col">
+                                                  <span className="text-[8px] uppercase tracking-tighter text-white/20">呼号</span>
+                                                  <span className="font-mono text-[10px] leading-tight text-white/80">{ship.details?.callSign || '--'}</span>
+                                                </div>
+                                                <div className="flex flex-col">
+                                                  <span className="text-[8px] uppercase tracking-tighter text-white/20">IMO</span>
+                                                  <span className="font-mono text-[10px] leading-tight text-white/80">{ship.details?.imo || '--'}</span>
+                                                </div>
                                               </div>
-                                              <div className="space-y-0.5">
-                                                <div className="text-[9px] uppercase tracking-wider text-white/25">船籍 / 类型</div>
-                                                <div className="text-[10px] font-medium text-white/70">{ship.details?.flag || '--'} / {ship.type}</div>
+
+                                              {/* 第二行：物理规格 (船籍 | 尺度 | 吃水) */}
+                                              <div className="grid grid-cols-3 gap-2">
+                                                <div className="flex flex-col">
+                                                  <span className="text-[8px] uppercase tracking-tighter text-white/20">船籍</span>
+                                                  <span className="truncate text-[10px] leading-tight text-white/80">{ship.details?.flag || '--'}</span>
+                                                </div>
+                                                <div className="flex flex-col">
+                                                  <span className="text-[8px] uppercase tracking-tighter text-white/20">尺度 (L×W)</span>
+                                                  <span className="text-[10px] leading-tight text-white/80">{ship.details?.length}×{ship.details?.width}m</span>
+                                                </div>
+                                                <div className="flex flex-col">
+                                                  <span className="text-[8px] uppercase tracking-tighter text-white/20">吃水</span>
+                                                  <span className="text-[10px] leading-tight text-white/80">{ship.details?.draft}m</span>
+                                                </div>
                                               </div>
-                                              <div className="space-y-0.5">
-                                                <div className="text-[9px] uppercase tracking-wider text-white/25">尺度 (L×W×D)</div>
-                                                <div className="text-[10px] font-medium text-white/70">{ship.details?.length}m × {ship.details?.width}m × {ship.details?.draft}m</div>
-                                              </div>
-                                              <div className="space-y-0.5">
-                                                <div className="text-[9px] uppercase tracking-wider text-white/25">目的港</div>
-                                                <div className="truncate text-[10px] font-medium text-white/70">{ship.details?.destination || '--'}</div>
+
+                                              {/* 第三行：航行与业务 (航程 | 货物 | 载重) */}
+                                              <div className="grid grid-cols-3 gap-2">
+                                                <div className="flex flex-col">
+                                                  <span className="text-[8px] uppercase tracking-tighter text-white/20">航程</span>
+                                                  <div className="flex items-center gap-1 text-[10px] leading-tight text-white/80">
+                                                    <span className="truncate max-w-[32px]">{ship.details?.lastPort || '--'}</span>
+                                                    <span className="text-white/20">→</span>
+                                                    <span className="truncate max-w-[32px]">{ship.details?.destination || '--'}</span>
+                                                  </div>
+                                                </div>
+                                                <div className="flex flex-col">
+                                                  <span className="text-[8px] uppercase tracking-tighter text-white/20">货物</span>
+                                                  <span className="truncate text-[10px] leading-tight text-white/80">{ship.details?.cargo || '--'}</span>
+                                                </div>
+                                                <div className="flex flex-col">
+                                                  <span className="text-[8px] uppercase tracking-tighter text-white/20">载重 (DWT)</span>
+                                                  <span className="truncate text-[10px] leading-tight text-white/80">{ship.details?.dwt || '--'}t</span>
+                                                </div>
                                               </div>
                                             </div>
                                           </motion.div>
@@ -431,22 +466,57 @@ export default function AnchoragePanel({
                                             exit={{ height: 0, opacity: 0 }}
                                             className="overflow-hidden border-t border-white/5 pt-2"
                                           >
-                                            <div className="grid grid-cols-2 gap-x-4 gap-y-2 pb-1">
-                                              <div className="space-y-0.5">
-                                                <div className="text-[9px] uppercase tracking-wider text-white/25">MMSI / 呼号</div>
-                                                <div className="text-[10px] font-medium text-white/70">{ship.mmsi || '--'} / {ship.details?.callSign || '--'}</div>
+                                            <div className="space-y-1 py-0.5 px-1">
+                                              {/* 第一行：身份标识 (MMSI | 呼号 | IMO) */}
+                                              <div className="grid grid-cols-3 gap-2">
+                                                <div className="flex flex-col">
+                                                  <span className="text-[8px] uppercase tracking-tighter text-white/20">MMSI</span>
+                                                  <span className="font-mono text-[10px] leading-tight text-white/80">{ship.mmsi || '--'}</span>
+                                                </div>
+                                                <div className="flex flex-col">
+                                                  <span className="text-[8px] uppercase tracking-tighter text-white/20">呼号</span>
+                                                  <span className="font-mono text-[10px] leading-tight text-white/80">{ship.details?.callSign || '--'}</span>
+                                                </div>
+                                                <div className="flex flex-col">
+                                                  <span className="text-[8px] uppercase tracking-tighter text-white/20">IMO</span>
+                                                  <span className="font-mono text-[10px] leading-tight text-white/80">{ship.details?.imo || '--'}</span>
+                                                </div>
                                               </div>
-                                              <div className="space-y-0.5">
-                                                <div className="text-[9px] uppercase tracking-wider text-white/25">船籍 / 类型</div>
-                                                <div className="text-[10px] font-medium text-white/70">{ship.details?.flag || '--'} / {ship.type}</div>
+
+                                              {/* 第二行：物理规格 (船籍 | 尺度 | 吃水) */}
+                                              <div className="grid grid-cols-3 gap-2">
+                                                <div className="flex flex-col">
+                                                  <span className="text-[8px] uppercase tracking-tighter text-white/20">船籍</span>
+                                                  <span className="truncate text-[10px] leading-tight text-white/80">{ship.details?.flag || '--'}</span>
+                                                </div>
+                                                <div className="flex flex-col">
+                                                  <span className="text-[8px] uppercase tracking-tighter text-white/20">尺度 (L×W)</span>
+                                                  <span className="text-[10px] leading-tight text-white/80">{ship.details?.length}×{ship.details?.width}m</span>
+                                                </div>
+                                                <div className="flex flex-col">
+                                                  <span className="text-[8px] uppercase tracking-tighter text-white/20">吃水</span>
+                                                  <span className="text-[10px] leading-tight text-white/80">{ship.details?.draft}m</span>
+                                                </div>
                                               </div>
-                                              <div className="space-y-0.5">
-                                                <div className="text-[9px] uppercase tracking-wider text-white/25">尺度 (L×W×D)</div>
-                                                <div className="text-[10px] font-medium text-white/70">{ship.details?.length}m × {ship.details?.width}m × {ship.details?.draft}m</div>
-                                              </div>
-                                              <div className="space-y-0.5">
-                                                <div className="text-[9px] uppercase tracking-wider text-white/25">目的港</div>
-                                                <div className="truncate text-[10px] font-medium text-white/70">{ship.details?.destination || '--'}</div>
+
+                                              {/* 第三行：航行与业务 (航程 | 货物 | 载重) */}
+                                              <div className="grid grid-cols-3 gap-2">
+                                                <div className="flex flex-col">
+                                                  <span className="text-[8px] uppercase tracking-tighter text-white/20">航程</span>
+                                                  <div className="flex items-center gap-1 text-[10px] leading-tight text-white/80">
+                                                    <span className="truncate max-w-[32px]">{ship.details?.lastPort || '--'}</span>
+                                                    <span className="text-white/20">→</span>
+                                                    <span className="truncate max-w-[32px]">{ship.details?.destination || '--'}</span>
+                                                  </div>
+                                                </div>
+                                                <div className="flex flex-col">
+                                                  <span className="text-[8px] uppercase tracking-tighter text-white/20">货物</span>
+                                                  <span className="truncate text-[10px] leading-tight text-white/80">{ship.details?.cargo || '--'}</span>
+                                                </div>
+                                                <div className="flex flex-col">
+                                                  <span className="text-[8px] uppercase tracking-tighter text-white/20">载重 (DWT)</span>
+                                                  <span className="truncate text-[10px] leading-tight text-white/80">{ship.details?.dwt || '--'}t</span>
+                                                </div>
                                               </div>
                                             </div>
                                           </motion.div>

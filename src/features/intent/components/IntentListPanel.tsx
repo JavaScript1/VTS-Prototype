@@ -149,31 +149,58 @@ export default function IntentListPanel({
                       className="overflow-hidden border-t border-white/5"
                     >
                       <div className="space-y-1.5 bg-transparent p-2">
-                        <div className="rounded-lg border-none bg-transparent px-2 py-2">
-                          <div className="grid grid-cols-3 gap-x-2 gap-y-1.5">
-                            <div className="space-y-0.5">
-                              <div className="text-[10px] uppercase tracking-widest text-white/30">MMSI</div>
-                              <div className="font-mono text-[10px] text-white/75">{item.mmsi || '--'}</div>
+                        <div className="px-2 py-0">
+                          <div className="space-y-1 py-0.5">
+                            {/* 第一行：身份标识 (MMSI | 呼号 | IMO) */}
+                            <div className="grid grid-cols-3 gap-2">
+                              <div className="flex flex-col">
+                                <span className="text-[8px] uppercase tracking-tighter text-white/20">MMSI</span>
+                                <span className="font-mono text-[10px] leading-tight text-white/80">{item.mmsi || '--'}</span>
+                              </div>
+                              <div className="flex flex-col">
+                                <span className="text-[8px] uppercase tracking-tighter text-white/20">呼号</span>
+                                <span className="font-mono text-[10px] leading-tight text-white/80">{item.callSign || '--'}</span>
+                              </div>
+                              <div className="flex flex-col">
+                                <span className="text-[8px] uppercase tracking-tighter text-white/20">IMO</span>
+                                <span className="font-mono text-[10px] leading-tight text-white/80">{item.imo || '--'}</span>
+                              </div>
                             </div>
-                            <div className="space-y-0.5">
-                              <div className="text-[10px] uppercase tracking-widest text-white/30">呼号</div>
-                              <div className="font-mono text-[10px] text-white/75">{item.callSign || '--'}</div>
+
+                            {/* 第二行：物理规格 (船籍 | 尺度 | 吃水) */}
+                            <div className="grid grid-cols-3 gap-2">
+                              <div className="flex flex-col">
+                                <span className="text-[8px] uppercase tracking-tighter text-white/20">船籍</span>
+                                <span className="truncate text-[10px] leading-tight text-white/80">{item.flag || '--'}</span>
+                              </div>
+                              <div className="flex flex-col">
+                                <span className="text-[8px] uppercase tracking-tighter text-white/20">尺度 (L×W)</span>
+                                <span className="text-[10px] leading-tight text-white/80">{item.length}×{item.width}m</span>
+                              </div>
+                              <div className="flex flex-col">
+                                <span className="text-[8px] uppercase tracking-tighter text-white/20">吃水</span>
+                                <span className="text-[10px] leading-tight text-white/80">{item.draft}m</span>
+                              </div>
                             </div>
-                            <div className="space-y-0.5">
-                              <div className="text-[10px] uppercase tracking-widest text-white/30">船籍</div>
-                              <div className="text-[10px] text-white/75">{item.flag || '--'}</div>
-                            </div>
-                            <div className="space-y-0.5">
-                              <div className="text-[10px] uppercase tracking-widest text-white/30">最大吃水</div>
-                              <div className="text-[10px] text-white/75">{item.draft}</div>
-                            </div>
-                            <div className="space-y-0.5">
-                              <div className="text-[10px] uppercase tracking-widest text-white/30">长/宽</div>
-                              <div className="text-[10px] text-white/75">{item.length}/{item.width}</div>
-                            </div>
-                            <div className="space-y-0.5">
-                              <div className="text-[10px] uppercase tracking-widest text-white/30">航向/航速</div>
-                              <div className="text-[10px] text-white/75">{item.situation.hdg}/{item.speed}</div>
+
+                            {/* 第三行：航行与业务 (航程 | 货物 | 载重) */}
+                            <div className="grid grid-cols-3 gap-2">
+                              <div className="flex flex-col">
+                                <span className="text-[8px] uppercase tracking-tighter text-white/20">航程</span>
+                                <div className="flex items-center gap-1 text-[10px] leading-tight text-white/80">
+                                  <span className="truncate max-w-[32px]">{item.past || '--'}</span>
+                                  <span className="text-white/20">→</span>
+                                  <span className="truncate max-w-[32px]">{item.destination || '--'}</span>
+                                </div>
+                              </div>
+                              <div className="flex flex-col">
+                                <span className="text-[8px] uppercase tracking-tighter text-white/20">货物</span>
+                                <span className="truncate text-[10px] leading-tight text-white/80">{item.cargo || '--'}</span>
+                              </div>
+                              <div className="flex flex-col">
+                                <span className="text-[8px] uppercase tracking-tighter text-white/20">载重 (DWT)</span>
+                                <span className="truncate text-[10px] leading-tight text-white/80">{item.dwt || '--'}t</span>
+                              </div>
                             </div>
                           </div>
                         </div>

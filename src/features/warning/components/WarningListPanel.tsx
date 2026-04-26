@@ -153,30 +153,57 @@ export default function WarningListPanel({
                     >
                       <div className="space-y-1.5 px-2 py-1.5">
                         <div className="px-1 py-0">
-                          <div className="grid grid-cols-3 gap-x-2 gap-y-1">
-                            <div className="space-y-0.5">
-                              <div className="text-[10px] uppercase tracking-widest text-white/30">MMSI</div>
-                              <div className="font-mono text-[10px] text-white/75">{alert.mmsi || '--'}</div>
+                          <div className="space-y-1 py-0.5">
+                            {/* 第一行：身份标识 (MMSI | 呼号 | IMO) */}
+                            <div className="grid grid-cols-3 gap-2">
+                              <div className="flex flex-col">
+                                <span className="text-[8px] uppercase tracking-tighter text-white/20">MMSI</span>
+                                <span className="font-mono text-[10px] leading-tight text-white/80">{alert.mmsi || '--'}</span>
+                              </div>
+                              <div className="flex flex-col">
+                                <span className="text-[8px] uppercase tracking-tighter text-white/20">呼号</span>
+                                <span className="font-mono text-[10px] leading-tight text-white/80">{alert.callsign || '--'}</span>
+                              </div>
+                              <div className="flex flex-col">
+                                <span className="text-[8px] uppercase tracking-tighter text-white/20">IMO</span>
+                                <span className="font-mono text-[10px] leading-tight text-white/80">{alert.imo || '--'}</span>
+                              </div>
                             </div>
-                            <div className="space-y-0.5">
-                              <div className="text-[10px] uppercase tracking-widest text-white/30">呼号</div>
-                              <div className="font-mono text-[10px] text-white/75">{alert.callsign || '--'}</div>
+
+                            {/* 第二行：物理规格 (船籍 | 尺度 | 吃水) */}
+                            <div className="grid grid-cols-3 gap-2">
+                              <div className="flex flex-col">
+                                <span className="text-[8px] uppercase tracking-tighter text-white/20">船籍</span>
+                                <span className="truncate text-[10px] leading-tight text-white/80">{alert.flag || '--'}</span>
+                              </div>
+                              <div className="flex flex-col">
+                                <span className="text-[8px] uppercase tracking-tighter text-white/20">尺度 (L×W)</span>
+                                <span className="text-[10px] leading-tight text-white/80">{alert.length}×{alert.width}m</span>
+                              </div>
+                              <div className="flex flex-col">
+                                <span className="text-[8px] uppercase tracking-tighter text-white/20">吃水</span>
+                                <span className="text-[10px] leading-tight text-white/80">{alert.draft}m</span>
+                              </div>
                             </div>
-                            <div className="space-y-0.5">
-                              <div className="text-[10px] uppercase tracking-widest text-white/30">船籍</div>
-                              <div className="text-[10px] text-white/75">{alert.flag || '--'}</div>
-                            </div>
-                            <div className="space-y-0.5">
-                              <div className="text-[10px] uppercase tracking-widest text-white/30">最大吃水</div>
-                              <div className="text-[10px] text-white/75">{alert.draft}</div>
-                            </div>
-                            <div className="space-y-0.5">
-                              <div className="text-[10px] uppercase tracking-widest text-white/30">长/宽</div>
-                              <div className="text-[10px] text-white/75">{alert.length}/{alert.width}</div>
-                            </div>
-                            <div className="space-y-0.5">
-                              <div className="text-[10px] uppercase tracking-widest text-white/30">目的港</div>
-                              <div className="truncate text-[10px] text-white/75">{alert.destination}</div>
+
+                            {/* 第三行：航行与业务 (航程 | 货物 | 载重) */}
+                            <div className="grid grid-cols-3 gap-2">
+                              <div className="flex flex-col">
+                                <span className="text-[8px] uppercase tracking-tighter text-white/20">航程</span>
+                                <div className="flex items-center gap-1 text-[10px] leading-tight text-white/80">
+                                  <span className="truncate max-w-[32px]">{alert.lastPort || '--'}</span>
+                                  <span className="text-white/20">→</span>
+                                  <span className="truncate max-w-[32px]">{alert.destination || '--'}</span>
+                                </div>
+                              </div>
+                              <div className="flex flex-col">
+                                <span className="text-[8px] uppercase tracking-tighter text-white/20">货物</span>
+                                <span className="truncate text-[10px] leading-tight text-white/80">{alert.cargo || '--'}</span>
+                              </div>
+                              <div className="flex flex-col">
+                                <span className="text-[8px] uppercase tracking-tighter text-white/20">载重 (DWT)</span>
+                                <span className="truncate text-[10px] leading-tight text-white/80">{alert.dwt || '--'}t</span>
+                              </div>
                             </div>
                           </div>
                         </div>
