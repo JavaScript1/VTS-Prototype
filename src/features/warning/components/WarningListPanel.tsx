@@ -143,7 +143,7 @@ export default function WarningListPanel({
 
                         {/* 第二行：船舶类型与物理尺寸 */}
                         <div className="flex items-center gap-x-2 whitespace-nowrap">
-                          <span className="shrink-0 rounded bg-white/5 border border-white/5 px-1 py-0 text-[8px] font-normal uppercase tracking-wider text-white/40">{alert.shipType}</span>
+                          <span className="shrink-0 text-[8px] font-normal uppercase tracking-wider text-white/40">{alert.shipType}</span>
                           <div className="flex items-center gap-x-1.5 opacity-30">
                             <span className="text-[10px] tracking-tighter">L:{alert.length}</span>
                             <span className="text-[10px] tracking-tighter">W:{alert.width}</span>

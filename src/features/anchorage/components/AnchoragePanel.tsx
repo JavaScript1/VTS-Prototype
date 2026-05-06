@@ -340,16 +340,26 @@ export default function AnchoragePanel({
                                   <div className={`rounded-lg border transition-all ${isExpanded ? 'border-[#5c4a2f] bg-[#252A33] p-2' : 'border-white/6 bg-[#1A1D23] px-2 py-1.5 hover:border-[#FF9F43]/30'}`}>
                                     <div className="flex flex-col gap-2">
                                       <div className="flex items-center gap-2">
-                                        <div onClick={(e) => { e.stopPropagation(); onSelectExpiringShip(isExpanded ? null : ship.id); }} className="flex flex-1 cursor-pointer items-center gap-2 min-w-0 overflow-hidden text-[11px] font-bold text-white/90">
-                                            <div className="min-w-0 flex-1">
-                                              <div className="flex items-center gap-1.5 mb-1 min-w-0 overflow-hidden">
-                                                <span className="shrink-0 text-[9px] font-normal uppercase tracking-wider text-white/40">{ship.type}</span>
+                                        <div onClick={(e) => { e.stopPropagation(); onSelectExpiringShip(isExpanded ? null : ship.id); }} className="flex flex-1 cursor-pointer items-center gap-2 min-w-0 overflow-hidden">
+                                          <div className="flex min-w-0 flex-1 flex-col gap-1">
+                                            {/* Line 1: Ship Name and English Name */}
+                                            <div className="flex items-center min-w-0 overflow-hidden">
+                                              <span className="flex items-center gap-1 text-[11px] font-bold text-white/90 min-w-0 overflow-hidden">
                                                 <span className="truncate">{ship.name}</span>
                                                 {ship.englishName && <span className="text-[10px] font-medium opacity-40 truncate">({ship.englishName})</span>}
-                                              </div>
-                                              <div className="mt-1 text-[10px] leading-none text-white/28 font-normal">锚泊: {ship.details?.anchorTime || '--'}</div>
-                                              <div className="mt-1 text-[10px] font-medium leading-none text-[#f7a52c]">{formatAnchorageRemainingDuration(ship.expiryTime, currentTime)}</div>
-                                            </div>                                        </div>
+                                              </span>
+                                            </div>
+                                            {/* Line 2: Ship Type and Anchor Time */}
+                                            <div className="flex items-center gap-x-2 whitespace-nowrap">
+                                              <span className="shrink-0 text-[8px] font-normal uppercase tracking-wider text-white/40">{ship.type}</span>
+                                              <span className="text-[10px] font-normal leading-none text-white/28">锚泊: {ship.details?.anchorTime || '--'}</span>
+                                            </div>
+                                            {/* Status Line */}
+                                            <div className="text-[10px] font-medium leading-none text-[#f7a52c]">
+                                              {formatAnchorageRemainingDuration(ship.expiryTime, currentTime)}
+                                            </div>
+                                          </div>
+                                        </div>
                                         <div className={`flex flex-col gap-1 transition-opacity ${isExpanded ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
                                           <button type="button" onClick={(e) => e.stopPropagation()} className="rounded-md bg-[#30343d] px-1.5 py-1 text-[10px] font-black leading-none text-white/45 transition-colors hover:text-white/80 whitespace-nowrap">忽略</button>
                                           <button type="button" onClick={(e) => e.stopPropagation()} className="rounded-md bg-[#3D2616] px-1.5 py-1 text-[10px] font-black leading-none text-[#FF9F43] transition-colors hover:bg-[#4D321D] whitespace-nowrap">提醒</button>
@@ -446,15 +456,24 @@ export default function AnchoragePanel({
                                   <div className={`rounded-lg border transition-all ${isExpanded ? 'border-[#5a2a32] bg-[#252A33] p-2' : 'border-white/6 bg-[#1A1D23] px-2 py-1.5 hover:border-[#FF4D4D]/30'}`}>
                                     <div className="flex flex-col gap-2">
                                       <div className="flex items-center gap-2">
-                                        <div onClick={(e) => { e.stopPropagation(); onSelectOvertimeShip(isExpanded ? null : ship.id); }} className="flex flex-1 cursor-pointer items-center gap-2 min-w-0 overflow-hidden text-[11px] font-bold text-white/90">
-                                          <div className="min-w-0 flex-1">
-                                            <div className="flex items-center gap-1.5 mb-1 min-w-0 overflow-hidden">
-                                              <span className="shrink-0 text-[9px] font-normal uppercase tracking-wider text-white/60">{ship.type}</span>
-                                              <span className="truncate">{ship.name}</span>
-                                              {ship.englishName && <span className="text-[9px] font-medium opacity-40 truncate">({ship.englishName})</span>}
+                                        <div onClick={(e) => { e.stopPropagation(); onSelectOvertimeShip(isExpanded ? null : ship.id); }} className="flex flex-1 cursor-pointer items-center gap-2 min-w-0 overflow-hidden">
+                                          <div className="flex min-w-0 flex-1 flex-col gap-1">
+                                            {/* Line 1: Ship Name and English Name */}
+                                            <div className="flex items-center min-w-0 overflow-hidden">
+                                              <span className="flex items-center gap-1 text-[11px] font-bold text-white/90 min-w-0 overflow-hidden">
+                                                <span className="truncate">{ship.name}</span>
+                                                {ship.englishName && <span className="text-[10px] font-medium opacity-40 truncate">({ship.englishName})</span>}
+                                              </span>
                                             </div>
-                                            <div className="mt-1 text-[10px] leading-none text-white/28 font-normal">锚泊: {ship.details?.anchorTime || '--'}</div>
-                                            <div className="mt-1 text-[10px] font-medium leading-none text-[#ff6269]">超时: {ship.overtimeDuration.replace('超时 ', '')}</div>
+                                            {/* Line 2: Ship Type and Anchor Time */}
+                                            <div className="flex items-center gap-x-2 whitespace-nowrap">
+                                              <span className="shrink-0 text-[8px] font-normal uppercase tracking-wider text-white/40">{ship.type}</span>
+                                              <span className="text-[10px] font-normal leading-none text-white/28">锚泊: {ship.details?.anchorTime || '--'}</span>
+                                            </div>
+                                            {/* Status Line */}
+                                            <div className="text-[10px] font-medium leading-none text-[#ff6269]">
+                                              超时: {ship.overtimeDuration.replace('超时 ', '')}
+                                            </div>
                                           </div>
                                         </div>
                                         <div className={`flex flex-col gap-1 transition-opacity ${isExpanded ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
