@@ -1,5 +1,6 @@
+import React, { useState, useEffect } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
-import { AlertCircle, AlertTriangle, ChevronDown, Info, X } from 'lucide-react';
+import { AlertCircle, AlertTriangle, ChevronDown, Info, X, Clock } from 'lucide-react';
 import type { Alert } from '../../../types';
 
 type WarningListPanelProps = {
@@ -46,6 +47,48 @@ const getLevelMeta = (level: Alert['level']) => {
   };
 };
 
+const ElapsedTimer = ({ timeStr }: { timeStr: string }) => {
+  const [seconds, setSeconds] = useState(0);
+
+  useEffect(() => {
+    const calculateSeconds = () => {
+      try {
+        const [hours, minutes] = timeStr.split(':').map(Number);
+        const now = new Date();
+        const alertTime = new Date();
+        alertTime.setHours(hours, minutes, 0, 0);
+        
+        // If alert time is in the future, assume it was yesterday
+        if (alertTime > now) {
+          alertTime.setDate(alertTime.getDate() - 1);
+        }
+        
+        const diff = Math.floor((now.getTime() - alertTime.getTime()) / 1000);
+        setSeconds(diff > 0 ? diff : 0);
+      } catch (e) {
+        setSeconds(0);
+      }
+    };
+
+    calculateSeconds();
+    const interval = setInterval(calculateSeconds, 1000);
+    return () => clearInterval(interval);
+  }, [timeStr]);
+
+  const formatTime = (s: number) => {
+    if (s < 60) return `${s}s`;
+    if (s < 3600) return `${Math.floor(s / 60)}m ${s % 60}s`;
+    return `${Math.floor(s / 3600)}h ${Math.floor((s % 3600) / 60)}m`;
+  };
+
+  return (
+    <div className="flex items-center gap-1 text-sky-400/60 font-mono text-[10px]">
+      <Clock size={10} />
+      <span>{formatTime(seconds)}</span>
+    </div>
+  );
+};
+
 export default function WarningListPanel({
   alerts,
   selectedAlert,
@@ -54,31 +97,6 @@ export default function WarningListPanel({
 }: WarningListPanelProps) {
   return (
     <div className="flex h-full flex-col space-y-3 p-4">
-      <div className="space-y-3">
-        <div className="space-y-1.5">
-          <div className="grid grid-cols-4 gap-1">
-            <div className="rounded-md border border-red-500/20 bg-red-500/10 p-1 text-center">
-              <div className="text-sm font-bold text-red-500">{alerts.filter((a) => a.level === 'emergency').length}</div>
-              <div className="text-[7px] font-bold uppercase text-red-500/70">紧急</div>
-            </div>
-            <div className="rounded-md border border-orange-500/20 bg-orange-500/10 p-1 text-center">
-              <div className="text-sm font-bold text-orange-500">{alerts.filter((a) => a.level === 'alarm').length}</div>
-              <div className="text-[7px] font-bold uppercase text-orange-500/70">警报</div>
-            </div>
-            <div className="rounded-md border border-yellow-500/20 bg-yellow-500/10 p-1 text-center">
-              <div className="text-sm font-bold text-yellow-500">{alerts.filter((a) => a.level === 'warning').length}</div>
-              <div className="text-[7px] font-bold uppercase text-yellow-500/70">警告</div>
-            </div>
-            <div className="rounded-md border border-blue-500/20 bg-blue-500/10 p-1 text-center">
-              <div className="text-sm font-bold text-blue-500">{alerts.filter((a) => a.level === 'caution').length}</div>
-              <div className="text-[7px] font-bold uppercase text-blue-500/70">注意</div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div className="h-px bg-white/5" />
-
       <div className="custom-scrollbar flex-1 space-y-2 overflow-y-auto pr-1">
         <AnimatePresence mode="popLayout">
           {alerts.map((alert, i) => {
@@ -102,8 +120,8 @@ export default function WarningListPanel({
                   <div className={`absolute left-0 top-0 bottom-0 w-1 z-20 ${levelMeta.textClass.replace('text-', 'bg-')}`} />
                 )}
                 <div className="bg-gradient-to-b from-white/[0.02] to-transparent pt-1.5 px-2 pb-0.5 relative z-10">
-                  <div className="mb-1 flex items-start justify-between gap-3">
-                    <div className="flex items-start gap-2 min-w-0 flex-1">
+                  <div className="mb-1 flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-2 min-w-0 flex-1">
                       <div className="flex flex-col items-center gap-0.5 shrink-0">
                         <div className={`flex h-6 w-6 items-center justify-center rounded-full ${levelMeta.iconClass}`}>
                           {levelMeta.icon}
@@ -111,14 +129,15 @@ export default function WarningListPanel({
                         <span className={`text-[8px] font-black uppercase tracking-tighter px-1 rounded-sm border ${levelMeta.badgeClass}`}>
                           {levelMeta.badge}
                         </span>
+                        <div className="mt-1 font-mono text-[9px] text-white/25">{alert.time}</div>
                       </div>
                       
                       <div className="flex min-w-0 flex-1 flex-col gap-1">
                         {/* 第一行：船名卡片 */}
                         <div className="flex items-center min-w-0 overflow-hidden">
-                          <span className="flex items-center gap-1 rounded bg-white/5 border border-white/5 px-1.5 py-0.5 text-[10px] font-bold text-white/80 min-w-0 overflow-hidden">
+                          <span className="flex items-center gap-1 text-[11px] font-bold text-white/90 min-w-0 overflow-hidden">
                             <span className="truncate">{alert.ship}</span>
-                            {alert.englishName && <span className="text-[9px] font-medium opacity-40 truncate">({alert.englishName})</span>}
+                            {alert.englishName && <span className="text-[10px] font-medium opacity-40 truncate">({alert.englishName})</span>}
                           </span>
                         </div>
 
@@ -132,10 +151,10 @@ export default function WarningListPanel({
                           </div>
                         </div>
 
-                        {/* 第三行：预警类型、时间与航速 */}
+                        {/* 第三行：预警类型、计时器与航速 */}
                         <div className="flex items-center gap-x-2">
                           <span className={`text-[11px] font-black tracking-tight ${levelMeta.textClass}`}>{alert.type}</span>
-                          <span className="font-mono text-[10px] text-white/20">{alert.time}</span>
+                          <ElapsedTimer timeStr={alert.time} />
                           <div className="flex items-center gap-1 ml-auto">
                             <div className="h-1 w-1 animate-pulse rounded-full bg-sky-500" />
                             <span className="text-[10px] font-bold tracking-tighter text-sky-400">S:{alert.speed}</span>

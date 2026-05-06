@@ -25,6 +25,9 @@ export interface Alert {
   shipType: string;
   mmsi: string;
   callsign?: string;
+  imo?: string;
+  lastPort?: string;
+  dwt?: string;
   flag?: string;
   agent?: string;
   anchorTime?: string;
@@ -222,6 +225,8 @@ export interface IntentItem {
   flag?: string;
   agent?: string;
   anchorTime?: string;
+  cargo?: string;
+  dwt?: string;
   shipType: string;
   cargoType: string;
   length: string;
