@@ -81,28 +81,35 @@ export default function IntentListPanel({
                       <div className="flex h-6 w-6 items-center justify-center rounded-full bg-sky-500/20 shrink-0">
                         <Ship size={14} className="text-sky-400" />
                       </div>
-                      <div className="flex min-w-0 flex-col">
-                        <div className="flex items-center gap-1.5 min-w-0 overflow-hidden">
-                          <span className="shrink-0 rounded bg-white/5 border border-white/5 px-1.5 py-0.5 text-[9px] font-normal uppercase tracking-wider text-white/60">{item.shipType}</span>
-                          <span className="flex items-center gap-1 rounded bg-white/5 border border-white/5 px-1.5 py-0.5 text-[10px] font-bold text-white/80 min-w-0 overflow-hidden">
+                      <div className="flex min-w-0 flex-col gap-1">
+                        {/* Line 1: Ship Name and English Name */}
+                        <div className="flex items-center min-w-0 overflow-hidden">
+                          <span className="flex items-center gap-1 text-[11px] font-bold text-white/90 min-w-0 overflow-hidden">
                             <span className="truncate">{item.ship}</span>
-                            {item.englishName && <span className="text-[9px] font-medium opacity-40 truncate">({item.englishName})</span>}
+                            {item.englishName && <span className="text-[10px] font-medium opacity-40 truncate">({item.englishName})</span>}
                           </span>
                         </div>
-                        <div className="flex items-center gap-x-2 whitespace-nowrap mt-1">
-                          <span className="text-[10px] tracking-tighter text-white/30">L:{item.length}</span>
-                          <span className="text-[10px] tracking-tighter text-white/30">W:{item.width}</span>
-                          <span className="text-[10px] tracking-tighter text-white/30">D:{item.draft}</span>
-                          <div className="flex items-center gap-1 ml-1">
-                            <div className="h-1 w-1 animate-pulse rounded-full bg-sky-500" />
-                            <span className="text-[10px] font-bold tracking-tighter text-sky-400">S:{item.speed}</span>
+
+                        {/* Line 2: Ship Type and Physical Dimensions */}
+                        <div className="flex items-center gap-x-2 whitespace-nowrap">
+                          <span className="shrink-0 text-[8px] font-normal uppercase tracking-wider text-white/40">{item.shipType}</span>
+                          <div className="flex items-center gap-x-1.5 opacity-30">
+                            <span className="text-[10px] tracking-tighter">L:{item.length}</span>
+                            <span className="text-[10px] tracking-tighter">W:{item.width}</span>
+                            <span className="text-[10px] tracking-tighter">D:{item.draft}</span>
                           </div>
                         </div>
-                        <div className="mt-0.5 flex items-center gap-2">
+
+                        {/* Line 3: Active Action and Time */}
+                        <div className="flex items-center gap-x-2">
                           <span className="text-xs font-black text-white">
                             {item.path.find((p) => p.status === 'active')?.action || '正在执行'}
                           </span>
                           <span className="font-mono text-[10px] text-white/30">{item.occurrenceTime.split(' ')[1]}</span>
+                          <div className="flex items-center gap-1 ml-auto">
+                            <div className="h-1 w-1 animate-pulse rounded-full bg-sky-500" />
+                            <span className="text-[10px] font-bold tracking-tighter text-sky-400">S:{item.speed}</span>
+                          </div>
                         </div>
                       </div>
                     </div>
