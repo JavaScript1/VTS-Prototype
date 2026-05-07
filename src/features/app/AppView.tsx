@@ -114,7 +114,6 @@ import { VhfPanel } from '../vhf';
 import { IntentListPanel } from '../intent';
 import { WarningListPanel } from '../warning';
 import { AnchoragePanel } from '../anchorage';
-import { AdminPanel as SplitAdminPanel } from '../admin';
 
 const MarqueeText = ({ text, isHovered, className }: { text: string; isHovered: boolean; className?: string }) => {
   const containerRef = React.useRef<HTMLDivElement>(null);
@@ -2263,7 +2262,7 @@ const AdminPanel = ({
                 <div className="flex items-center gap-3">
                   <Layout size={14} className="text-white/70" />
                   <div className="w-1 h-4 rounded-full bg-sky-400" />
-                  <span className="text-[14px] font-semibold text-white">区域设置</span>
+                  <span className="text-[15px] font-semibold text-white">区域设置</span>
                 </div>
                 <div className="flex items-center gap-4 text-white/70">
                   <button className="hover:text-white transition-colors">
@@ -2566,7 +2565,7 @@ const AdminPanel = ({
                           </td>
                           <td className="px-6 py-4 text-xs text-white/60">{vessel.type}</td>
                           <td className="px-6 py-4">
-                            <span className={`px-2 py-1 rounded text-[10px] font-bold ${
+                            <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
                               vessel.status === '正在作业' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' :
                               vessel.status === '正在航行' ? 'bg-sky-500/10 text-sky-400 border border-sky-500/20' :
                               'bg-orange-500/10 text-orange-400 border border-orange-500/20'
@@ -2642,28 +2641,30 @@ const AdminPanel = ({
                                                   <div className="flex items-center gap-3">
                                                     <button 
                                                       onClick={() => setPlaybackData({ vessel, event })}
-                                                      className="text-[10px] font-bold text-sky-400 hover:text-sky-300 transition-colors flex items-center gap-1"
+                                                      className="text-[9px] font-bold text-sky-400 hover:text-sky-300 transition-colors flex items-center gap-1"
                                                     >
                                                       <Play size={10} /> 回放定位
                                                     </button>
-                                                    <div className="text-[10px] font-bold text-emerald-500/50 uppercase tracking-widest">已完成</div>
+                                                    <div className="text-[9px] font-bold text-emerald-500/50 uppercase tracking-widest">已完成</div>
                                                   </div>
                                                 )}
                                                 {event.status === 'current' && (
                                                   <div className="flex items-center gap-3">
                                                     <button 
                                                       onClick={() => setPlaybackData({ vessel, event })}
-                                                      className="text-[10px] font-bold text-sky-400 hover:text-sky-300 transition-colors flex items-center gap-1"
+                                                      className="text-[9px] font-bold text-sky-400 hover:text-sky-300 transition-colors flex items-center gap-1"
                                                     >
                                                       <MapPin size={10} /> 实时定位
                                                     </button>
-                                                    <div className="text-[10px] font-bold text-sky-500 uppercase tracking-widest animate-pulse">进行中</div>
+                                                    <div className="text-[9px] font-bold text-sky-500 uppercase tracking-widest animate-pulse">进行中</div>
                                                   </div>
                                                 )}
-                                                {event.status === 'warning' && <div className="text-[10px] font-bold text-red-500 uppercase tracking-widest">风险/违规</div>}
+                                                {event.status === 'warning' && <div className="text-[9px] font-bold text-red-500 uppercase tracking-widest">风险/违规</div>}
                                               </div>
-
-                                              {/* 对话细节 */}                                              {event.dialogue && event.dialogue.length > 0 && (
+                                              <p className="text-xs text-white/50 leading-relaxed">{event.desc}</p>
+                                              
+                                              {/* 对话细节 */}
+                                              {event.dialogue && event.dialogue.length > 0 && (
                                                 <div className="mt-4 pt-4 border-t border-white/5 space-y-3">
                                                   <div className="flex items-center gap-2 mb-2">
                                                     <div className="w-1 h-3 bg-sky-500/50 rounded-full" />
@@ -2675,7 +2676,7 @@ const AdminPanel = ({
                                                         <span className={`text-[10px] font-black ${chat.sender.includes('VTS') || chat.sender.includes('中心') ? 'text-sky-400' : 'text-white/60'}`}>
                                                           {chat.sender}
                                                         </span>
-                                                        <span className="text-[10px] font-mono text-white/20">{chat.time}</span>
+                                                        <span className="text-[9px] font-mono text-white/20">{chat.time}</span>
                                                       </div>
                                                       <div className={`text-xs p-2 rounded-lg ${
                                                         chat.sender.includes('VTS') || chat.sender.includes('中心') 
@@ -2826,7 +2827,7 @@ const AdminPanel = ({
                                         </div>
                                         <div className="flex flex-col">
                                           <span className="text-[12px] font-bold text-white/90">{rule.name}</span>
-                                          <span className="text-[10px] text-white/30 font-bold uppercase tracking-widest">{rule.category}</span>
+                                          <span className="text-[9px] text-white/30 font-bold uppercase tracking-widest">{rule.category}</span>
                                         </div>
                                       </div>
                                     </td>
@@ -2834,7 +2835,7 @@ const AdminPanel = ({
                                       <span className="text-[11px] text-white/60 font-medium">{rule.category}</span>
                                     </td>
                                     <td className="px-6 py-4">
-                                      <span className={`px-2 py-1 rounded text-[10px] font-black uppercase tracking-widest border ${
+                                      <span className={`px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-widest border ${
                                         rule.severity === '紧急' ? 'bg-red-500/10 text-red-400 border-red-500/20' :
                                         rule.severity === '警报' ? 'bg-orange-500/10 text-orange-400 border-orange-500/20' :
                                         rule.severity === '警告' ? 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20' :
@@ -2848,14 +2849,14 @@ const AdminPanel = ({
                                         {areaNames.length > 0 ? (
                                           <>
                                             {areaNames.slice(0, 2).map((name, idx) => (
-                                              <span key={idx} className="px-2 py-1 bg-white/5 border border-white/10 rounded-md text-[10px] text-white/60 whitespace-nowrap">
+                                              <span key={idx} className="px-2 py-0.5 bg-white/5 border border-white/10 rounded-md text-[10px] text-white/60 whitespace-nowrap">
                                                 {name}
                                               </span>
                                             ))}
                                             {areaNames.length > 2 && (
                                               <div className="relative group/tooltip">
                                                 <span 
-                                                  className="px-2 py-1 bg-sky-500/5 border border-sky-500/10 rounded-md text-[10px] text-sky-400 font-bold whitespace-nowrap cursor-help"
+                                                  className="px-2 py-0.5 bg-sky-500/5 border border-sky-500/10 rounded-md text-[10px] text-sky-400 font-bold whitespace-nowrap cursor-help"
                                                 >
                                                   +{areaNames.length - 2}
                                                 </span>
@@ -2864,7 +2865,7 @@ const AdminPanel = ({
                                                   <div className="text-[10px] font-bold text-white/30 uppercase tracking-widest mb-1.5 border-b border-white/5 pb-1">全部生效区域</div>
                                                   <div className="flex flex-wrap gap-1">
                                                     {areaNames.map((name, idx) => (
-                                                      <span key={idx} className="px-1.5 py-1 bg-white/5 rounded text-[10px] text-white/70">
+                                                      <span key={idx} className="px-1.5 py-0.5 bg-white/5 rounded text-[9px] text-white/70">
                                                         {name}
                                                       </span>
                                                     ))}
@@ -3032,19 +3033,19 @@ const AdminPanel = ({
                                         <div className="text-[12px] font-bold text-white/90">
                                           {ship.name} ({ (ship as any).nameEn || (ship as any).englishName || 'VESSEL NAME' })
                                         </div>
-                                        <div className="text-[10px] text-white/20 font-mono">
+                                        <div className="text-[9px] text-white/20 font-mono">
                                           {ship.mmsi} / { (ship as any).imo || 'IMO9123456' } / { ship.callsign || 'CALLSIGN' }
                                         </div>
                                       </div>
                                     </div>
                                   </td>
                                   <td className="px-6 py-4">
-                                    <span className="px-2 py-1 bg-white/5 border border-white/10 rounded-md text-[10px] text-white/60 whitespace-nowrap">
+                                    <span className="px-2 py-0.5 bg-white/5 border border-white/10 rounded-md text-[10px] text-white/60 whitespace-nowrap">
                                       { (ship as any).type || '油轮' }
                                     </span>
                                   </td>
                                   <td className="px-6 py-4">
-                                    <span className={`px-2 py-1 rounded text-[10px] font-black uppercase tracking-widest border ${
+                                    <span className={`px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-widest border ${
                                       Number(ship.id) % 3 === 0
                                         ? 'bg-rose-500/10 text-rose-400 border-rose-500/20'
                                         : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
@@ -3054,7 +3055,7 @@ const AdminPanel = ({
                                   </td>
                                   <td className="px-6 py-4">
                                     <div className="flex items-center gap-3">
-                                      <span className={`px-2 py-1 rounded text-[10px] font-black uppercase tracking-widest border ${
+                                      <span className={`px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-widest border ${
                                         ship.riskScore > 85 ? 'bg-red-500/10 text-red-400 border-red-500/20' :
                                         ship.riskScore > 65 ? 'bg-orange-500/10 text-orange-400 border-orange-500/20' :
                                         ship.riskScore > 40 ? 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20' :
@@ -3224,16 +3225,16 @@ const AdminPanel = ({
                                       dataKey="time" 
                                       axisLine={{ stroke: '#ffffff10' }} 
                                       tickLine={{ stroke: '#ffffff10' }} 
-                                      tick={{fill: '#ffffff20', fontSize: 11, fontMono: true}} 
+                                      tick={{fill: '#ffffff20', fontSize: 10, fontMono: true}} 
                                     />
                                     <YAxis 
                                       axisLine={{ stroke: '#ffffff10' }} 
                                       tickLine={{ stroke: '#ffffff10' }} 
-                                      tick={{fill: '#ffffff20', fontSize: 11, fontMono: true}} 
+                                      tick={{fill: '#ffffff20', fontSize: 10, fontMono: true}} 
                                     />
                                     <Tooltip 
                                       contentStyle={{ backgroundColor: '#0a101a', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '16px', boxShadow: '0 20px 50px rgba(0,0,0,0.5)' }}
-                                      itemStyle={{ fontSize: '12px', fontWeight: 'bold' }}
+                                      itemStyle={{ fontSize: '11px', fontWeight: 'bold' }}
                                     />
                                     <Line 
                                       type="monotone" 
@@ -3295,7 +3296,7 @@ const AdminPanel = ({
                                       </Pie>
                                       <Tooltip 
                                         contentStyle={{ backgroundColor: '#0a101a', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px' }}
-                                        itemStyle={{ fontSize: '11px', fontWeight: 'bold' }}
+                                        itemStyle={{ fontSize: '10px', fontWeight: 'bold' }}
                                       />
                                     </PieChart>
                                   </ResponsiveContainer>
@@ -3356,7 +3357,7 @@ const AdminPanel = ({
                                       </Pie>
                                       <Tooltip 
                                         contentStyle={{ backgroundColor: '#0a101a', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px' }}
-                                        itemStyle={{ fontSize: '11px', fontWeight: 'bold' }}
+                                        itemStyle={{ fontSize: '10px', fontWeight: 'bold' }}
                                       />
                                     </PieChart>
                                   </ResponsiveContainer>
@@ -3489,7 +3490,7 @@ const AdminPanel = ({
                                         <div className="text-[12px] font-bold text-white/90">
                                           {ship.name} ({ (ship as any).nameEn || (ship as any).englishName || 'VESSEL NAME' })
                                         </div>
-                                        <div className="text-[10px] text-white/20 font-mono">
+                                        <div className="text-[9px] text-white/20 font-mono">
                                           {ship.mmsi} / { (ship as any).imo || 'IMO9123456' } / { ship.callsign || 'CALLSIGN' }
                                         </div>
                                       </div>
@@ -3497,26 +3498,26 @@ const AdminPanel = ({
                                   </td>
                                   <td className="px-6 py-4">
                                     <div className="flex items-center gap-2">
-                                      <span className="px-2 py-1 bg-white/5 border border-white/10 rounded-md text-[10px] text-white/60 whitespace-nowrap">
+                                      <span className="px-2 py-0.5 bg-white/5 border border-white/10 rounded-md text-[10px] text-white/60 whitespace-nowrap">
                                         { (ship as any).flag || '中国 (CHINA)' }
                                       </span>
                                     </div>
                                   </td>
                                   <td className="px-6 py-4">
-                                    <span className="px-2 py-1 bg-white/5 border border-white/10 rounded-md text-[10px] text-white/60 whitespace-nowrap">
+                                    <span className="px-2 py-0.5 bg-white/5 border border-white/10 rounded-md text-[10px] text-white/60 whitespace-nowrap">
                                       { (ship as any).type || '油轮' }
                                     </span>
                                   </td>
                                   <td className="px-6 py-4">
                                     <div className="flex flex-wrap gap-1.5 max-w-[200px]">
                                       {['超速', '偏航', '违停'].slice(0, 2).map((name, idx) => (
-                                        <span key={idx} className="px-2 py-1 bg-white/5 border border-white/10 rounded-md text-[10px] text-white/60 whitespace-nowrap">
+                                        <span key={idx} className="px-2 py-0.5 bg-white/5 border border-white/10 rounded-md text-[10px] text-white/60 whitespace-nowrap">
                                           {name}
                                         </span>
                                       ))}
                                       {3 > 2 && (
                                         <div className="relative group/tooltip">
-                                          <span className="px-2 py-1 bg-sky-500/5 border border-sky-500/10 rounded-md text-[10px] text-sky-400 font-bold whitespace-nowrap cursor-help">
+                                          <span className="px-2 py-0.5 bg-sky-500/5 border border-sky-500/10 rounded-md text-[10px] text-sky-400 font-bold whitespace-nowrap cursor-help">
                                             +1
                                           </span>
                                           {/* 悬浮气泡框 */}
@@ -3524,7 +3525,7 @@ const AdminPanel = ({
                                             <div className="text-[10px] font-bold text-white/30 uppercase tracking-widest mb-1.5 border-b border-white/5 pb-1">全部风险类型</div>
                                             <div className="flex flex-wrap gap-1">
                                               {['超速', '偏航', '违停'].map((name, idx) => (
-                                                <span key={idx} className="px-1.5 py-1 bg-white/5 rounded text-[10px] text-white/70">
+                                                <span key={idx} className="px-1.5 py-0.5 bg-white/5 rounded text-[9px] text-white/70">
                                                   {name}
                                                 </span>
                                               ))}
@@ -3785,7 +3786,7 @@ const AdminPanel = ({
                                       <div className={`text-[11px] font-bold truncate ${isSelected ? 'text-sky-300' : 'text-white/60'}`}>
                                         {area.name}
                                       </div>
-                                      <div className="text-[10px] text-white/20 mt-0.5">{area.type}</div>
+                                      <div className="text-[9px] text-white/20 mt-0.5">{area.type}</div>
                                     </div>
                                     {isSelected && <Check size={10} className="text-sky-400 ml-1.5" strokeWidth={4} />}
                                   </button>
@@ -4154,7 +4155,7 @@ const AdminPanel = ({
                         <div className="w-10 h-10 rounded-xl bg-sky-500/20 flex items-center justify-center group-hover:scale-110 transition-transform">
                           <MessageSquare size={20} className="text-sky-400" />
                         </div>
-                        <span className="text-[10px] font-bold text-emerald-400 bg-emerald-500/10 px-2 py-1 rounded-full">+12%</span>
+                        <span className="text-[10px] font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full">+12%</span>
                       </div>
                       <div className="text-2xl font-black text-white mb-1">1,284</div>
                       <div className="text-[11px] font-bold text-white/30 uppercase tracking-widest">对话次数</div>
@@ -4165,7 +4166,7 @@ const AdminPanel = ({
                         <div className="w-10 h-10 rounded-xl bg-blue-500/20 flex items-center justify-center group-hover:scale-110 transition-transform">
                           <Activity size={20} className="text-blue-400" />
                         </div>
-                        <span className="text-[10px] font-bold text-emerald-400 bg-emerald-500/10 px-2 py-1 rounded-full">+5%</span>
+                        <span className="text-[10px] font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full">+5%</span>
                       </div>
                       <div className="text-2xl font-black text-white mb-1">456</div>
                       <div className="text-[11px] font-bold text-white/30 uppercase tracking-widest">指挥次数</div>
@@ -4176,7 +4177,7 @@ const AdminPanel = ({
                         <div className="w-10 h-10 rounded-xl bg-indigo-500/20 flex items-center justify-center group-hover:scale-110 transition-transform">
                           <Check size={20} className="text-indigo-400" />
                         </div>
-                        <span className="text-[10px] font-bold text-emerald-400 bg-emerald-500/10 px-2 py-1 rounded-full">+8%</span>
+                        <span className="text-[10px] font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full">+8%</span>
                       </div>
                       <div className="text-2xl font-black text-white mb-1">892</div>
                       <div className="text-[11px] font-bold text-white/30 uppercase tracking-widest">回答次数</div>
@@ -4231,20 +4232,20 @@ const AdminPanel = ({
                             dataKey="time" 
                             axisLine={false}
                             tickLine={false}
-                            tick={{ fill: 'rgba(255,255,255,0.3)', fontSize: 13 }}
+                            tick={{ fill: 'rgba(255,255,255,0.3)', fontSize: 12 }}
                             dy={10}
                           />
                           <YAxis 
                             axisLine={false}
                             tickLine={false}
-                            tick={{ fill: 'rgba(255,255,255,0.3)', fontSize: 13 }}
+                            tick={{ fill: 'rgba(255,255,255,0.3)', fontSize: 12 }}
                           />
                           <Tooltip 
                             contentStyle={{ 
                               backgroundColor: '#0a0a0a', 
                               border: '1px solid rgba(255,255,255,0.1)',
                               borderRadius: '8px',
-                              fontSize: '13px'
+                              fontSize: '12px'
                             }}
                             itemStyle={{ color: '#0ea5e9' }}
                           />
@@ -4303,7 +4304,7 @@ const AdminPanel = ({
                               </td>
                               <td className="px-6 py-4 text-[10px] text-white/40 font-mono">{item.time}</td>
                               <td className="px-6 py-4">
-                                <span className={`px-2 py-1 border rounded text-[10px] font-bold ${
+                                <span className={`px-2 py-0.5 border rounded text-[10px] font-bold ${
                                   item.status === '批准' ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' :
                                   item.status === '拒绝' ? 'bg-red-500/10 border-red-500/20 text-red-400' :
                                   item.status === '回复等待' ? 'bg-orange-500/10 border-orange-500/20 text-orange-400' :
@@ -4407,7 +4408,7 @@ const AdminPanel = ({
                           className={`group cursor-pointer p-4 rounded-2xl transition-all ${selectedVhfSnippet?.id === msg.id ? 'bg-sky-500/10 border border-sky-500/30' : 'bg-white/5 border border-transparent hover:border-white/10'}`}
                         >
                           <div className="flex items-center justify-between mb-2">
-                            <span className={`text-[10px] font-bold px-2 py-1 rounded-full ${msg.isVts ? 'bg-sky-500/20 text-sky-400' : 'bg-emerald-500/20 text-emerald-400'}`}>
+                            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${msg.isVts ? 'bg-sky-500/20 text-sky-400' : 'bg-emerald-500/20 text-emerald-400'}`}>
                               {msg.sender}
                             </span>
                             <span className="text-[10px] text-white/20 font-mono">{msg.time}</span>
@@ -4604,6 +4605,7 @@ const AdminPanel = ({
                           playbackData.event.type === 'risk' ? 'text-red-400' : 'text-sky-400'
                         }`}>{playbackData.event.label}</span>
                       </div>
+                      <p className="text-xs text-white/60 leading-relaxed">{playbackData.event.desc}</p>
                     </div>
                   </div>
 
@@ -4618,8 +4620,8 @@ const AdminPanel = ({
                         {playbackData.event.dialogue.map((chat: any, idx: number) => (
                           <div key={idx} className={`flex flex-col gap-0.5 ${chat.sender.includes('VTS') ? 'items-end' : 'items-start'}`}>
                             <div className="flex items-center gap-2 mb-0.5">
-                              <span className="text-[10px] font-bold text-white/30 uppercase">{chat.sender}</span>
-                              <span className="text-[10px] font-mono text-white/20">{chat.time}</span>
+                              <span className="text-[9px] font-bold text-white/30 uppercase">{chat.sender}</span>
+                              <span className="text-[9px] font-mono text-white/20">{chat.time}</span>
                             </div>
                             <div className={`text-xs p-1.5 rounded-2xl max-w-[90%] ${
                               chat.sender.includes('VTS') 
@@ -5566,7 +5568,7 @@ export default function AppView() {
 
       <AnimatePresence>
         {isAdminView && (
-          <SplitAdminPanel
+          <AdminPanel
             onClose={() => {
               setIsAdminView(false);
               setInitialAdminMenu(undefined);
@@ -5577,7 +5579,6 @@ export default function AppView() {
             setDynamicPlaybackSession={setDynamicPlaybackSession}
             initialMenu={initialAdminMenu}
             initialStatsTab={initialAdminStatsTab}
-            getRiskPlaybackSession={getRiskPlaybackSession}
           />
         )}
       </AnimatePresence>
