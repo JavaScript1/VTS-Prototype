@@ -1,4 +1,4 @@
-import { Check, ChevronDown, ChevronRight, Map as MapIcon } from 'lucide-react';
+import { Check, ChevronDown, ChevronRight } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import type { MockArea, MockAreaMap } from '../../../types';
 
@@ -22,112 +22,93 @@ export default function PlaybackAreaSelector({
   onReset,
 }: PlaybackAreaSelectorProps) {
   return (
-    <div className="z-[10] flex w-64 flex-col border-r border-white/10 bg-black/40 backdrop-blur-md">
-      <div className="flex items-center justify-between border-b border-white/10 p-4">
+    <div className="rounded-2xl border border-white/5 bg-[#11161f] p-3">
+      <div className="mb-3 flex items-center justify-between">
+        <div className="text-[13px] font-bold text-white/88">关联辖区</div>
         <div className="flex items-center gap-2">
-          <MapIcon size={16} className="text-sky-400" />
-          <h3 className="text-xs font-black uppercase tracking-wider text-white">
-            辖区管理面板
-          </h3>
+          <span className="rounded-md bg-[#0c3751] px-2 py-0.5 text-[11px] text-[#18c4ff]">
+            已选 {selectedAreas.size}
+          </span>
+          <button
+            onClick={onReset}
+            className="rounded-md bg-[#123243] px-2 py-0.5 text-[11px] text-[#18c4ff] transition-all hover:bg-[#18455b]"
+          >
+            重置
+          </button>
         </div>
-        <span className="rounded bg-sky-500/10 px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-widest text-sky-400/60">
-          已选 {selectedAreas.size}
-        </span>
       </div>
 
-      <div className="custom-scrollbar flex-1 overflow-y-auto p-2">
-        <div className="space-y-1">
-          {Object.entries(areasByCategory).map(([category, areas]) => {
-            const isExpanded = expandedCategories.has(category);
-            const allSelected = areas.every((area) => selectedAreas.has(area.id));
-            const someSelected = areas.some((area) => selectedAreas.has(area.id)) && !allSelected;
+      <div className="custom-scrollbar max-h-[320px] overflow-y-auto pr-1">
+        {Object.entries(areasByCategory).map(([category, areas]) => {
+          const isExpanded = expandedCategories.has(category);
+          const allSelected = areas.every((area) => selectedAreas.has(area.id));
+          const someSelected = !allSelected && areas.some((area) => selectedAreas.has(area.id));
 
-            return (
-              <div key={category} className="space-y-0.5">
-                <div className="group flex items-center gap-2 rounded-lg p-2 transition-all hover:bg-white/5">
-                  <button
-                    onClick={() => onToggleCategory(category)}
-                    className="rounded p-1 text-white/40 transition-all hover:bg-white/10"
+          return (
+            <div key={category} className="mb-1">
+              <div className="flex items-center gap-2 rounded-lg px-2 py-2 text-[12px] text-white/70 hover:bg-white/[0.03]">
+                <button
+                  onClick={() => onToggleCategory(category)}
+                  className="rounded p-0.5 text-white/45 transition-all hover:bg-white/[0.06]"
+                >
+                  {isExpanded ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
+                </button>
+                <button
+                  onClick={() => onToggleAllInCategory(category, areas)}
+                  className="flex min-w-0 flex-1 items-center gap-2 text-left"
+                >
+                  <span
+                    className={`flex h-3.5 w-3.5 items-center justify-center rounded border ${
+                      allSelected
+                        ? 'border-[#18c4ff] bg-[#18c4ff]'
+                        : someSelected
+                          ? 'border-[#18c4ff] bg-[#18c4ff]/45'
+                          : 'border-white/18'
+                    }`}
                   >
-                    {isExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
-                  </button>
-                  <div
-                    onClick={() => onToggleAllInCategory(category, areas)}
-                    className="flex flex-1 cursor-pointer items-center gap-2"
-                  >
-                    <div
-                      className={`flex h-3.5 w-3.5 items-center justify-center rounded border transition-all ${
-                        allSelected
-                          ? 'border-sky-500 bg-sky-500'
-                          : someSelected
-                            ? 'border-sky-500/60 bg-sky-500/40'
-                            : 'border-white/20'
-                      }`}
-                    >
-                      {allSelected && <Check size={10} className="text-white" strokeWidth={4} />}
-                      {someSelected && <div className="h-0.5 w-1.5 rounded-full bg-white" />}
-                    </div>
-                    <span className="text-[12px] font-bold text-white/60 transition-colors group-hover:text-white">
-                      {category}
-                    </span>
-                  </div>
-                </div>
-
-                <AnimatePresence>
-                  {isExpanded && (
-                    <motion.div
-                      initial={{ height: 0, opacity: 0 }}
-                      animate={{ height: 'auto', opacity: 1 }}
-                      exit={{ height: 0, opacity: 0 }}
-                      className="ml-6 space-y-0.5 overflow-hidden"
-                    >
-                      {areas.map((area) => (
-                        <div
-                          key={area.id}
-                          onClick={() => onToggleArea(area.id)}
-                          className="group flex cursor-pointer items-center gap-2 rounded-lg p-2 transition-all hover:bg-white/5"
-                        >
-                          <div
-                            className={`flex h-3.5 w-3.5 items-center justify-center rounded border transition-all ${
-                              selectedAreas.has(area.id)
-                                ? 'border-sky-500 bg-sky-500'
-                                : 'border-white/20'
-                            }`}
-                          >
-                            {selectedAreas.has(area.id) && (
-                              <Check size={10} className="text-white" strokeWidth={4} />
-                            )}
-                          </div>
-                          <div className="flex flex-col">
-                            <span
-                              className={`text-[12px] transition-colors ${
-                                selectedAreas.has(area.id)
-                                  ? 'font-bold text-white'
-                                  : 'text-white/40 group-hover:text-white/60'
-                              }`}
-                            >
-                              {area.name}
-                            </span>
-                            <span className="text-[10px] text-white/20">{area.type}</span>
-                          </div>
-                        </div>
-                      ))}
-                    </motion.div>
-                  )}
-                </AnimatePresence>
+                    {allSelected && <Check size={10} className="text-white" strokeWidth={3} />}
+                    {someSelected && <span className="h-0.5 w-1.5 rounded-full bg-white" />}
+                  </span>
+                  <span>{category}</span>
+                </button>
               </div>
-            );
-          })}
-        </div>
-      </div>
 
-      <div className="border-t border-white/10 bg-white/[0.02] p-4">
-        <button
-          onClick={onReset}
-          className="w-full rounded-lg border border-white/10 bg-white/5 py-2 text-[11px] font-bold text-white/40 transition-all hover:bg-white/10 hover:text-white"
-        >
-          重置选择
-        </button>
+              <AnimatePresence>
+                {isExpanded && (
+                  <motion.div
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: 'auto', opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    className="ml-5 overflow-hidden"
+                  >
+                    {areas.map((area) => (
+                      <button
+                        key={area.id}
+                        onClick={() => onToggleArea(area.id)}
+                        className="flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left text-[12px] hover:bg-white/[0.03]"
+                      >
+                        <span
+                          className={`flex h-3.5 w-3.5 items-center justify-center rounded border ${
+                            selectedAreas.has(area.id)
+                              ? 'border-[#18c4ff] bg-[#18c4ff]'
+                              : 'border-white/18'
+                          }`}
+                        >
+                          {selectedAreas.has(area.id) && (
+                            <Check size={10} className="text-white" strokeWidth={3} />
+                          )}
+                        </span>
+                        <span className={selectedAreas.has(area.id) ? 'text-white' : 'text-white/48'}>
+                          {area.name}
+                        </span>
+                      </button>
+                    ))}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+          );
+        })}
       </div>
     </div>
   );

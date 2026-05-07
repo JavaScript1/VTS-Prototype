@@ -4,8 +4,15 @@ import { AREA_CATEGORIES, INITIAL_WARNING_RULES, MOCK_AREAS, MOCK_RISK_STATS } f
 import type { MockRiskStat } from '../../../types';
 import type { WarningRule } from '../../../mockData';
 import WarningDashboardTab from './warning/WarningDashboardTab';
+import WarningRuleConfigModal from './warning/WarningRuleConfigModal';
 import WarningRiskListTab from './warning/WarningRiskListTab';
 import WarningStrategyTab from './warning/WarningStrategyTab';
+import {
+  createWarningAreaFeature,
+  getRiskConfigAreaType,
+  type RiskConfigAreaType,
+  type WarningAreaRecord,
+} from './warning/utils';
 
 type WarningManagementRouteProps = {
   setDynamicPlaybackSession?: (value: any) => void;
@@ -28,22 +35,86 @@ export default function WarningManagementRoute({
   const [warningRules, setWarningRules] = useState<WarningRule[]>(
     INITIAL_WARNING_RULES.map((rule) => ({ ...rule })),
   );
+  const [isWarningConfigOpen, setIsWarningConfigOpen] = useState(false);
+  const [selectedWarningRuleId, setSelectedWarningRuleId] = useState(
+    INITIAL_WARNING_RULES[0]?.id || '',
+  );
+  const [warningAreaSearchQuery, setWarningAreaSearchQuery] = useState('');
+  const [selectedRiskConfigAreaType, setSelectedRiskConfigAreaType] =
+    useState<RiskConfigAreaType>('全部');
   const [selectedRiskId, setSelectedRiskId] = useState<string | null>(MOCK_RISK_STATS[0]?.id ?? null);
+
+  const allWarningAreas = useMemo<WarningAreaRecord[]>(
+    () =>
+      AREA_CATEGORIES.flatMap((category) =>
+        (MOCK_AREAS[category] || []).map((area) => ({
+          ...area,
+          category,
+        })),
+      ),
+    [],
+  );
 
   const warningAreaLookup = useMemo(
     () =>
       new Map(
-        AREA_CATEGORIES.flatMap((category) =>
-          (MOCK_AREAS[category] || []).map((area) => [area.id, area] as const),
-        ),
+        allWarningAreas.map((area) => [area.id, area] as const),
       ),
-    [],
+    [allWarningAreas],
+  );
+
+  const selectedWarningRule = useMemo(
+    () => warningRules.find((rule) => rule.id === selectedWarningRuleId) || warningRules[0] || null,
+    [selectedWarningRuleId, warningRules],
+  );
+
+  const filteredConfigAreas = useMemo(() => {
+    const keyword = warningAreaSearchQuery.trim().toLowerCase();
+    return allWarningAreas.filter((area) => {
+      const matchesSearch =
+        !keyword ||
+        area.name.toLowerCase().includes(keyword) ||
+        area.type.toLowerCase().includes(keyword);
+      const matchesType =
+        selectedRiskConfigAreaType === '全部' ||
+        (selectedRiskConfigAreaType === '警戒区' && area.type === '警戒区') ||
+        getRiskConfigAreaType({ type: area.type, category: area.category }) ===
+          selectedRiskConfigAreaType;
+      return matchesSearch && matchesType;
+    });
+  }, [allWarningAreas, selectedRiskConfigAreaType, warningAreaSearchQuery]);
+
+  const warningMapFeatures = useMemo(
+    () =>
+      filteredConfigAreas.map((area, index) =>
+        createWarningAreaFeature(area, area.category, index, filteredConfigAreas.length),
+      ),
+    [filteredConfigAreas],
   );
 
   const handleToggleRule = (ruleId: string) => {
     setWarningRules((current) =>
       current.map((rule) => (rule.id === ruleId ? { ...rule, enabled: !rule.enabled } : rule)),
     );
+  };
+
+  const handleUpdateRule = (ruleId: string, updater: (rule: WarningRule) => WarningRule) => {
+    setWarningRules((current) => current.map((rule) => (rule.id === ruleId ? updater(rule) : rule)));
+  };
+
+  const handleResetRule = (ruleId: string) => {
+    const defaultRule = INITIAL_WARNING_RULES.find((rule) => rule.id === ruleId);
+    if (!defaultRule) return;
+    setWarningRules((current) => current.map((rule) => (rule.id === ruleId ? { ...defaultRule } : rule)));
+  };
+
+  const handleToggleRuleArea = (ruleId: string, areaId: string) => {
+    const targetRule = warningRules.find((rule) => rule.id === ruleId);
+    if (!targetRule) return;
+    const nextAreaIds = targetRule.effectiveAreaIds.includes(areaId)
+      ? targetRule.effectiveAreaIds.filter((id) => id !== areaId)
+      : [...targetRule.effectiveAreaIds, areaId];
+    handleUpdateRule(ruleId, (rule) => ({ ...rule, effectiveAreaIds: Array.from(new Set(nextAreaIds)) }));
   };
 
   const handlePlayback = (item: MockRiskStat) => {
@@ -89,6 +160,10 @@ export default function WarningManagementRoute({
             warningRules={warningRules}
             warningAreaLookup={warningAreaLookup}
             onToggleRule={handleToggleRule}
+            onOpenRuleConfig={(ruleId) => {
+              setSelectedWarningRuleId(ruleId);
+              setIsWarningConfigOpen(true);
+            }}
           />
         )}
 
@@ -105,6 +180,25 @@ export default function WarningManagementRoute({
           <WarningDashboardTab risks={MOCK_RISK_STATS} warningRules={warningRules} />
         )}
       </div>
+
+      <WarningRuleConfigModal
+        isOpen={isWarningConfigOpen}
+        selectedWarningRule={selectedWarningRule}
+        selectedRiskConfigAreaType={selectedRiskConfigAreaType}
+        warningAreaSearchQuery={warningAreaSearchQuery}
+        allWarningAreas={filteredConfigAreas}
+        warningMapFeatures={warningMapFeatures}
+        onClose={() => setIsWarningConfigOpen(false)}
+        onReset={handleResetRule}
+        onToggleRule={handleToggleRule}
+        onUpdateRule={handleUpdateRule}
+        onSetRiskConfigAreaType={setSelectedRiskConfigAreaType}
+        onWarningAreaSearchQueryChange={setWarningAreaSearchQuery}
+        onToggleWarningRuleArea={handleToggleRuleArea}
+        onClearWarningRuleAreas={(ruleId) =>
+          handleUpdateRule(ruleId, (rule) => ({ ...rule, effectiveAreaIds: [] }))
+        }
+      />
     </div>
   );
 }

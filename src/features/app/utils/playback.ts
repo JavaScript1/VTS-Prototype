@@ -24,11 +24,14 @@ export const getRiskPlaybackSession = (
   return {
     vessel: {
       name: item.name,
+      englishName: (item as typeof item & { englishName?: string }).englishName,
       mmsi: item.mmsi,
       type: item.type,
       callsign: item.callsign,
+      imo: (item as typeof item & { imo?: string }).imo,
       destination: item.destination,
       speed: item.speed,
+      heading: item.heading,
       draft: item.draft,
       length: item.length,
       width: item.width,

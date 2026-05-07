@@ -7,6 +7,7 @@ type WarningStrategyTabProps = {
   warningRules: WarningRule[];
   warningAreaLookup: Map<string, MockArea>;
   onToggleRule: (ruleId: string) => void;
+  onOpenRuleConfig: (ruleId: string) => void;
 };
 
 const SEVERITY_STYLES: Record<WarningRule['severity'], string> = {
@@ -20,6 +21,7 @@ export default function WarningStrategyTab({
   warningRules,
   warningAreaLookup,
   onToggleRule,
+  onOpenRuleConfig,
 }: WarningStrategyTabProps) {
   const [keyword, setKeyword] = useState('');
 
@@ -156,7 +158,10 @@ export default function WarningStrategyTab({
                       </button>
                     </td>
                     <td className="px-6 py-4 text-right">
-                      <button className="rounded-lg p-2 text-white/40 transition-all hover:bg-sky-500/20 hover:text-sky-400">
+                      <button
+                        onClick={() => onOpenRuleConfig(rule.id)}
+                        className="rounded-lg p-2 text-white/40 transition-all hover:bg-sky-500/20 hover:text-sky-400"
+                      >
                         <Settings size={14} />
                       </button>
                     </td>

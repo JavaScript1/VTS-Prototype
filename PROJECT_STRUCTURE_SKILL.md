@@ -130,6 +130,8 @@
   后台管理主壳。
 - `routes/`
   后台管理按路由拆分的页面实现，每个路由单独成文件。
+- `routes/warning/`
+  预警管理子目录，策略页、风险列表、风险看板及其局部子组件/静态数据都放在这里，例如 `warningDashboardData.ts`、`warningRiskListData.ts`。
 - `index.ts`
   对外出口。
 
@@ -162,6 +164,7 @@
 
 - `DynamicPlaybackView.tsx`
 - `playback/PlaybackAreaSelector.tsx`
+- `playback/PlaybackInfoSidebar.tsx`
 - `playback/PlaybackStatusSidebar.tsx`
 - `FloatingPanels.tsx`
 - `HomeShipDetailPanel.tsx`
