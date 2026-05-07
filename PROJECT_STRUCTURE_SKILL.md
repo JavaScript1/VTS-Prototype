@@ -8,7 +8,8 @@
 - 根组件壳：`src/App.tsx`
 - 主页面装配层：`src/features/app/AppView.tsx`
 - 全局类型：`src/types.ts`
-- 全局 mock 数据：`src/mockData.ts`
+- mock 数据总出口：`src/mockData.ts`
+- mock 数据拆分目录：`src/mock/`
 - 通用工具：`src/utils/`
 - 样式入口：`src/index.css`
 
@@ -51,7 +52,9 @@
 - `types.ts`
   共享类型定义。
 - `mockData.ts`
-  全局模拟数据和静态配置。
+  mock 数据聚合出口，实际数据按主题拆分在 `src/mock/`。
+- `mock/`
+  按业务主题拆分的模拟数据目录，避免数据文件继续膨胀。
 - `utils/`
   非 UI 工具方法。
 - `components/`
@@ -64,7 +67,11 @@
 ### `src/features/app/`
 
 - `AppView.tsx`
-  主页面装配层。负责整体页面编排、状态组织、各 feature 联动。
+  主页面装配层。只保留页面状态、派生数据和 feature 拼装，不再承载大段内联 UI。
+- `components/`
+  首页壳层子组件，例如顶部栏、底部栏、侧栏装配、地图装配等。
+- `utils/`
+  首页相关工具函数，按锚地、船舶、VHF、回放等主题拆分。
 - `index.ts`
   feature 对外统一出口。
 
@@ -109,7 +116,11 @@
 ### `src/features/anchorage/`
 
 - `components/AnchoragePanel.tsx`
-  锚地态势主面板。
+  锚地态势主面板装配层。
+- `components/AnchorageShipCard.tsx`
+  锚地船舶展开卡片。
+- `components/AnchorageDistributions.tsx`
+  锚地分布图表区块。
 - `index.ts`
   对外出口。
 
@@ -145,12 +156,13 @@
 
 ### `src/components/Panels/`
 
-该目录放置较大的业务面板组件，部分已经被 feature 层包装或接管。
+该目录放置仍然被多个 feature 复用的业务面板组件，页面级逻辑应继续向 `src/features/` 下沉。
 
 当前可见的关键文件：
 
-- `AdminPanel.tsx`
 - `DynamicPlaybackView.tsx`
+- `playback/PlaybackAreaSelector.tsx`
+- `playback/PlaybackStatusSidebar.tsx`
 - `FloatingPanels.tsx`
 - `HomeShipDetailPanel.tsx`
 - `VhfPanel.tsx`
@@ -160,6 +172,7 @@
 
 说明：
 
+- 后台管理旧版大文件 `components/Panels/AdminPanel.tsx` 已移除，当前统一使用 `src/features/admin/`。
 - 若需要继续重构，优先把 `components/Panels` 中仍然偏业务型的大组件继续下沉到 `src/features/`。
 - `components/` 更适合放通用展示组件，不适合继续堆叠页面级业务逻辑。
 
@@ -178,17 +191,18 @@
 - 修改锚地态势：先看 `src/features/anchorage/`
 - 修改后台管理：先看 `src/features/admin/`，具体页面再看 `routes/`
 - 修改类型：看 `src/types.ts`
-- 修改静态模拟数据：看 `src/mockData.ts`
+- 修改静态模拟数据：先看 `src/mockData.ts`，再进入 `src/mock/` 对应主题文件
 - 修改 VHF 会话聚合工具：看 `src/utils/vhfConversation.ts`
 
 ## 7. 当前架构约束
 
 - `App.tsx` 应保持为薄入口文件，不承担复杂业务实现。
 - 新增业务能力时，优先进入 `src/features/`，不要继续把页面级逻辑堆回 `App.tsx`。
+- 单个源码文件应尽量控制在 500 行以内，优先通过 feature 子组件、hooks、utils 继续拆分。
 - 后台管理按路由拆分，每个路由一个独立文件。
 - 新的复杂业务面板，优先归入对应 feature 文件夹，而不是直接塞进 `src/components/Panels/`。
 - 共享类型放 `src/types.ts`；若后续增长明显，可再拆成 feature types。
-- 共享 mock 数据先放 `src/mockData.ts`；若某一 feature 数据明显增大，应迁移到对应 feature 内。
+- `src/mockData.ts` 仅作为 barrel 文件，实际大块 mock 数据继续拆在 `src/mock/`。
 
 ## 8. 模型工作建议
 
@@ -218,6 +232,7 @@
     ├── App.tsx
     ├── index.css
     ├── types.ts
+    ├── mock
     ├── mockData.ts
     ├── utils
     │   └── vhfConversation.ts
@@ -227,9 +242,12 @@
     │   └── Sidebar
     └── features
         ├── app
+        │   ├── components
+        │   └── utils
         ├── admin
         │   └── routes
         ├── anchorage
+        │   └── components
         ├── intent
         ├── map
         ├── ship-detail
@@ -240,4 +258,4 @@
 
 ## 10. 一句话总结
 
-这个项目当前应按“`App.tsx` 入口壳 -> `features/app/AppView.tsx` 总装配 -> 各业务 feature -> 通用 components/utils/types`”的路径来理解和修改。
+这个项目当前应按“`App.tsx` 入口壳 -> `features/app/AppView.tsx` 装配层 -> feature 子组件/工具 -> 通用 components/utils/types`”的路径来理解和修改。

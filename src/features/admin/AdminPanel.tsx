@@ -77,7 +77,12 @@ export default function AdminPanel({
       case '业务统计':
         return <BusinessStatsRoute activeStatsTab={activeStatsTab} onActiveStatsTabChange={setActiveStatsTab} />;
       case '预警管理':
-        return <WarningManagementRoute />;
+        return (
+          <WarningManagementRoute
+            setDynamicPlaybackSession={setDynamicPlaybackSession}
+            getRiskPlaybackSession={getRiskPlaybackSession}
+          />
+        );
       case '场景演示':
         return <ScenarioDemoRoute setDynamicPlaybackSession={setDynamicPlaybackSession} getRiskPlaybackSession={getRiskPlaybackSession} />;
       case '个人信息':
