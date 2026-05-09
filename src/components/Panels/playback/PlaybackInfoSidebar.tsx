@@ -1,3 +1,4 @@
+import React from 'react';
 import { AlertTriangle, Cloud, Compass, Map, ShipWheel } from 'lucide-react';
 import type { MockArea, MockAreaMap } from '../../../types';
 import type { PlaybackSessionLike } from '../DynamicPlaybackView';

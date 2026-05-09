@@ -3,7 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-export const VTS_CHART_TILE_URL = 'https://test.shipdt.com/vts/chart/{z}/{x}/{y}.png';
+// ShipDT chart tiles use /{z}/{y}/{x}.png instead of the common /{z}/{x}/{y}.png.
+export const VTS_CHART_TILE_URL = 'https://test.shipdt.com/vts/chart/{z}/{y}/{x}.png';
 export const VTS_CHART_TILE_ATTRIBUTION = '&copy; ShipDT';
 
 export const HOME_MAP_DEFAULT_CENTER: [number, number] = [31.316261, 121.723495];

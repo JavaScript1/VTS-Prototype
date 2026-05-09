@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { BarChart3, List, Settings, Shield } from 'lucide-react';
+import { BarChart3, List, Map as MapIcon, Settings, Shield } from 'lucide-react';
 import { AREA_CATEGORIES, INITIAL_WARNING_RULES, MOCK_AREAS, MOCK_RISK_STATS } from '../../../mockData';
 import type { MockRiskStat } from '../../../types';
 import type { WarningRule } from '../../../mockData';
@@ -7,6 +7,7 @@ import WarningDashboardTab from './warning/WarningDashboardTab';
 import WarningRuleConfigModal from './warning/WarningRuleConfigModal';
 import WarningRiskListTab from './warning/WarningRiskListTab';
 import WarningStrategyTab from './warning/WarningStrategyTab';
+import WarningKeyAreasTab from './warning/WarningKeyAreasTab';
 import {
   createWarningAreaFeature,
   getRiskConfigAreaType,
@@ -19,12 +20,13 @@ type WarningManagementRouteProps = {
   getRiskPlaybackSession?: (item: MockRiskStat) => any;
 };
 
-type WarningTabId = '实时预警' | '风险列表' | '风险统计';
+type WarningTabId = '实时预警' | '风险列表' | '风险统计' | '重点区域';
 
 const WARNING_TABS: Array<{ id: WarningTabId; label: string; icon: typeof Settings }> = [
   { id: '实时预警', label: '预警策略', icon: Settings },
   { id: '风险列表', label: '风险列表', icon: List },
   { id: '风险统计', label: '风险看板', icon: BarChart3 },
+  { id: '重点区域', label: '重点区域', icon: MapIcon },
 ];
 
 export default function WarningManagementRoute({
@@ -154,7 +156,7 @@ export default function WarningManagementRoute({
         </div>
       </div>
 
-      <div className="custom-scrollbar flex-1 overflow-y-auto p-6">
+      <div className={`custom-scrollbar flex-1 overflow-y-auto ${activeTab === '重点区域' ? 'py-6 pr-6 pl-3' : 'p-6'}`}>
         {activeTab === '实时预警' && (
           <WarningStrategyTab
             warningRules={warningRules}
@@ -178,6 +180,10 @@ export default function WarningManagementRoute({
 
         {activeTab === '风险统计' && (
           <WarningDashboardTab risks={MOCK_RISK_STATS} warningRules={warningRules} />
+        )}
+
+        {activeTab === '重点区域' && (
+          <WarningKeyAreasTab />
         )}
       </div>
 
