@@ -24,6 +24,7 @@ import {
   Tooltip,
   Line,
   LineChart,
+  Legend,
 } from 'recharts';
 
 // --- Types ---
@@ -130,9 +131,9 @@ export default function WarningKeyAreasTab() {
   };
 
   return (
-    <div className="flex flex-col gap-3 h-full overflow-hidden">
+    <div className="flex flex-col gap-2.5 h-full overflow-hidden">
       {/* Header & Filters */}
-      <div className="flex flex-wrap items-end justify-between gap-4 rounded-xl border border-white/5 bg-white/[0.02] p-3 backdrop-blur-md shrink-0">
+      <div className="flex flex-wrap items-end justify-between gap-4 rounded-xl border border-white/5 bg-white/[0.02] p-2.5 backdrop-blur-md shrink-0">
         <div className="flex items-center gap-4">
           <Dropdown 
             label="所属辖区" 
@@ -181,72 +182,69 @@ export default function WarningKeyAreasTab() {
       </div>
 
       {/* Top Stats Row */}
-      <div className="grid grid-cols-4 gap-3 shrink-0">
+      <div className="grid grid-cols-4 gap-2.5 shrink-0">
         {[
           { label: '碰撞预警触发', value: '452', unit: '次', color: 'text-red-400', icon: AlertCircle, sub: '较昨日 +12%' },
           { label: '区域交通流量', value: '1,284', unit: '艘', color: 'text-sky-400', icon: Activity, sub: '峰值 256 艘/h' },
           { label: '重点监管船舶', value: '53', unit: '艘', color: 'text-amber-400', icon: Anchor, sub: '危化品/油轮/客运' },
           { label: '在航船舶总数', value: '124', unit: '艘', color: 'text-white', icon: Users, sub: '当前区域实时' },
         ].map((item, i) => (
-          <Panel key={i} className="px-4 py-2.5">
-            <div className="flex items-center justify-between mb-1">
+          <Panel key={i} className="px-4 py-2">
+            <div className="flex items-center justify-between mb-0.5">
               <div className="text-[10px] text-white/40 font-bold">{item.label}</div>
-              <item.icon size={14} className={item.color} />
+              <item.icon size={13} className={item.color} />
             </div>
             <div className="flex items-baseline gap-1">
               <span className={`text-xl font-black ${item.color}`}>{item.value}</span>
               <span className="text-[9px] text-white/20 font-bold">{item.unit}</span>
             </div>
-            <div className="text-[9px] text-white/25 mt-1">{item.sub}</div>
+            <div className="text-[9px] text-white/25 mt-0.5">{item.sub}</div>
           </Panel>
         ))}
       </div>
 
       {/* Main Content Area */}
       <div className="grid grid-cols-12 gap-3 flex-1 min-h-0">
-        {/* Left: Warning & Flow Trends */}
-        <div className="col-span-8 flex flex-col gap-3 min-h-0">
-          <Panel className="flex-1 p-4 flex flex-col min-h-0">
-            <SectionTitle title="碰撞预警触发趋势 (次数)" icon={<TrendingUp size={12} />} />
-            <div className="flex-1 min-h-0">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={TREND_DATA}>
-                  <defs>
-                    <linearGradient id="warningBar" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="#ff5e85" stopOpacity={0.8}/>
-                      <stop offset="100%" stopColor="#ff5e85" stopOpacity={0.1}/>
-                    </linearGradient>
-                  </defs>
-                  <XAxis dataKey="time" axisLine={false} tickLine={false} tick={{ fill: 'rgba(255,255,255,0.3)', fontSize: 9 }} />
-                  <YAxis axisLine={false} tickLine={false} tick={{ fill: 'rgba(255,255,255,0.3)', fontSize: 9 }} />
-                  <Tooltip 
-                    cursor={{ fill: 'rgba(255,255,255,0.05)' }}
-                    contentStyle={{ backgroundColor: '#0a1018', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', fontSize: '10px' }}
-                  />
-                  <Bar dataKey="warnings" name="预警次数" fill="url(#warningBar)" radius={[2, 2, 0, 0]} barSize={24} />
-                </BarChart>
-              </ResponsiveContainer>
+        {/* Left: Warning & Flow Trends Merged */}
+        <div className="col-span-8 flex flex-col min-h-0">
+          <Panel className="flex-1 p-5 flex flex-col min-h-0">
+            <div className="flex items-center justify-between mb-2">
+              <SectionTitle title="预警触发与流量综合态势" icon={<TrendingUp size={14} />} />
             </div>
-          </Panel>
-
-          <Panel className="flex-1 p-4 flex flex-col min-h-0">
-            <SectionTitle title="区域交通流量态势 (艘次)" icon={<Activity size={12} />} />
             <div className="flex-1 min-h-0">
               <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={TREND_DATA}>
-                  <XAxis dataKey="time" axisLine={false} tickLine={false} tick={{ fill: 'rgba(255,255,255,0.3)', fontSize: 9 }} />
-                  <YAxis axisLine={false} tickLine={false} tick={{ fill: 'rgba(255,255,255,0.3)', fontSize: 9 }} />
+                <LineChart data={TREND_DATA} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                  <XAxis dataKey="time" axisLine={false} tickLine={false} tick={{ fill: 'rgba(255,255,255,0.3)', fontSize: 10 }} />
+                  <YAxis yAxisId="left" axisLine={false} tickLine={false} tick={{ fill: 'rgba(255,255,255,0.3)', fontSize: 10 }} />
+                  <YAxis yAxisId="right" orientation="right" axisLine={false} tickLine={false} tick={{ fill: 'rgba(255,255,255,0.3)', fontSize: 10 }} />
                   <Tooltip 
-                    contentStyle={{ backgroundColor: '#0a1018', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', fontSize: '10px' }}
+                    contentStyle={{ backgroundColor: '#0a1018', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', fontSize: '11px' }}
+                  />
+                  <Legend 
+                    verticalAlign="top" 
+                    align="right" 
+                    iconType="circle" 
+                    wrapperStyle={{ paddingBottom: '20px', fontSize: '10px' }} 
                   />
                   <Line 
+                    yAxisId="left"
+                    type="monotone" 
+                    dataKey="warnings" 
+                    name="预警次数" 
+                    stroke="#ff5e85" 
+                    strokeWidth={3} 
+                    dot={{ r: 3, fill: '#ff5e85', strokeWidth: 0 }} 
+                    activeDot={{ r: 5, strokeWidth: 0 }}
+                  />
+                  <Line 
+                    yAxisId="right"
                     type="monotone" 
                     dataKey="flow" 
                     name="交通流量" 
                     stroke="#18c4ff" 
-                    strokeWidth={2} 
-                    dot={{ r: 2, fill: '#18c4ff' }} 
-                    activeDot={{ r: 4 }}
+                    strokeWidth={3} 
+                    dot={{ r: 3, fill: '#18c4ff', strokeWidth: 0 }} 
+                    activeDot={{ r: 5, strokeWidth: 0 }}
                   />
                 </LineChart>
               </ResponsiveContainer>
@@ -256,31 +254,40 @@ export default function WarningKeyAreasTab() {
 
         {/* Right: Distributions */}
         <div className="col-span-4 flex flex-col gap-3 min-h-0">
-          <Panel className="flex-1 p-4 flex flex-col min-h-0">
-            <SectionTitle title="预警船舶类型分布" icon={<PieChartIcon size={12} />} />
-            <div className="flex-1 min-h-0">
+          <Panel className="flex-1 p-5 flex flex-col min-h-0">
+            <SectionTitle title="预警船舶类型分布" icon={<BarChart3 size={12} />} />
+            <div className="flex-1 min-h-0 mt-2">
               <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={VESSEL_TYPE_DATA}
-                    innerRadius={35}
-                    outerRadius={50}
-                    paddingAngle={4}
-                    dataKey="value"
-                    stroke="none"
-                  >
+                <BarChart
+                  layout="vertical"
+                  data={VESSEL_TYPE_DATA}
+                  margin={{ left: -10, right: 20, top: 0, bottom: 0 }}
+                >
+                  <XAxis type="number" hide />
+                  <YAxis 
+                    dataKey="name" 
+                    type="category" 
+                    axisLine={false} 
+                    tickLine={false} 
+                    tick={{ fill: 'rgba(255,255,255,0.5)', fontSize: 10 }}
+                    width={60}
+                  />
+                  <Tooltip
+                    cursor={{ fill: 'rgba(255,255,255,0.05)' }}
+                    contentStyle={{ backgroundColor: '#0a1018', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', fontSize: '11px' }}
+                  />
+                  <Bar dataKey="value" name="占比 (%)" radius={[0, 4, 4, 0]} barSize={12}>
                     {VESSEL_TYPE_DATA.map((entry, index) => (
                       <Cell key={`cell-${index}`} fill={entry.color} />
                     ))}
-                  </Pie>
-                  <Tooltip />
-                </PieChart>
+                  </Bar>
+                </BarChart>
               </ResponsiveContainer>
             </div>
-            <div className="grid grid-cols-2 gap-2 mt-2">
+            <div className="grid grid-cols-2 gap-x-4 gap-y-2 mt-4 pt-4 border-t border-white/5">
               {VESSEL_TYPE_DATA.map((item) => (
-                <div key={item.name} className="flex items-center gap-1.5 text-[9px]">
-                  <div className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: item.color }} />
+                <div key={item.name} className="flex items-center gap-2 text-[10px]">
+                  <div className="h-2 w-2 rounded-full" style={{ backgroundColor: item.color }} />
                   <span className="text-white/40 truncate">{item.name}</span>
                   <span className="text-white/80 font-bold ml-auto">{item.value}%</span>
                 </div>
@@ -288,16 +295,16 @@ export default function WarningKeyAreasTab() {
             </div>
           </Panel>
 
-          <Panel className="flex-1 p-4 flex flex-col min-h-0">
+          <Panel className="flex-1 p-5 flex flex-col min-h-0">
             <SectionTitle title="重点船舶监管详情" icon={<Shield size={12} />} />
-            <div className="space-y-2.5 mt-2 overflow-y-auto pr-1 custom-scrollbar">
+            <div className="space-y-3 mt-3 overflow-y-auto pr-1 custom-scrollbar">
               {KEY_VESSEL_DATA.map((item) => (
-                <div key={item.name} className="space-y-1">
-                  <div className="flex justify-between text-[10px]">
+                <div key={item.name} className="space-y-1.5">
+                  <div className="flex justify-between text-[11px]">
                     <span className="text-white/60">{item.name}</span>
-                    <span className="text-white font-bold">{item.value} 艘</span>
+                    <span className="text-white font-black">{item.value} 艘</span>
                   </div>
-                  <div className="h-1 rounded-full bg-white/5">
+                  <div className="h-1.5 rounded-full bg-white/5">
                     <div 
                       className="h-full rounded-full transition-all duration-1000" 
                       style={{ width: `${(item.value / 30) * 100}%`, backgroundColor: item.color }} 
@@ -306,10 +313,10 @@ export default function WarningKeyAreasTab() {
                 </div>
               ))}
             </div>
-            <div className="mt-auto pt-3 border-t border-white/5">
-              <div className="flex items-center justify-between text-[9px] text-white/30">
+            <div className="mt-auto pt-4 border-t border-white/5">
+              <div className="flex items-center justify-between text-[10px] text-white/30">
                 <span>重点船舶总占比</span>
-                <span className="text-amber-400 font-bold">42.7%</span>
+                <span className="text-amber-400 font-black text-[12px]">42.7%</span>
               </div>
             </div>
           </Panel>
