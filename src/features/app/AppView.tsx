@@ -71,6 +71,7 @@ export default function AppView() {
   const [editingIntentIndex] = useState<number | null>(null);
   const [currentTime, setCurrentTime] = useState(new Date());
   const [isControlPanelExpanded, setIsControlPanelExpanded] = useState(false);
+  const [isToolsExpanded, setIsToolsExpanded] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [mouseCoords, setMouseCoords] = useState<{ lat: number; lng: number } | null>(null);
   const [isAdminView, setIsAdminView] = useState(false);
@@ -468,8 +469,10 @@ export default function AppView() {
         showBars={showBars}
         mouseCoords={mouseCoords}
         isControlPanelExpanded={isControlPanelExpanded}
+        isToolsExpanded={isToolsExpanded}
         sidebarPosition={sidebarPosition}
         onToggleControlPanel={() => setIsControlPanelExpanded((value) => !value)}
+        onToggleTools={() => setIsToolsExpanded((value) => !value)}
         onToggleSidebarPosition={() =>
           setSidebarPosition((value) => (value === 'left' ? 'right' : 'left'))
         }

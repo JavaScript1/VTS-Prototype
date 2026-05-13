@@ -1,4 +1,12 @@
-import { ChevronRight } from 'lucide-react';
+import {
+  ArrowLeft,
+  ArrowRight,
+  Camera,
+  ChevronRight,
+  Ruler,
+  Video,
+  Wrench,
+} from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 
 type SidebarPosition = 'left' | 'right';
@@ -7,8 +15,10 @@ type AppBottomBarProps = {
   showBars: boolean;
   mouseCoords: { lat: number; lng: number } | null;
   isControlPanelExpanded: boolean;
+  isToolsExpanded: boolean;
   sidebarPosition: SidebarPosition;
   onToggleControlPanel: () => void;
+  onToggleTools: () => void;
   onToggleSidebarPosition: () => void;
 };
 
@@ -16,10 +26,20 @@ export default function AppBottomBar({
   showBars,
   mouseCoords,
   isControlPanelExpanded,
+  isToolsExpanded,
   sidebarPosition,
   onToggleControlPanel,
+  onToggleTools,
   onToggleSidebarPosition,
 }: AppBottomBarProps) {
+  const toolItems = [
+    { icon: ArrowLeft, label: '上一步' },
+    { icon: ArrowRight, label: '下一步' },
+    { icon: Ruler, label: '测距' },
+    { icon: Camera, label: '截图' },
+    { icon: Video, label: '录制' },
+  ];
+
   return (
     <AnimatePresence>
       {showBars && (
@@ -114,6 +134,44 @@ export default function AppBottomBar({
                 }`}
               />
             </button>
+
+            <div className="relative">
+              <AnimatePresence>
+                {isToolsExpanded && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                    className="absolute bottom-full right-0 z-[5000] mb-2 flex items-center gap-1 rounded-xl border border-white/10 bg-[#0a0a0a]/95 p-1.5 shadow-2xl backdrop-blur-xl"
+                  >
+                    {toolItems.map((item) => (
+                      <button
+                        key={item.label}
+                        className="flex h-8 w-8 items-center justify-center rounded-lg text-white/60 transition-all hover:bg-white/10 hover:text-sky-400"
+                        title={item.label}
+                      >
+                        <item.icon size={16} />
+                      </button>
+                    ))}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
+              <button
+                onClick={onToggleTools}
+                className={`flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest transition-colors ${
+                  isToolsExpanded ? 'text-sky-500' : 'text-white/40 hover:text-white'
+                }`}
+              >
+                工具
+                <Wrench
+                  size={14}
+                  className={`transition-transform duration-300 ${
+                    isToolsExpanded ? 'rotate-[30deg]' : 'rotate-0'
+                  }`}
+                />
+              </button>
+            </div>
           </div>
         </motion.footer>
       )}
