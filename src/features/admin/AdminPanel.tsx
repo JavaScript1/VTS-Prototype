@@ -133,8 +133,8 @@ export default function AdminPanel({
           </div>
         </aside>
 
-        <main className="flex-1 overflow-y-auto bg-[#050a10] p-6">
-          <div className="mb-6 flex items-center justify-between">
+        <main className="flex min-h-0 flex-1 flex-col overflow-y-auto bg-[#050a10] p-3">
+          <div className="mb-3 shrink-0 flex items-center justify-between">
             <h2 className="flex items-center gap-3 text-lg font-black tracking-tight text-white/90">
               <div className="h-6 w-1 rounded-full bg-sky-500" />
               {activeMenu}
@@ -150,6 +150,7 @@ export default function AdminPanel({
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -8 }}
+              className="flex min-h-0 flex-1 flex-col"
             >
               {route}
             </motion.div>

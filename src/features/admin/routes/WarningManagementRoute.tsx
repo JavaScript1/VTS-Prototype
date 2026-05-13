@@ -128,13 +128,13 @@ export default function WarningManagementRoute({
 
   return (
     <div className="flex h-full min-h-full flex-col overflow-hidden bg-[#050a10]">
-      <div className="flex h-14 shrink-0 items-center justify-between border-b border-white/5 bg-[#0a101a]/50 px-6 backdrop-blur-xl">
-        <div className="flex items-center gap-8">
-          <div className="flex items-center gap-3">
-            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-sky-500/10 text-sky-400">
-              <Shield size={18} />
+      <div className="flex h-12 shrink-0 items-center justify-between border-b border-white/5 bg-[#0a101a]/30 px-2 backdrop-blur-xl">
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2.5">
+            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-sky-500/10 text-sky-400">
+              <Shield size={16} />
             </div>
-            <span className="text-sm font-black uppercase tracking-widest text-white">
+            <span className="text-[13px] font-black uppercase tracking-widest text-white">
               预警与风险管理
             </span>
           </div>
@@ -144,13 +144,13 @@ export default function WarningManagementRoute({
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center gap-2 rounded-lg px-4 py-1.5 text-[11px] font-bold transition-all ${
+                className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[10px] font-bold transition-all ${
                   activeTab === tab.id
                     ? 'bg-sky-500 text-white shadow-lg shadow-sky-500/20'
                     : 'text-white/40 hover:bg-white/5 hover:text-white/60'
                 }`}
               >
-                <tab.icon size={14} />
+                <tab.icon size={12} />
                 {tab.label}
               </button>
             ))}
@@ -158,7 +158,13 @@ export default function WarningManagementRoute({
         </div>
       </div>
 
-      <div className={`custom-scrollbar flex-1 overflow-y-auto ${activeTab === '重点区域' ? 'py-6 pr-6 pl-3' : 'p-6'}`}>
+      <div
+        className={`${
+          activeTab === '宏观态势'
+            ? 'flex h-full min-h-0 flex-1 flex-col p-2'
+            : `custom-scrollbar flex-1 overflow-y-auto ${activeTab === '重点区域' ? 'py-2 pr-2 pl-1.5' : 'p-2'}`
+        }`}
+      >
         {activeTab === '实时预警' && (
           <WarningStrategyTab
             warningRules={warningRules}
