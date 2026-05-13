@@ -274,32 +274,33 @@ export interface RiskTimelineEvent {
 export interface RiskSnapshot {
   image: string;
   location: string;
-  actualSpeed: number;
-  speedLimit: number;
+  actualSpeed?: number;
+  speedLimit?: number;
 }
 
 export interface MockRiskStat {
   id: string;
   name: string;
-  mmsi: string;
-  type: string;
-  length: number;
-  width: number;
-  cargo: string;
-  draft: number;
+  mmsi?: string;
+  type?: string;
+  length?: number;
+  width?: number;
+  cargo?: string;
+  draft?: number;
   risk: string;
-  speed: number;
-  heading: number;
-  wind: string;
-  wave: string;
-  visibility: string;
+  speed?: number;
+  heading?: number;
+  wind?: string;
+  wave?: string;
+  visibility?: string;
   time: string;
-  coords: Coordinates;
+  coords?: Coordinates;
   snapshot: RiskSnapshot;
-  timeline: RiskTimelineEvent[];
+  timeline?: RiskTimelineEvent[];
   callsign?: string;
   destination?: string;
   riskScore?: number;
+  isImageScenario?: boolean;
 }
 
 export interface MockIntentStat {

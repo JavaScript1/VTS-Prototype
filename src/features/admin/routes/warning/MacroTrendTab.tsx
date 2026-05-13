@@ -3,38 +3,69 @@ import {
   Search, 
   Calendar, 
   ChevronDown, 
-  Filter, 
   Download,
   AlertTriangle,
   Waves,
   Maximize2,
   Minimize2,
-  Info
+  Info,
+  Map as MapIcon
 } from 'lucide-react';
+import { MapContainer, TileLayer, CircleMarker, Popup } from 'react-leaflet';
+import 'leaflet/dist/leaflet.css';
+import { 
+  VTS_CHART_TILE_URL, 
+  VTS_CHART_TILE_ATTRIBUTION, 
+  HOME_MAP_DEFAULT_CENTER 
+} from '../../../map/constants';
 
 // --- Types ---
 type TimeRange = '24h' | '7d' | '30d' | '自定义';
 type WarningType = '全部' | '碰撞预警' | '区域入侵' | '超速预警' | '走锚预警';
 
-// --- Mock Data for Heatmap ---
-// Generate a grid of points for the heatmap
-const generateHeatmapData = () => {
-  const data = [];
-  for (let y = 0; y < 20; y++) {
-    for (let x = 0; x < 30; x++) {
-      // Create some "hot spots"
-      const intensity = Math.floor(
-        Math.random() * 20 + 
-        (Math.sin(x / 3) * Math.cos(y / 2) * 50 + 50) * 
-        (Math.random() > 0.8 ? 1.5 : 0.5)
-      );
-      data.push({ x, y, intensity });
+// --- Mock Data for Map Heatmap ---
+const generateWarningLocations = () => {
+  const locations = [];
+  const baseLat = HOME_MAP_DEFAULT_CENTER[0];
+  const baseLng = HOME_MAP_DEFAULT_CENTER[1];
+  
+  // Create clusters around specific areas
+  const clusters = [
+    { lat: baseLat, lng: baseLng, count: 120, radius: 0.05, intensity: 0.8 }, // 吴淞口
+    { lat: baseLat + 0.12, lng: baseLng + 0.08, count: 80, radius: 0.04, intensity: 0.6 }, // 外高桥
+    { lat: baseLat - 0.08, lng: baseLng - 0.05, count: 50, radius: 0.03, intensity: 0.5 }, // 核心航道
+    { lat: baseLat + 0.05, lng: baseLng + 0.15, count: 40, radius: 0.06, intensity: 0.4 }, // 警戒区
+  ];
+
+  clusters.forEach(cluster => {
+    for (let i = 0; i < cluster.count; i++) {
+      locations.push({
+        id: `w-${locations.length}`,
+        lat: cluster.lat + (Math.random() - 0.5) * cluster.radius,
+        lng: cluster.lng + (Math.random() - 0.5) * cluster.radius,
+        intensity: Math.random() * cluster.intensity + 0.2,
+        type: ['碰撞预警', '区域入侵', '超速预警', '走锚预警'][Math.floor(Math.random() * 4)],
+        time: '2026-05-11 10:24:12'
+      });
     }
+  });
+
+  // Add some random noise
+  for (let i = 0; i < 50; i++) {
+    locations.push({
+      id: `noise-${i}`,
+      lat: baseLat + (Math.random() - 0.5) * 0.4,
+      lng: baseLng + (Math.random() - 0.5) * 0.4,
+      intensity: Math.random() * 0.3,
+      type: '常规监控',
+      time: '2026-05-11 09:15:00'
+    });
   }
-  return data;
+
+  return locations;
 };
 
-const HEATMAP_DATA = generateHeatmapData();
+const WARNING_LOCATIONS = generateWarningLocations();
 
 // --- Sub-components ---
 const Panel: React.FC<{ children: React.ReactNode; className?: string }> = ({
@@ -86,13 +117,17 @@ export default function MacroTrendTab() {
   const [warningType, setWarningType] = useState<WarningType>('全部');
   const [isFullscreen, setIsFullscreen] = useState(false);
 
-  // Intensity color mapping
-  const getIntensityColor = (intensity: number) => {
-    if (intensity > 80) return 'rgba(239, 68, 68, 0.8)'; // Red
-    if (intensity > 60) return 'rgba(249, 115, 22, 0.7)'; // Orange
-    if (intensity > 40) return 'rgba(234, 179, 8, 0.6)'; // Yellow
-    if (intensity > 20) return 'rgba(14, 165, 233, 0.4)'; // Blue
-    return 'rgba(14, 165, 233, 0.1)'; // Faint Blue
+  // Filter locations based on type
+  const filteredLocations = useMemo(() => {
+    if (warningType === '全部') return WARNING_LOCATIONS;
+    return WARNING_LOCATIONS.filter(loc => loc.type === warningType);
+  }, [warningType]);
+
+  const getHeatColor = (intensity: number) => {
+    if (intensity > 0.8) return '#ef4444'; // Red
+    if (intensity > 0.6) return '#f97316'; // Orange
+    if (intensity > 0.4) return '#eab308'; // Yellow
+    return '#38bdf8'; // Sky Blue
   };
 
   return (
@@ -140,22 +175,22 @@ export default function MacroTrendTab() {
           )}
           <button className="flex items-center gap-2 rounded-lg bg-[#18c4ff] px-4 py-1.5 text-[11px] font-black text-white shadow-md transition-all hover:bg-[#35ccff] active:scale-95">
             <Search size={12} />
-            生成热力图
+            执行聚合分析
           </button>
         </div>
       </div>
 
-      {/* Main Heatmap Area */}
+      {/* Main Map Heatmap Area */}
       <Panel className="flex-1 relative overflow-hidden flex flex-col min-h-0">
         <div className="flex items-center justify-between p-4 border-b border-white/5 shrink-0">
           <div className="flex items-center gap-3">
             <div className="flex h-6 w-6 items-center justify-center rounded bg-amber-500/10 text-amber-500">
               <AlertTriangle size={14} />
             </div>
-            <h3 className="text-xs font-black text-white uppercase tracking-wider">全辖区预警热力分布态势</h3>
+            <h3 className="text-xs font-black text-white uppercase tracking-wider">全辖区预警热力分布态势 (GIS版)</h3>
             <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-white/5 text-[9px] text-white/40">
-              <Waves size={10} />
-              <span>基于当前筛选条件下的聚合分析</span>
+              <MapIcon size={10} />
+              <span>基于实际坐标的空间聚合分析</span>
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -171,46 +206,51 @@ export default function MacroTrendTab() {
           </div>
         </div>
 
-        <div className="flex-1 relative bg-[#02060a] p-8 min-h-0">
-          {/* Heatmap Grid Simulation */}
-          <div className="absolute inset-0 opacity-20 pointer-events-none" 
-               style={{ 
-                 backgroundImage: 'radial-gradient(#1e293b 1px, transparent 1px)', 
-                 backgroundSize: '24px 24px' 
-               }} 
-          />
-          
-          <div className="w-full h-full relative grid grid-cols-[repeat(30,1fr)] grid-rows-[repeat(20,1fr)] gap-1">
-            {HEATMAP_DATA.map((point, i) => (
-              <div 
-                key={i}
-                className="rounded-sm transition-all duration-700 hover:scale-150 hover:z-10 hover:shadow-xl cursor-crosshair group relative"
-                style={{ 
-                  backgroundColor: getIntensityColor(point.intensity),
-                  filter: `blur(${12 - (point.intensity / 10)}px)`,
-                  opacity: point.intensity / 100 + 0.1
+        <div className="flex-1 relative min-h-0">
+          <MapContainer
+            center={HOME_MAP_DEFAULT_CENTER}
+            zoom={11}
+            className="h-full w-full grayscale-[0.8] brightness-[0.7] contrast-[1.2]"
+            zoomControl={false}
+          >
+            <TileLayer url={VTS_CHART_TILE_URL} attribution={VTS_CHART_TILE_ATTRIBUTION} />
+            
+            {/* Heatmap simulation using many semi-transparent circles */}
+            {filteredLocations.map((loc) => (
+              <CircleMarker
+                key={loc.id}
+                center={[loc.lat, loc.lng]}
+                radius={8 + loc.intensity * 20}
+                pathOptions={{
+                  fillColor: getHeatColor(loc.intensity),
+                  color: 'transparent',
+                  fillOpacity: 0.1,
+                  stroke: false
                 }}
               >
-                {/* Tooltip on hover */}
-                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block z-50">
-                  <div className="bg-[#0f172a] border border-white/10 rounded px-2 py-1 shadow-2xl whitespace-nowrap">
-                    <div className="text-[10px] font-black text-white">预警密度: {point.intensity}</div>
-                    <div className="text-[8px] text-white/40">坐标: {point.x}, {point.y}</div>
+                <Popup className="custom-map-popup">
+                  <div className="p-2 min-w-[120px]">
+                    <div className="text-[10px] font-black text-sky-400 mb-1">{loc.type}</div>
+                    <div className="text-[9px] text-white/60">{loc.time}</div>
+                    <div className="mt-1 flex items-center gap-1">
+                      <div className="w-1 h-1 rounded-full bg-amber-500" />
+                      <span className="text-[9px] text-white/40">风险指数: {(loc.intensity * 10).toFixed(1)}</span>
+                    </div>
                   </div>
-                </div>
-              </div>
+                </Popup>
+              </CircleMarker>
             ))}
-          </div>
+          </MapContainer>
 
           {/* Legend */}
-          <div className="absolute bottom-6 right-6 flex flex-col gap-2 p-3 rounded-xl bg-black/60 backdrop-blur-md border border-white/10">
-            <div className="text-[9px] font-bold text-white/40 uppercase tracking-widest mb-1">密度图例</div>
+          <div className="absolute bottom-6 right-6 z-[1000] flex flex-col gap-2 p-3 rounded-xl bg-black/60 backdrop-blur-md border border-white/10">
+            <div className="text-[9px] font-bold text-white/40 uppercase tracking-widest mb-1">预警密度图例</div>
             <div className="flex flex-col gap-1.5">
               {[
-                { label: '高危区域', color: 'bg-red-500' },
+                { label: '极高风险', color: 'bg-red-500' },
                 { label: '预警频发', color: 'bg-orange-500' },
-                { label: '中度风险', color: 'bg-yellow-500' },
-                { label: '常规监控', color: 'bg-sky-500' },
+                { label: '中度波动', color: 'bg-yellow-500' },
+                { label: '常规密度', color: 'bg-sky-500' },
               ].map((item) => (
                 <div key={item.label} className="flex items-center gap-2">
                   <div className={`h-1.5 w-3 rounded-full ${item.color}`} />
@@ -220,14 +260,14 @@ export default function MacroTrendTab() {
             </div>
           </div>
 
-          {/* Map Overlay Simulation */}
-          <div className="absolute top-6 left-6 p-3 rounded-xl bg-black/40 backdrop-blur-md border border-white/5 pointer-events-none">
+          {/* Info Overlay */}
+          <div className="absolute top-6 left-6 z-[1000] p-3 rounded-xl bg-black/40 backdrop-blur-md border border-white/5 pointer-events-none">
             <div className="flex items-center gap-2 mb-2">
               <Info size={10} className="text-sky-400" />
-              <span className="text-[9px] font-bold text-white/80">热力态势说明</span>
+              <span className="text-[9px] font-bold text-white/80">空间态势分析</span>
             </div>
             <p className="text-[8px] leading-relaxed text-white/40 max-w-[180px]">
-              当前热力图基于历史预警触发现场坐标进行空间聚合分析。红色区域代表在选定时间内预警密度极高的重点监管水域，建议加强巡航。
+              当前热力图集成了GIS地理信息，通过对全辖区预警事件的经纬度进行聚类分析得出。高亮区域表明在该时间段内发生了密集的违规或风险事件。
             </p>
           </div>
         </div>
@@ -235,10 +275,10 @@ export default function MacroTrendTab() {
         {/* Footer Stats */}
         <div className="flex items-center gap-6 p-4 bg-white/[0.02] border-t border-white/5 overflow-x-auto shrink-0">
           {[
-            { label: '最高密度中心', value: '吴淞口警戒区' },
-            { label: '平均预警密度', value: '12.4 次/km²' },
-            { label: '密度环比增长', value: '+8.2%', color: 'text-red-400' },
-            { label: '分析覆盖点位', value: '12,482 个' },
+            { label: '重点分析区域', value: '吴淞口/北槽航道' },
+            { label: '分析样本总数', value: `${filteredLocations.length} 处` },
+            { label: '空间聚合度', value: '84.2%', color: 'text-sky-400' },
+            { label: '地理分布偏差', value: '±2.4m' },
           ].map((stat, i) => (
             <div key={i} className="flex flex-col gap-0.5 min-w-fit">
               <span className="text-[9px] text-white/30 font-bold uppercase tracking-wider">{stat.label}</span>

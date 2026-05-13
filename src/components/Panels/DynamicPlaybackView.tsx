@@ -258,58 +258,81 @@ export default function DynamicPlaybackView({ session, onClose }: DynamicPlaybac
           onResetAreas={() => setSelectedAreas(new Set())}
         />
 
-        <div className="relative flex-1">
-          <MapContainer center={session.event.coords} zoom={14} className="h-full w-full" zoomControl={false}>
-            <TileLayer url={VTS_CHART_TILE_URL} attribution={VTS_CHART_TILE_ATTRIBUTION} />
-
-            {areaMapElements.map((element) => (
-              <div key={element.id}>
-                <Polygon
-                  positions={element.bounds}
-                  pathOptions={{
-                    color: '#00b7ff',
-                    fillColor: '#00b7ff',
-                    fillOpacity: 0.18,
-                    weight: 1.5,
-                  }}
-                >
-                  <Popup>
-                    <div className="p-2">
-                      <h4 className="mb-1 text-xs font-bold text-sky-500">{element.name}</h4>
-                      <p className="text-[11px] text-gray-500">类型: {element.type}</p>
+        <div className="relative flex-1 bg-[#111]">
+          {session.vessel.isImageScenario ? (
+            <div className="flex h-full w-full items-center justify-center p-8">
+              <div className="relative h-full w-full overflow-hidden rounded-2xl border border-white/10 shadow-2xl">
+                <img
+                  src={session.vessel.image}
+                  alt={session.vessel.name}
+                  className="h-full w-full object-contain"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent pointer-events-none" />
+                <div className="absolute bottom-6 left-6 right-6">
+                  <div className="flex items-center gap-4">
+                    <div className="rounded-lg bg-sky-500/20 px-3 py-1.5 text-xs font-bold text-sky-400 backdrop-blur-md border border-sky-500/30">
+                      场景快照
                     </div>
-                  </Popup>
-                </Polygon>
-                <Marker position={element.center} icon={createAreaMarkerIcon(element.name)} />
+                    <div className="text-sm font-medium text-white/90">
+                      指挥中心应急视频会商画面
+                    </div>
+                  </div>
+                </div>
               </div>
-            ))}
+            </div>
+          ) : (
+            <MapContainer center={session.event.coords} zoom={14} className="h-full w-full" zoomControl={false}>
+              <TileLayer url={VTS_CHART_TILE_URL} attribution={VTS_CHART_TILE_ATTRIBUTION} />
 
-            <Polyline
-              positions={trajectory}
-              pathOptions={{ color: '#a76bff', weight: 3, opacity: 0.9 }}
-            />
-            <Polyline
-              positions={trajectory.slice(0, Math.floor((progress / 100) * (trajectory.length - 1)) + 1)}
-              pathOptions={{ color: '#1bb7ff', weight: 3.5, opacity: 1 }}
-            />
+              {areaMapElements.map((element) => (
+                <div key={element.id}>
+                  <Polygon
+                    positions={element.bounds}
+                    pathOptions={{
+                      color: '#00b7ff',
+                      fillColor: '#00b7ff',
+                      fillOpacity: 0.18,
+                      weight: 1.5,
+                    }}
+                  >
+                    <Popup>
+                      <div className="p-2">
+                        <h4 className="mb-1 text-xs font-bold text-sky-500">{element.name}</h4>
+                        <p className="text-[11px] text-gray-500">类型: {element.type}</p>
+                      </div>
+                    </Popup>
+                  </Polygon>
+                  <Marker position={element.center} icon={createAreaMarkerIcon(element.name)} />
+                </div>
+              ))}
 
-            <CircleMarker
-              center={session.event.coords}
-              pathOptions={{ color: '#ff4b5c', fillColor: '#ff4b5c', fillOpacity: 0.95 }}
-              radius={10}
-            >
-              <Popup>
-                <div className="p-2 text-xs font-bold text-red-500">风险触发点: {session.event.label}</div>
-              </Popup>
-            </CircleMarker>
-
-            {currentPos && (
-              <Marker
-                position={currentPos}
-                icon={createPlaybackShipIcon(session.vessel.name)}
+              <Polyline
+                positions={trajectory}
+                pathOptions={{ color: '#a76bff', weight: 3, opacity: 0.9 }}
               />
-            )}
-          </MapContainer>
+              <Polyline
+                positions={trajectory.slice(0, Math.floor((progress / 100) * (trajectory.length - 1)) + 1)}
+                pathOptions={{ color: '#1bb7ff', weight: 3.5, opacity: 1 }}
+              />
+
+              <CircleMarker
+                center={session.event.coords}
+                pathOptions={{ color: '#ff4b5c', fillColor: '#ff4b5c', fillOpacity: 0.95 }}
+                radius={10}
+              >
+                <Popup>
+                  <div className="p-2 text-xs font-bold text-red-500">风险触发点: {session.event.label}</div>
+                </Popup>
+              </CircleMarker>
+
+              {currentPos && (
+                <Marker
+                  position={currentPos}
+                  icon={createPlaybackShipIcon(session.vessel.name)}
+                />
+              )}
+            </MapContainer>
+          )}
         </div>
       </div>
     </motion.div>

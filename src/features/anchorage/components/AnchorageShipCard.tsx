@@ -1,3 +1,4 @@
+import React from 'react';
 import { ChevronRight } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 
@@ -9,6 +10,7 @@ type AnchorageShipCardProps = {
   variant: 'expiring' | 'overtime';
   primaryActionLabel: string;
   onToggle: () => void;
+  key?: React.Key;
 };
 
 const VARIANT_STYLES = {

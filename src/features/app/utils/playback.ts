@@ -36,23 +36,25 @@ export const getRiskPlaybackSession = (
       length: item.length,
       width: item.width,
       cargo: item.cargo,
+      isImageScenario: item.isImageScenario,
+      image: item.snapshot.image,
     },
     event: {
-      coords: item.coords,
+      coords: item.coords || [31.35, 121.55],
       time: item.time,
       label: item.risk,
       type: 'risk',
       desc: `${item.name} 于 ${item.time} 触发「${item.risk}」风险预警，发生区域 ${item.snapshot.location}。`,
-      timeline: item.timeline.map((entry) => ({
+      timeline: (item.timeline || []).map((entry) => ({
         ...entry,
         desc: entry.event,
       })),
       dialogue,
       environment: [
         { label: '风险区域', value: item.snapshot.location },
-        { label: '船首向', value: `${item.heading}°` },
-        { label: '实际航速', value: `${item.speed.toFixed(1)} kn` },
-        { label: '可视距离', value: item.visibility },
+        { label: '船首向', value: item.heading ? `${item.heading}°` : '--' },
+        { label: '实际航速', value: item.speed ? `${item.speed.toFixed(1)} kn` : '--' },
+        { label: '可视距离', value: item.visibility || '--' },
         {
           label: '交通密度',
           value:
@@ -65,9 +67,9 @@ export const getRiskPlaybackSession = (
         { label: '管制状态', value: item.risk },
       ],
       weather: [
-        { label: '风力', value: item.wind },
-        { label: '浪高', value: item.wave },
-        { label: '能见度', value: item.visibility },
+        { label: '风力', value: item.wind || '--' },
+        { label: '浪高', value: item.wave || '--' },
+        { label: '能见度', value: item.visibility || '--' },
       ],
     },
   };

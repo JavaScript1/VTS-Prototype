@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Activity, ArrowLeft, BarChart3, BookOpen, Lock, Map as MapIcon, Monitor, Presentation, Settings, Shield, User, Users, Volume2 } from 'lucide-react';
+import { Activity, ArrowLeft, BarChart3, BookOpen, Lock, Map as MapIcon, Monitor, Presentation, Settings, Shield, Ship, User, Users, Volume2 } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { AREA_CATEGORIES, MOCK_AREAS } from '../../mockData';
 import type { MockAreaMap } from '../../types';
@@ -8,6 +8,7 @@ import BusinessStatsRoute from './routes/BusinessStatsRoute';
 import PlaceholderRoute from './routes/PlaceholderRoute';
 import ScenarioDemoRoute from './routes/ScenarioDemoRoute';
 import VesselDynamicsRoute from './routes/VesselDynamicsRoute';
+import VesselSymbolConfigRoute from './routes/VesselSymbolConfigRoute';
 import WarningManagementRoute from './routes/WarningManagementRoute';
 
 type AdminPanelProps = {
@@ -50,6 +51,7 @@ export default function AdminPanel({
       { name: '账号管理', icon: User },
       { name: '区域设置', icon: MapIcon },
       { name: '船舶动态', icon: Activity },
+      { name: '船舶符号', icon: Ship },
       { name: '字典管理', icon: BookOpen },
       { name: '语音设置', icon: Volume2 },
       { name: '显示设置', icon: Monitor },
@@ -74,6 +76,8 @@ export default function AdminPanel({
         );
       case '船舶动态':
         return <VesselDynamicsRoute onLocate={setPlaybackData} />;
+      case '船舶符号':
+        return <VesselSymbolConfigRoute />;
       case '业务统计':
         return <BusinessStatsRoute activeStatsTab={activeStatsTab} onActiveStatsTabChange={setActiveStatsTab} />;
       case '预警管理':

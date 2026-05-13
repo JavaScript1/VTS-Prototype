@@ -2,6 +2,17 @@ import { type MockIntentStat, type MockRiskStat, type MockVesselDynamic } from '
 
 export const MOCK_RISK_STATS: MockRiskStat[] = [
   {
+    id: '6',
+    name: '应急联动会商',
+    risk: '多方视频会商',
+    time: '2026-03-17 14:00:00',
+    snapshot: {
+      image: '/images/scenario-conference.jpg',
+      location: '指挥中心',
+    },
+    isImageScenario: true,
+  },
+  {
     id: '1',
     name: '远洋 123',
     mmsi: '413000001',

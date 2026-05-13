@@ -181,32 +181,32 @@ export default function WarningKeyAreasTab() {
         </div>
       </div>
 
-      {/* Top Stats Row */}
-      <div className="grid grid-cols-4 gap-2.5 shrink-0">
-        {[
-          { label: '碰撞预警触发', value: '452', unit: '次', color: 'text-red-400', icon: AlertCircle, sub: '较昨日 +12%' },
-          { label: '区域交通流量', value: '1,284', unit: '艘', color: 'text-sky-400', icon: Activity, sub: '峰值 256 艘/h' },
-          { label: '重点监管船舶', value: '53', unit: '艘', color: 'text-amber-400', icon: Anchor, sub: '危化品/油轮/客运' },
-          { label: '在航船舶总数', value: '124', unit: '艘', color: 'text-white', icon: Users, sub: '当前区域实时' },
-        ].map((item, i) => (
-          <Panel key={i} className="px-4 py-2">
-            <div className="flex items-center justify-between mb-0.5">
-              <div className="text-[10px] text-white/40 font-bold">{item.label}</div>
-              <item.icon size={13} className={item.color} />
-            </div>
-            <div className="flex items-baseline gap-1">
-              <span className={`text-xl font-black ${item.color}`}>{item.value}</span>
-              <span className="text-[9px] text-white/20 font-bold">{item.unit}</span>
-            </div>
-            <div className="text-[9px] text-white/25 mt-0.5">{item.sub}</div>
-          </Panel>
-        ))}
-      </div>
-
       {/* Main Content Area */}
       <div className="grid grid-cols-12 gap-3 flex-1 min-h-0">
-        {/* Left: Warning & Flow Trends Merged */}
-        <div className="col-span-8 flex flex-col min-h-0">
+        {/* Left: Stats & Trends */}
+        <div className="col-span-8 flex flex-col gap-3 min-h-0">
+          {/* Top Stats Row - Now inside 8-col layout */}
+          <div className="grid grid-cols-4 gap-2.5 shrink-0">
+            {[
+              { label: '碰撞预警触发', value: '452', unit: '次', color: 'text-red-400', icon: AlertCircle, sub: '较昨日 +12%' },
+              { label: '区域交通流量', value: '1,284', unit: '艘', color: 'text-sky-400', icon: Activity, sub: '峰值 256 艘/h' },
+              { label: '重点监管船舶', value: '53', unit: '艘', color: 'text-amber-400', icon: Anchor, sub: '危化品/油轮/客运' },
+              { label: '在航船舶总数', value: '124', unit: '艘', color: 'text-white', icon: Users, sub: '当前区域实时' },
+            ].map((item, i) => (
+              <Panel key={i} className="px-4 py-2">
+                <div className="flex items-center justify-between mb-0.5">
+                  <div className="text-[10px] text-white/40 font-bold">{item.label}</div>
+                  <item.icon size={13} className={item.color} />
+                </div>
+                <div className="flex items-baseline gap-1">
+                  <span className={`text-xl font-black ${item.color}`}>{item.value}</span>
+                  <span className="text-[9px] text-white/20 font-bold">{item.unit}</span>
+                </div>
+                <div className="text-[9px] text-white/25 mt-0.5">{item.sub}</div>
+              </Panel>
+            ))}
+          </div>
+
           <Panel className="flex-1 p-5 flex flex-col min-h-0">
             <div className="flex items-center justify-between mb-2">
               <SectionTitle title="预警触发与流量综合态势" icon={<TrendingUp size={14} />} />

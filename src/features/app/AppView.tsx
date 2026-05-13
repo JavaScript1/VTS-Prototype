@@ -123,10 +123,10 @@ export default function AppView() {
         shipType: item.type,
         mmsi: item.mmsi,
         cargoType: item.cargo,
-        length: `${item.length}m`,
-        width: `${item.width}m`,
-        draft: `${item.draft}m`,
-        speed: `${item.speed.toFixed(1)}kn`,
+        length: item.length ? `${item.length}m` : undefined,
+        width: item.width ? `${item.width}m` : undefined,
+        draft: item.draft ? `${item.draft}m` : undefined,
+        speed: item.speed !== undefined ? `${item.speed.toFixed(1)}kn` : undefined,
         destination: item.destination,
       });
     });
