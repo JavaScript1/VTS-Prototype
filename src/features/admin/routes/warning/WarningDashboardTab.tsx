@@ -24,6 +24,7 @@ import {
   SHIP_TYPE_DATA,
   TREND_DATA,
 } from './warningDashboardData';
+import { Panel, SectionTitle } from './SharedComponents';
 
 type WarningDashboardTabProps = {
   risks: MockRiskStat[];
@@ -87,25 +88,6 @@ function roundBySelection(value: number, weight: number) {
   return Math.max(0, Math.round(value * weight));
 }
 
-function SectionTitle({ title }: { title: string }) {
-  return (
-    <div className="mb-4 flex items-center gap-2.5">
-      <div className="h-3.5 w-1 rounded-full bg-[#18c4ff]" />
-      <h3 className="text-[13px] font-black text-white">{title}</h3>
-    </div>
-  );
-}
-
-function Panel({ children, className = '' }: { children: React.ReactNode; className?: string }) {
-  return (
-    <div
-      className={`rounded-[24px] border border-[#15304b] bg-[radial-gradient(circle_at_top,_rgba(20,44,74,0.32),_rgba(10,15,24,0.96)_58%)] shadow-[0_10px_30px_rgba(0,0,0,0.28)] ${className}`}
-    >
-      {children}
-    </div>
-  );
-}
-
 function DistributionList({
   items,
   accent = '#1ebcff',
@@ -115,23 +97,23 @@ function DistributionList({
 }) {
   const maxValue = Math.max(...items.map((item) => item.value), 1);
   return (
-    <div className="custom-scrollbar space-y-4 overflow-y-auto pr-2">
+    <div className="custom-scrollbar space-y-3.5 overflow-y-auto pr-2">
       {items.map((item) => (
-        <div key={item.name} className="space-y-2">
-          <div className="flex items-center justify-between gap-3 text-[12px]">
-            <span className="truncate text-white/72">{item.name}</span>
-            <span className="flex items-center gap-1 font-bold text-[#18c4ff]">
+        <div key={item.name} className="space-y-1.5 transition-all hover:translate-x-1">
+          <div className="flex items-center justify-between gap-3 text-[11px]">
+            <span className="truncate text-white/60 font-medium">{item.name}</span>
+            <span className="flex items-center gap-1 font-black text-[#18c4ff]">
               {item.value}
               {item.trend === 'up' ? (
-                <ArrowUpRight size={12} className="text-[#ff5e85]" />
+                <ArrowUpRight size={11} className="text-[#ff5e85]" />
               ) : (
-                <ArrowDownRight size={12} className="text-[#17d68d]" />
+                <ArrowDownRight size={11} className="text-[#17d68d]" />
               )}
             </span>
           </div>
-          <div className="h-[3px] overflow-hidden rounded-full bg-white/8">
+          <div className="h-[3px] overflow-hidden rounded-full bg-white/5">
             <div
-              className="h-full rounded-full"
+              className="h-full rounded-full shadow-[0_0_8px_rgba(24,191,255,0.4)]"
               style={{
                 width: `${(item.value / maxValue) * 100}%`,
                 background: accent,
@@ -148,44 +130,34 @@ export default function WarningDashboardTab({
   risks,
   warningRules,
 }: WarningDashboardTabProps) {
+  const [activeJurisdiction, setActiveJurisdiction] = useState<Jurisdiction | '全辖区'>('全辖区');
   const [analysisTab, setAnalysisTab] = useState<'昨日分析' | '自定义时间'>('昨日分析');
-  const [selectedJurisdictions, setSelectedJurisdictions] = useState<Jurisdiction[]>(JURISDICTION_OPTIONS);
   const [customRange, setCustomRange] = useState({
     start: '2026-05-01T00:00',
     end: '2026-05-06T23:59',
   });
+
+  const selectedJurisdictions = useMemo(() => {
+    if (activeJurisdiction === '全辖区') return JURISDICTION_OPTIONS;
+    return [activeJurisdiction];
+  }, [activeJurisdiction]);
 
   const jurisdictionWeight = useMemo(() => {
     const weight = selectedJurisdictions.reduce((sum, item) => sum + JURISDICTION_TOTAL_WEIGHT[item], 0);
     return Math.min(weight, 1);
   }, [selectedJurisdictions]);
 
-  const jurisdictionLabel = useMemo(() => {
-    if (selectedJurisdictions.length === JURISDICTION_OPTIONS.length) return '全部辖区';
-    return selectedJurisdictions.join('、');
-  }, [selectedJurisdictions]);
-
   const periodLabel =
     analysisTab === '昨日分析'
-      ? '2026-05-06 00:00:00 至 2026-05-06 23:59:59'
-      : `${customRange.start.replace('T', ' ')}:00 至 ${customRange.end.replace('T', ' ')}:00`;
-
-  const toggleJurisdiction = (target: Jurisdiction) => {
-    setSelectedJurisdictions((current) => {
-      if (current.includes(target)) {
-        if (current.length === 1) return current;
-        return current.filter((item) => item !== target);
-      }
-      return [...current, target];
-    });
-  };
+      ? '2026-05-06'
+      : `${customRange.start.split('T')[0]} ~ ${customRange.end.split('T')[0]}`;
 
   const handleExportReport = () => {
     const reportLines = [
       '风险看板导出报表',
       `分析模式: ${analysisTab}`,
       `统计周期: ${periodLabel}`,
-      `辖区范围: ${jurisdictionLabel}`,
+      `辖区范围: ${activeJurisdiction}`,
       `预警总量: ${summary.totalCount}`,
       `高风险船舶: ${summary.highRiskCount}`,
       `平均风险分: ${summary.avgScore}`,
@@ -290,270 +262,257 @@ export default function WarningDashboardTab({
 
   return (
     <div className="space-y-3.5">
-      <div className="flex items-center justify-between rounded-2xl bg-white/[0.04] px-4 py-2.5">
-        <div className="flex flex-wrap items-center gap-3">
-          <div className="flex items-center gap-1.5 rounded-xl bg-[#151c27] p-1">
-            {(['昨日分析', '自定义时间'] as const).map((item) => (
+      {/* 紧凑型筛选器头部 */}
+      <div className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-white/5 bg-white/[0.02] p-2.5 backdrop-blur-md">
+        <div className="flex flex-wrap items-center gap-4">
+          {/* 主辖区切换 - 响应用户需求 */}
+          <div className="flex items-center gap-1 rounded-xl bg-[#151c27] p-0.5 border border-white/5">
+            {(['全辖区', ...JURISDICTION_OPTIONS] as const).map((item) => (
               <button
                 key={item}
-                onClick={() => setAnalysisTab(item)}
-                className={`rounded-lg px-3.5 py-1.5 text-[11px] font-bold transition-all ${
-                  analysisTab === item
-                    ? 'bg-[#18bfff] text-white shadow-[0_0_18px_rgba(24,191,255,0.35)]'
-                    : 'text-white/40 hover:text-white/70'
+                onClick={() => setActiveJurisdiction(item)}
+                className={`rounded-lg px-3 py-1 text-[10px] font-black transition-all ${
+                  activeJurisdiction === item
+                    ? 'bg-sky-500 text-white shadow-sm'
+                    : 'text-white/30 hover:text-white/60'
                 }`}
               >
                 {item}
               </button>
             ))}
           </div>
+
+          <div className="h-6 w-px bg-white/5" />
+
+          <div className="flex items-center gap-2">
+            <span className="text-[9px] font-bold text-white/20 uppercase tracking-widest">周期:</span>
+            <div className="flex bg-[#111823] rounded-lg p-0.5 border border-white/8">
+              {(['昨日分析', '自定义时间'] as const).map((item) => (
+                <button
+                  key={item}
+                  onClick={() => setAnalysisTab(item)}
+                  className={`rounded-md px-2.5 py-1 text-[10px] font-bold transition-all ${
+                    analysisTab === item
+                      ? 'bg-white/10 text-sky-400'
+                      : 'text-white/30 hover:text-white/50'
+                  }`}
+                >
+                  {item === '昨日分析' ? 'YESTERDAY' : 'CUSTOM'}
+                </button>
+              ))}
+            </div>
+          </div>
+
           {analysisTab === '自定义时间' && (
-            <div className="flex flex-wrap items-center gap-2 rounded-xl border border-[#1a3347] bg-[#0d1620] px-3 py-1.5">
-              <div className="flex items-center gap-2 text-[10px] font-bold text-white/55">
-                <CalendarRange size={13} className="text-sky-400" />
-                时间范围
-              </div>
+            <div className="flex items-center gap-2 rounded-xl bg-[#111823] px-2 py-1 border border-white/8">
+              <CalendarRange size={12} className="text-sky-400" />
               <input
-                type="datetime-local"
-                value={customRange.start}
-                onChange={(e) => setCustomRange((current) => ({ ...current, start: e.target.value }))}
-                className="rounded-lg border border-white/10 bg-[#111823] px-3 py-1.5 text-[10px] font-medium text-white outline-none transition-all focus:border-sky-400/40"
+                type="date"
+                value={customRange.start.split('T')[0]}
+                onChange={(e) => setCustomRange((current) => ({ ...current, start: e.target.value + 'T00:00' }))}
+                className="bg-transparent text-[10px] font-bold text-white outline-none"
               />
-              <span className="text-[10px] text-white/35">至</span>
+              <span className="text-[10px] text-white/20">-</span>
               <input
-                type="datetime-local"
-                value={customRange.end}
-                onChange={(e) => setCustomRange((current) => ({ ...current, end: e.target.value }))}
-                className="rounded-lg border border-white/10 bg-[#111823] px-3 py-1.5 text-[10px] font-medium text-white outline-none transition-all focus:border-sky-400/40"
+                type="date"
+                value={customRange.end.split('T')[0]}
+                onChange={(e) => setCustomRange((current) => ({ ...current, end: e.target.value + 'T23:59' }))}
+                className="bg-transparent text-[10px] font-bold text-white outline-none"
               />
             </div>
           )}
-          <div className="flex flex-wrap items-center gap-2 rounded-xl border border-[#1a3347] bg-[#0d1620] px-3 py-1.5">
-            <div className="flex items-center gap-2 pr-1 text-[10px] font-bold text-white/55">
-              <MapPinned size={13} className="text-sky-400" />
-              辖区选择
-            </div>
-            <button
-              onClick={() => setSelectedJurisdictions(JURISDICTION_OPTIONS)}
-                className={`rounded-full border px-2.5 py-1 text-[10px] font-bold transition-all ${
-                selectedJurisdictions.length === JURISDICTION_OPTIONS.length
-                  ? 'border-sky-400/50 bg-sky-500/20 text-sky-300'
-                  : 'border-white/10 bg-white/[0.03] text-white/45 hover:text-white/70'
-              }`}
-            >
-              全部
-            </button>
-            {JURISDICTION_OPTIONS.map((item) => {
-              const active = selectedJurisdictions.includes(item);
-              return (
-                <button
-                  key={item}
-                  onClick={() => toggleJurisdiction(item)}
-                    className={`flex items-center gap-1 rounded-full border px-2.5 py-1 text-[10px] font-bold transition-all ${
-                    active
-                      ? 'border-sky-400/50 bg-sky-500/15 text-sky-200'
-                      : 'border-white/10 bg-white/[0.03] text-white/45 hover:text-white/70'
-                  }`}
-                >
-                  {active && <Check size={11} />}
-                  {item}
-                </button>
-              );
-            })}
-          </div>
         </div>
+
         <div className="flex items-center gap-3">
-          <div className="space-y-1 text-right">
-            <div className="text-[10px] font-bold text-sky-300/90">{jurisdictionLabel}</div>
-            <div className="rounded-full border border-[#1b5074] bg-[#0d2537] px-4 py-1.5 text-[10px] text-white/78">
-              统计周期: {periodLabel}
-            </div>
+          <div className="flex flex-col items-end">
+            <span className="text-[9px] uppercase tracking-widest text-white/30 font-bold leading-none">ANALYSIS DATE</span>
+            <span className="text-[10px] font-black text-white/60">{periodLabel}</span>
           </div>
+          <div className="h-6 w-px bg-white/10" />
           <button
             onClick={handleExportReport}
-            className="flex items-center gap-2 rounded-xl border border-sky-400/25 bg-sky-500/12 px-3.5 py-1.5 text-[10px] font-bold text-sky-200 transition-all hover:bg-sky-500/18 hover:text-white"
+            className="flex items-center gap-1.5 rounded-lg bg-sky-500 px-3 py-1.5 text-[10px] font-black text-white shadow-lg shadow-sky-500/20 transition-all hover:bg-sky-400 active:scale-95"
           >
-            <Download size={13} />
-            导出报表
+            <Download size={12} />
+            REPORT
           </button>
         </div>
       </div>
 
-      <div className="flex items-center gap-3">
-        <div className="h-4 w-1 rounded-full bg-[#18c4ff]" />
-        <h2 className="text-[14px] font-black text-white">昨日风险态势分析报告</h2>
-      </div>
-
       <div className="grid gap-4 xl:grid-cols-[2.2fr_1.1fr]">
-        <Panel className="p-5">
+        <Panel className="p-4">
           <div className="grid gap-5 lg:grid-cols-[160px_1fr]">
             <div className="flex flex-col justify-center">
-              <div className="text-[12px] text-white/42">昨日数量总览</div>
-              <div className="mt-2.5 text-5xl font-black tracking-tight text-white">
+              <div className="text-[11px] font-bold uppercase tracking-wider text-white/30">总预警次数</div>
+              <div className="mt-1 text-3xl font-black tracking-tighter text-white">
                 {summary.totalCount.toLocaleString()}
               </div>
-              <div className="mt-1.5 text-[11px] text-white/35">总计预警触发次数</div>
+              <div className="mt-4 flex items-center gap-2">
+                <div className="flex h-5 w-5 items-center justify-center rounded bg-red-500/20 text-red-400">
+                  <ArrowUpRight size={12} />
+                </div>
+                <div className="text-[10px] font-bold text-white/40">
+                  较昨日 <span className="text-red-400">+8.4%</span>
+                </div>
+              </div>
             </div>
 
             <div>
-              <SectionTitle title="预警趋势" />
-              <div className="h-[188px]">
+              <SectionTitle title="预警趋势分析" />
+              <div className="h-[160px]">
                 <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={trendData} margin={{ left: 8, right: 8, top: 8, bottom: 0 }}>
+                  <LineChart data={trendData} margin={{ left: -25, right: 5, top: 10, bottom: 0 }}>
                     <XAxis
                       dataKey="hour"
                       axisLine={false}
                       tickLine={false}
-                      tick={{ fill: '#516173', fontSize: 11 }}
+                      tick={{ fill: 'rgba(255,255,255,0.2)', fontSize: 10 }}
                     />
                     <YAxis
                       axisLine={false}
                       tickLine={false}
-                      tick={{ fill: '#516173', fontSize: 11 }}
+                      tick={{ fill: 'rgba(255,255,255,0.2)', fontSize: 10 }}
                     />
                     <Tooltip
                       contentStyle={{
                         backgroundColor: '#0a1018',
-                        border: '1px solid rgba(69,116,158,0.35)',
-                        borderRadius: '14px',
+                        border: '1px solid rgba(255,255,255,0.1)',
+                        borderRadius: '12px',
+                        fontSize: '11px',
                       }}
                     />
                     <Line
                       type="monotone"
                       dataKey="warning"
+                      name="预警次数"
                       stroke="#18bfff"
                       strokeWidth={3}
-                      dot={{ r: 2.5, stroke: '#18bfff', fill: '#18bfff' }}
-                      activeDot={{ r: 4 }}
+                      dot={false}
+                      activeDot={{ r: 4, strokeWidth: 0, fill: '#18bfff' }}
                     />
                     <Line
                       type="monotone"
                       dataKey="handled"
+                      name="干预次数"
                       stroke="#17d6a2"
                       strokeWidth={2}
-                      dot={{ r: 2, stroke: '#17d6a2', fill: '#17d6a2' }}
+                      strokeDasharray="4 4"
+                      dot={false}
                     />
                   </LineChart>
                 </ResponsiveContainer>
-              </div>
-              <div className="mt-1.5 flex justify-end gap-4 text-[10px] text-white/36">
-                <span className="flex items-center gap-2">
-                  <span className="h-[3px] w-4 rounded-full bg-[#18bfff]" />
-                  预警次数
-                </span>
-                <span className="flex items-center gap-2">
-                  <span className="h-[3px] w-4 rounded-full bg-[#17d6a2]" />
-                  干预次数
-                </span>
               </div>
             </div>
           </div>
         </Panel>
 
-        <Panel className="p-4.5">
+        <Panel className="p-4 flex flex-col">
           <SectionTitle title="风险维度分布" />
-          <div className="h-[188px]">
+          <div className="flex-1 overflow-hidden">
             <DistributionList items={riskDimensionData} />
           </div>
         </Panel>
       </div>
 
       <div className="grid gap-4 xl:grid-cols-3">
-        <Panel className="p-4.5">
-          <SectionTitle title="风险船舶的类型分布" />
-          <div className="grid gap-3 lg:grid-cols-[168px_1fr]">
-            <div className="h-[188px]">
+        <Panel className="p-4">
+          <SectionTitle title="预警船舶类型" />
+          <div className="grid gap-4 lg:grid-cols-[120px_1fr]">
+            <div className="h-[140px]">
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie
                     data={shipTypeData}
                     dataKey="value"
-                    nameKey="name"
-                    innerRadius={46}
-                    outerRadius={66}
-                    paddingAngle={2}
+                    innerRadius={45}
+                    outerRadius={65}
+                    paddingAngle={3}
                     stroke="transparent"
                   >
                     {shipTypeData.map((entry, index) => (
-                      <Cell key={entry.name} fill={SHIP_TYPE_COLORS[index % SHIP_TYPE_COLORS.length]} />
+                      <Cell 
+                        key={entry.name} 
+                        fill={SHIP_TYPE_COLORS[index % SHIP_TYPE_COLORS.length]}
+                        className="transition-all hover:opacity-80 cursor-pointer" 
+                      />
                     ))}
                   </Pie>
                 </PieChart>
               </ResponsiveContainer>
             </div>
-            <div className="custom-scrollbar max-h-[188px] space-y-2.5 overflow-y-auto pr-2">
+            <div className="custom-scrollbar max-h-[140px] space-y-2.5 overflow-y-auto pr-1">
               {shipTypeData.map((item, index) => (
-                <div key={item.name} className="flex items-center justify-between gap-4 text-[11px]">
-                  <div className="flex min-w-0 items-center gap-3">
+                <div key={item.name} className="flex items-center justify-between text-[11px] group cursor-pointer">
+                  <div className="flex items-center gap-2">
                     <span
-                      className="h-2.5 w-2.5 shrink-0 rounded-full"
+                      className="h-1.5 w-1.5 rounded-full"
                       style={{ backgroundColor: SHIP_TYPE_COLORS[index % SHIP_TYPE_COLORS.length] }}
                     />
-                    <span className="truncate text-white/70">{item.name}</span>
+                    <span className="text-white/50 group-hover:text-white/80 transition-colors">{item.name}</span>
                   </div>
-                  <span className="shrink-0 text-white/82">{item.value}次</span>
+                  <span className="font-bold text-white/80">{item.value}</span>
                 </div>
               ))}
             </div>
           </div>
         </Panel>
 
-        <Panel className="p-4.5">
+        <Panel className="p-4">
           <SectionTitle title="预警等级占比" />
-          <div className="grid gap-3 lg:grid-cols-[168px_1fr]">
-            <div className="relative h-[188px]">
+          <div className="grid gap-4 lg:grid-cols-[120px_1fr]">
+            <div className="relative h-[140px]">
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie
                     data={alertLevelData}
                     dataKey="value"
-                    nameKey="name"
-                    innerRadius={46}
-                    outerRadius={66}
-                    paddingAngle={2}
+                    innerRadius={45}
+                    outerRadius={65}
+                    paddingAngle={3}
                     stroke="transparent"
                   >
                     {alertLevelData.map((entry, index) => (
-                      <Cell key={entry.name} fill={ALERT_LEVEL_COLORS[index % ALERT_LEVEL_COLORS.length]} />
+                      <Cell 
+                        key={entry.name} 
+                        fill={ALERT_LEVEL_COLORS[index % ALERT_LEVEL_COLORS.length]}
+                        className="transition-all hover:opacity-80 cursor-pointer" 
+                      />
                     ))}
                   </Pie>
                 </PieChart>
               </ResponsiveContainer>
               <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
-                <div className="text-[10px] text-white/28">警告</div>
-                <div className="mt-1 text-xl font-black text-white/30">
-                  {alertLevelData[2]?.value ?? 0}
-                </div>
+                <div className="text-[18px] font-black text-white/80">{totalAlertLevelValue}</div>
+                <div className="text-[9px] font-bold text-white/30 uppercase tracking-widest">总计</div>
               </div>
             </div>
-            <div className="space-y-3 pt-1">
+            <div className="space-y-3 pt-2">
               {alertLevelData.map((item, index) => (
-                <div key={item.name} className="flex items-center justify-between gap-3 text-[11px]">
-                  <div className="flex items-center gap-3">
-                    <span
-                      className="h-2.5 w-2.5 rounded-full"
-                      style={{ backgroundColor: ALERT_LEVEL_COLORS[index % ALERT_LEVEL_COLORS.length] }}
+                <div key={item.name} className="flex items-center justify-between text-[11px] group cursor-pointer">
+                  <div className="flex items-center gap-2">
+                    <div
+                      className="h-1.5 w-1.5 rounded-full shadow-[0_0_8px_currentColor]"
+                      style={{ backgroundColor: ALERT_LEVEL_COLORS[index % ALERT_LEVEL_COLORS.length], color: ALERT_LEVEL_COLORS[index % ALERT_LEVEL_COLORS.length] }}
                     />
-                    <span className="text-white/70">{item.name}</span>
+                    <span className="text-white/50 group-hover:text-white/80 transition-colors">{item.name}</span>
                   </div>
-                  <span className="text-white/82">{item.value}次</span>
+                  <span className="font-bold text-white/80">{item.value}</span>
                 </div>
               ))}
-              <div className="pt-3 text-[11px] text-white/18">总计 {totalAlertLevelValue} 次</div>
             </div>
           </div>
         </Panel>
 
-        <Panel className="p-4.5">
-          <SectionTitle title="高频风险区域" />
-          <div className="h-[188px]">
+        <Panel className="p-4">
+          <SectionTitle title="高频风险区域排行" />
+          <div className="h-[140px] flex flex-col">
             <DistributionList items={highRiskAreaData} />
           </div>
         </Panel>
       </div>
 
-      <Panel className="p-4.5">
-        <SectionTitle title="高风险关注名单" />
+      <Panel className="p-4">
+        <SectionTitle title="高风险关注名单 (当日)" />
         <WarningDashboardFocusList items={FOCUS_LIST} />
       </Panel>
     </div>

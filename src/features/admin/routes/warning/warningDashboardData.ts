@@ -24,7 +24,7 @@ export const SHIP_TYPE_COLORS = [
   '#9f7aea',
 ];
 
-export const ALERT_LEVEL_COLORS = ['#ff4f86', '#ff9f1a', '#ffca0a', '#20b8ff'];
+export const ALERT_LEVEL_COLORS = ['#ff4f86', '#ff7a4d', '#f6c343', '#4cc6ff'];
 
 export const TREND_DATA = [
   { hour: '00', warning: 64, handled: 1 },

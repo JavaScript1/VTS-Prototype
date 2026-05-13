@@ -2,14 +2,18 @@ import React, { useState, useMemo } from 'react';
 import { 
   Search, 
   Calendar, 
-  ChevronDown, 
   Download,
   AlertTriangle,
-  Waves,
   Maximize2,
   Minimize2,
   Map as MapIcon,
-  Flame
+  Flame,
+  Play,
+  Pause,
+  SkipBack,
+  SkipForward,
+  ArrowUpRight,
+  ArrowDownRight
 } from 'lucide-react';
 import { MapContainer, TileLayer, Circle, CircleMarker, Marker, Tooltip } from 'react-leaflet';
 import L from 'leaflet';
@@ -19,6 +23,7 @@ import {
   VTS_CHART_TILE_ATTRIBUTION, 
   HOME_MAP_DEFAULT_CENTER 
 } from '../../../map/constants';
+import { Panel, FilterSelect } from './SharedComponents';
 
 // --- Types ---
 type TimeRange = '24h' | '7d' | '30d' | '自定义';
@@ -34,6 +39,7 @@ type HotspotConfig = {
   spread: number;
   weight: number;
   focus: string;
+  trend: 'up' | 'down';
 };
 
 type WarningLocation = {
@@ -57,6 +63,7 @@ const HOTSPOT_CONFIGS: HotspotConfig[] = [
     spread: 0.05,
     weight: 0.84,
     focus: '碰撞 / 交汇风险高发',
+    trend: 'up'
   },
   {
     id: 'waigaoqiao',
@@ -67,6 +74,7 @@ const HOTSPOT_CONFIGS: HotspotConfig[] = [
     spread: 0.04,
     weight: 0.7,
     focus: '区域入侵 / 靠离泊扰动',
+    trend: 'down'
   },
   {
     id: 'beicao',
@@ -77,6 +85,7 @@ const HOTSPOT_CONFIGS: HotspotConfig[] = [
     spread: 0.03,
     weight: 0.56,
     focus: '超速 / 航道压缩风险',
+    trend: 'up'
   },
   {
     id: 'jingjie',
@@ -87,6 +96,7 @@ const HOTSPOT_CONFIGS: HotspotConfig[] = [
     spread: 0.06,
     weight: 0.46,
     focus: '边界试探 / 走锚告警',
+    trend: 'up'
   },
 ];
 
@@ -128,56 +138,14 @@ const generateWarningLocations = () => {
 
 const WARNING_LOCATIONS = generateWarningLocations();
 
-// --- Sub-components ---
-const Panel: React.FC<{ children: React.ReactNode; className?: string }> = ({
-  children,
-  className = '',
-}) => {
-  return (
-    <div
-      className={`rounded-2xl border border-[#15304b] bg-[radial-gradient(circle_at_top,_rgba(20,44,74,0.32),_rgba(10,15,24,0.96)_58%)] shadow-lg ${className}`}
-    >
-      {children}
-    </div>
-  );
-};
-
-function Dropdown({ 
-  label, 
-  value, 
-  options, 
-  onChange 
-}: { 
-  label: string; 
-  value: string; 
-  options: string[]; 
-  onChange: (val: any) => void 
-}) {
-  return (
-    <div className="flex flex-col gap-1">
-      <span className="text-[9px] uppercase tracking-wider text-white/30 ml-1">{label}</span>
-      <div className="relative group">
-        <select
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          className="appearance-none w-36 rounded-lg border border-white/10 bg-[#111823] py-1.5 pl-3 pr-8 text-[11px] font-bold text-white outline-none transition-all focus:border-[#18c4ff]/50 hover:bg-[#1a222d]"
-        >
-          {options.map((opt) => (
-            <option key={opt} value={opt} className="bg-[#0a1018]">{opt}</option>
-          ))}
-        </select>
-        <ChevronDown size={10} className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-white/40 group-hover:text-white/60" />
-      </div>
-    </div>
-  );
-}
-
 // --- Main Component ---
 export default function MacroTrendTab() {
   const [timeRange, setTimeRange] = useState<TimeRange>('24h');
   const [warningType, setWarningType] = useState<WarningType>('全部');
   const [jurisdiction, setJurisdiction] = useState<Jurisdiction>('全部');
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [playbackProgress, setPlaybackProgress] = useState(35);
 
   const visibleHotspots = useMemo(() => {
     if (jurisdiction === '全部') return HOTSPOT_CONFIGS;
@@ -214,11 +182,6 @@ export default function MacroTrendTab() {
       .sort((a, b) => b.avgIntensity - a.avgIntensity);
   }, [filteredLocations, visibleHotspots]);
 
-  const totalIntensity = useMemo(
-    () => filteredLocations.reduce((sum, item) => sum + item.intensity, 0),
-    [filteredLocations],
-  );
-
   const getHeatColor = (intensity: number) => {
     if (intensity > 0.78) return '#ef4444';
     if (intensity > 0.62) return '#f97316';
@@ -246,24 +209,24 @@ export default function MacroTrendTab() {
 
   return (
     <div className="flex h-full min-h-0 flex-col gap-3 overflow-hidden">
-      {/* Header & Filters */}
-      <div className="flex flex-wrap items-end justify-between gap-4 rounded-xl border border-white/5 bg-white/[0.02] p-3 backdrop-blur-md shrink-0">
+      {/* 紧凑型 Header */}
+      <div className="flex flex-wrap items-center justify-between gap-4 rounded-xl border border-white/5 bg-white/[0.02] p-2.5 backdrop-blur-md shrink-0">
         <div className="flex items-center gap-4">
-          <Dropdown
-            label="辖区"
+          <FilterSelect
+            label="管理辖区"
             value={jurisdiction}
             options={['全部', '外高桥', '洋山', '吴淞', '宝山']}
             onChange={setJurisdiction}
           />
-          <Dropdown 
-            label="预警类型" 
+          <FilterSelect 
+            label="预警统计类型" 
             value={warningType} 
             options={['全部', '碰撞预警', '区域入侵', '超速预警', '走锚预警']} 
             onChange={setWarningType} 
           />
           <div className="flex flex-col gap-1">
-            <span className="text-[9px] uppercase tracking-wider text-white/30 ml-1">时间维度</span>
-            <div className="flex bg-[#111823] rounded-lg p-0.5 border border-white/10">
+            <span className="text-[9px] uppercase tracking-wider text-white/30 ml-1">统计回溯</span>
+            <div className="flex bg-[#111823] rounded-lg p-0.5 border border-white/8">
               {([
                 { id: '24h', label: '24小时' },
                 { id: '7d', label: '7天' },
@@ -273,10 +236,10 @@ export default function MacroTrendTab() {
                 <button
                   key={t.id}
                   onClick={() => setTimeRange(t.id)}
-                  className={`px-3 py-1 rounded-md text-[10px] font-bold transition-all ${
+                  className={`px-3 py-1 rounded-md text-[10px] font-black transition-all ${
                     timeRange === t.id 
                       ? 'bg-sky-500 text-white shadow-sm' 
-                      : 'text-white/40 hover:text-white/60'
+                      : 'text-white/30 hover:text-white/60'
                   }`}
                 >
                   {t.label}
@@ -286,31 +249,30 @@ export default function MacroTrendTab() {
           </div>
         </div>
 
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3">
           {timeRange === '自定义' && (
-            <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-white/10 bg-[#111823] text-[10px] text-white/60">
-              <Calendar size={12} />
-              <span>2026-04-11 ~ 2026-05-11</span>
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-white/8 bg-[#111823] text-[10px] font-bold text-white/60">
+              <Calendar size={12} className="text-sky-400" />
+              <span>04-11 ~ 05-11</span>
             </div>
           )}
-          <button className="flex items-center gap-2 rounded-lg bg-[#18c4ff] px-4 py-1.5 text-[11px] font-black text-white shadow-md transition-all hover:bg-[#35ccff] active:scale-95">
+          <button className="flex items-center gap-2 rounded-lg bg-[#18c4ff] px-4 py-1.5 text-[10px] font-black text-white shadow-lg shadow-sky-500/20 transition-all hover:bg-sky-400 active:scale-95">
             <Search size={12} />
-            执行聚合分析
+            聚合分析
           </button>
         </div>
       </div>
 
-      {/* Main Map Heatmap Area */}
       <Panel className="relative flex-1 overflow-hidden flex min-h-0 flex-col">
         <div className="flex items-center justify-between p-4 border-b border-white/5 shrink-0">
           <div className="flex items-center gap-3">
             <div className="flex h-6 w-6 items-center justify-center rounded bg-amber-500/10 text-amber-500">
               <AlertTriangle size={14} />
             </div>
-            <h3 className="text-xs font-black text-white uppercase tracking-wider">全辖区预警热力分布态势</h3>
-            <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-white/5 text-[9px] text-white/40">
+            <h3 className="text-xs font-black text-white uppercase tracking-widest">全辖区风险热力拓扑呈现</h3>
+            <div className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-white/5 text-[9px] font-bold text-white/30">
               <MapIcon size={10} />
-              <span>地图底图 + 预警热力图叠加</span>
+              <span>SPATIAL STATISTICS</span>
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -327,32 +289,53 @@ export default function MacroTrendTab() {
         </div>
 
         <div className="flex-1 relative min-h-0">
-          <div className="absolute inset-x-6 top-4 z-[1000] flex gap-2 overflow-x-auto pb-2">
-            {hotspotSummaries.slice(0, 4).map((hotspot, index) => (
-              <div
-                key={hotspot.id}
-                className="min-w-fit rounded-xl border border-white/10 bg-[#07111b]/80 px-3 py-2 backdrop-blur-md shadow-lg"
-              >
+          {/* 合并后的 TOP 风险区域统计图面板 */}
+          <div className="absolute left-6 top-4 z-[1000] w-[240px]">
+            <Panel className="border-white/10 bg-[#07111b]/85 p-3 backdrop-blur-md shadow-2xl">
+              <div className="mb-3 flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <div className="flex h-5 w-5 items-center justify-center rounded-full bg-red-500/10 text-red-400">
-                    <Flame size={10} />
+                  <div className="flex h-5 w-5 items-center justify-center rounded bg-red-500/20 text-red-400">
+                    <Flame size={12} />
                   </div>
-                  <span className="text-[10px] font-black text-white">
-                    TOP {index + 1} {hotspot.name}
-                  </span>
-                  <span className="rounded-full bg-white/5 px-1.5 py-0.5 text-[8px] font-bold text-sky-300">
-                    {hotspot.jurisdiction}
-                  </span>
+                  <span className="text-[10px] font-black uppercase tracking-widest text-white/90">TOP 风险区域</span>
                 </div>
-                <div className="mt-1 flex items-end gap-3">
-                  <span className="text-[14px] font-black text-white">{hotspot.eventCount}</span>
-                  <span className="text-[9px] text-white/45">起预警</span>
-                  <span className="rounded-full bg-white/5 px-2 py-0.5 text-[9px] font-bold text-orange-300">
-                    热度 {hotspot.heatLevel}
-                  </span>
-                </div>
+                <span className="text-[8px] font-bold text-white/20">实时回溯</span>
               </div>
-            ))}
+              
+              <div className="space-y-3">
+                {hotspotSummaries.slice(0, 4).map((hotspot, index) => {
+                  const maxCount = hotspotSummaries[0]?.eventCount || 1;
+                  const percentage = (hotspot.eventCount / maxCount) * 100;
+                  
+                  return (
+                    <div key={hotspot.id} className="group space-y-1.5 transition-all">
+                      <div className="flex items-center justify-between gap-3 text-[10px]">
+                        <div className="flex min-w-0 items-center gap-2">
+                          <span className="w-3 font-mono font-black italic text-white/20">0{index + 1}</span>
+                          <span className="truncate font-bold text-white/70 group-hover:text-white transition-colors">
+                            {hotspot.name}
+                          </span>
+                        </div>
+                        <div className="flex shrink-0 items-center gap-1.5">
+                          <span className="font-black text-white">{hotspot.eventCount}</span>
+                          {hotspot.trend === 'up' ? (
+                            <ArrowUpRight size={10} className="text-red-400/80" />
+                          ) : (
+                            <ArrowDownRight size={10} className="text-green-400/80" />
+                          )}
+                        </div>
+                      </div>
+                      <div className="h-1 rounded-full bg-white/5 overflow-hidden">
+                        <div 
+                          className="h-full rounded-full bg-gradient-to-r from-sky-500/40 to-sky-400 shadow-[0_0_8px_rgba(56,189,248,0.3)] transition-all duration-1000"
+                          style={{ width: `${percentage}%` }}
+                        />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </Panel>
           </div>
 
           <MapContainer
@@ -374,15 +357,6 @@ export default function MacroTrendTab() {
                       stroke: false,
                       fillColor: heatColor,
                       fillOpacity: 0.16,
-                    }}
-                  />
-                  <Circle
-                    center={hotspot.center}
-                    radius={900 + hotspot.avgIntensity * 2400}
-                    pathOptions={{
-                      stroke: false,
-                      fillColor: heatColor,
-                      fillOpacity: 0.22,
                     }}
                   />
                   <Circle
@@ -428,11 +402,55 @@ export default function MacroTrendTab() {
             ))}
           </MapContainer>
 
-          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_38%,rgba(239,68,68,0.10),transparent_22%),radial-gradient(circle_at_66%_28%,rgba(249,115,22,0.10),transparent_18%),linear-gradient(180deg,rgba(3,8,15,0.08),rgba(3,8,15,0.28))]" />
+          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_38%,rgba(239,68,68,0.10),transparent_22%),linear-gradient(180deg,rgba(3,8,15,0.08),rgba(3,8,15,0.48))]" />
+
+          {/* 时间轴播放器 - 地理与时间维度融合 */}
+          <div className="absolute bottom-6 left-1/2 z-[1000] -translate-x-1/2 w-[600px]">
+            <div className="rounded-2xl border border-white/10 bg-black/60 p-3 backdrop-blur-xl shadow-2xl">
+              <div className="flex items-center gap-4">
+                <div className="flex items-center gap-2">
+                  <button className="p-1.5 rounded-lg hover:bg-white/10 text-white/60">
+                    <SkipBack size={14} />
+                  </button>
+                  <button 
+                    onClick={() => setIsPlaying(!isPlaying)}
+                    className="flex h-8 w-8 items-center justify-center rounded-full bg-sky-500 text-white shadow-lg shadow-sky-500/40"
+                  >
+                    {isPlaying ? <Pause size={16} fill="currentColor" /> : <Play size={16} fill="currentColor" className="ml-0.5" />}
+                  </button>
+                  <button className="p-1.5 rounded-lg hover:bg-white/10 text-white/60">
+                    <SkipForward size={14} />
+                  </button>
+                </div>
+                
+                <div className="flex-1 flex flex-col gap-1.5">
+                  <div className="flex justify-between text-[10px] font-black text-white/40 uppercase tracking-widest">
+                    <span>Playback Timeline</span>
+                    <span className="text-sky-400">2026-05-11 12:45:00</span>
+                  </div>
+                  <div className="relative h-1.5 w-full rounded-full bg-white/10">
+                    <div 
+                      className="absolute h-full rounded-full bg-sky-500 shadow-[0_0_12px_rgba(56,189,248,0.6)]"
+                      style={{ width: `${playbackProgress}%` }}
+                    />
+                    <div 
+                      className="absolute top-1/2 h-3 w-3 -translate-y-1/2 rounded-full border-2 border-sky-500 bg-[#0a1018] shadow-lg"
+                      style={{ left: `${playbackProgress}%` }}
+                    />
+                  </div>
+                </div>
+                
+                <div className="flex flex-col items-center">
+                  <span className="text-[14px] font-black text-white">1x</span>
+                  <span className="text-[8px] text-white/30 uppercase font-bold">Speed</span>
+                </div>
+              </div>
+            </div>
+          </div>
 
           {/* Legend */}
           <div className="absolute bottom-6 right-6 z-[1000] flex flex-col gap-2 p-3 rounded-xl bg-black/60 backdrop-blur-md border border-white/10">
-            <div className="text-[9px] font-bold text-white/40 uppercase tracking-widest mb-1">预警热力图例</div>
+            <div className="text-[9px] font-bold text-white/40 uppercase tracking-widest mb-1">风险热力图例</div>
             <div className="flex flex-col gap-1.5">
               {[
                 { label: '极高风险', color: 'bg-red-500' },
@@ -447,9 +465,7 @@ export default function MacroTrendTab() {
               ))}
             </div>
           </div>
-
         </div>
-
       </Panel>
     </div>
   );
