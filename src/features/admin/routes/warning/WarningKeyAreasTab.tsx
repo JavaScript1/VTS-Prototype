@@ -231,12 +231,24 @@ export default function WarningKeyAreasTab() {
       {/* 紧凑型 Header */}
       <div className="flex flex-wrap items-center justify-between gap-4 rounded-xl border border-white/5 bg-white/[0.02] p-2.5 backdrop-blur-md shrink-0">
         <div className="flex items-center gap-4">
-          <FilterSelect 
-            label="所属辖区" 
-            value={jurisdiction} 
-            options={JURISDICTIONS} 
-            onChange={handleJurisdictionChange} 
-          />
+          <div className="flex flex-col gap-1">
+            <span className="ml-1 text-[9px] uppercase tracking-wider text-white/30">所属辖区</span>
+            <div className="flex items-center gap-1 rounded-xl border border-white/5 bg-[#151c27] p-0.5">
+              {JURISDICTIONS.map((item) => (
+                <button
+                  key={item}
+                  onClick={() => handleJurisdictionChange(item)}
+                  className={`rounded-lg px-3 py-1 text-[10px] font-black transition-all ${
+                    jurisdiction === item
+                      ? 'bg-sky-500 text-white shadow-sm'
+                      : 'text-white/30 hover:text-white/60'
+                  }`}
+                >
+                  {item}
+                </button>
+              ))}
+            </div>
+          </div>
           <FilterSelect 
             label="监控区域" 
             value={area} 
@@ -279,10 +291,7 @@ export default function WarningKeyAreasTab() {
               { label: '时段最高潮位', value: maxTide, unit: 'm', time: maxTideTime, color: 'text-[#45B7D1]', icon: ArrowUpRight },
               { label: '时段最低潮位', value: minTide, unit: 'm', time: minTideTime, color: 'text-[#7C3AED]', icon: ArrowDownRight },
             ].map((item, i) => (
-              <Panel key={i} className="px-4 py-3 relative overflow-hidden group">
-                <div className="absolute top-0 right-0 p-1 opacity-5 group-hover:opacity-10 transition-opacity">
-                  <item.icon size={64} />
-                </div>
+              <Panel key={i} className="px-4 py-3 relative overflow-hidden">
                 <div className="flex items-center gap-2 mb-2">
                   <div className={`p-1.5 rounded-lg bg-white/5 ${item.color}`}>
                     <item.icon size={14} />

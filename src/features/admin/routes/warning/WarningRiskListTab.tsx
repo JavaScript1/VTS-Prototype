@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { Clock3, FileSpreadsheet, MapPin, Search, ShieldAlert, Ship, Siren, TriangleAlert } from 'lucide-react';
+import { Clock3, FileSpreadsheet, Search, ShieldAlert, Ship, Siren, TriangleAlert } from 'lucide-react';
 import type { MockRiskStat } from '../../../../types';
 import { getRiskLevel } from './utils';
 import { buildDisplayRisks, buildPageNumbers, PAGE_SIZE, type DisplayRiskRow, type RiskStatusType } from './warningRiskListData';
@@ -17,6 +17,19 @@ const STATUS_STYLES: Record<RiskStatusType, string> = {
   已关闭: 'bg-[#1ee6a0]',
 };
 
+type JurisdictionFilter = '全辖区' | '外高桥' | '洋山' | '吴淞' | '宝山';
+
+const JURISDICTION_OPTIONS: JurisdictionFilter[] = ['全辖区', '外高桥', '洋山', '吴淞', '宝山'];
+
+const LOCATION_JURISDICTION_MAP: Record<string, Exclude<JurisdictionFilter, '全辖区'>> = {
+  '黄浦江主航道进口（106-107下）': '外高桥',
+  '黄浦江主航道进口（106-107上）': '外高桥',
+  '宝山南航道（A84-A80）': '宝山',
+  '宝山北航道进口（79-85）': '宝山',
+  '宝山北航道出口深水（78-74）': '宝山',
+  外高桥航道出口: '外高桥',
+};
+
 export default function WarningRiskListTab({
   risks,
   selectedRiskId,
@@ -24,7 +37,7 @@ export default function WarningRiskListTab({
   onPlayback,
 }: WarningRiskListTabProps) {
   const [timeRange, setTimeRange] = useState('今天');
-  const [regionFilter, setRegionFilter] = useState('全部');
+  const [jurisdictionFilter, setJurisdictionFilter] = useState<JurisdictionFilter>('全辖区');
   const [riskTypeFilter, setRiskTypeFilter] = useState('全部');
   const [statusFilter, setStatusFilter] = useState('全部');
   const [falsePositiveFilter, setFalsePositiveFilter] = useState('全部');
@@ -33,10 +46,6 @@ export default function WarningRiskListTab({
   const [currentPage, setCurrentPage] = useState(1);
 
   const allRisks = useMemo(() => buildDisplayRisks(risks), [risks]);
-  const regionOptions = useMemo(
-    () => ['全部', ...Array.from(new Set(allRisks.map((item) => item.snapshot.location)))],
-    [allRisks],
-  );
   const riskTypeOptions = useMemo(
     () => ['全部', ...Array.from(new Set(allRisks.map((item) => item.risk)))],
     [allRisks],
@@ -52,7 +61,9 @@ export default function WarningRiskListTab({
         item.englishName.toLowerCase().includes(keyword) ||
         item.mmsi.includes(keyword);
       const matchesTime = timeRange === '今天' || timeRange === '近3天' || timeRange === '近7天';
-      const matchesRegion = regionFilter === '全部' || item.snapshot.location === regionFilter;
+      const itemJurisdiction = LOCATION_JURISDICTION_MAP[item.snapshot.location];
+      const matchesJurisdiction =
+        jurisdictionFilter === '全辖区' || itemJurisdiction === jurisdictionFilter;
       const matchesRiskType = riskTypeFilter === '全部' || item.risk === riskTypeFilter;
       const matchesStatus = statusFilter === '全部' || item.displayStatus === statusFilter;
       const matchesFalsePositive =
@@ -61,7 +72,7 @@ export default function WarningRiskListTab({
       return (
         matchesSearch &&
         matchesTime &&
-        matchesRegion &&
+        matchesJurisdiction &&
         matchesRiskType &&
         matchesStatus &&
         matchesFalsePositive &&
@@ -71,8 +82,8 @@ export default function WarningRiskListTab({
   }, [
     allRisks,
     falsePositiveFilter,
+    jurisdictionFilter,
     levelFilter,
-    regionFilter,
     riskTypeFilter,
     search,
     statusFilter,
@@ -110,15 +121,24 @@ export default function WarningRiskListTab({
                 setCurrentPage(1);
               }}
             />
-            <FilterSelect
-              icon={<MapPin size={12} className="text-[#18c4ff]" />}
-              value={regionFilter}
-              options={regionOptions}
-              onChange={(value) => {
-                setRegionFilter(value);
-                setCurrentPage(1);
-              }}
-            />
+            <div className="flex items-center gap-1 rounded-xl border border-white/5 bg-[#151c27] p-0.5">
+              {JURISDICTION_OPTIONS.map((item) => (
+                <button
+                  key={item}
+                  onClick={() => {
+                    setJurisdictionFilter(item);
+                    setCurrentPage(1);
+                  }}
+                  className={`rounded-lg px-3 py-1 text-[10px] font-black transition-all ${
+                    jurisdictionFilter === item
+                      ? 'bg-sky-500 text-white shadow-sm'
+                      : 'text-white/30 hover:text-white/60'
+                  }`}
+                >
+                  {item}
+                </button>
+              ))}
+            </div>
             <FilterSelect
               icon={<TriangleAlert size={12} className="text-[#b38cff]" />}
               value={riskTypeFilter}
@@ -313,4 +333,3 @@ export default function WarningRiskListTab({
     </div>
   );
 }
-
