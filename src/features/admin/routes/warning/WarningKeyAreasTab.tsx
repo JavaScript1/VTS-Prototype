@@ -210,11 +210,19 @@ export default function WarningKeyAreasTab() {
     setArea(AREAS_BY_JURISDICTION[j][0]);
   };
 
-  const { maxTide, minTide } = useMemo(() => {
-    const tides = TREND_DATA.map(d => d.tide);
+  const { maxTide, minTide, maxTideTime, minTideTime } = useMemo(() => {
+    const maxTidePoint = TREND_DATA.reduce((max, current) => (
+      current.tide > max.tide ? current : max
+    ), TREND_DATA[0]);
+    const minTidePoint = TREND_DATA.reduce((min, current) => (
+      current.tide < min.tide ? current : min
+    ), TREND_DATA[0]);
+
     return {
-      maxTide: Math.max(...tides).toFixed(2),
-      minTide: Math.min(...tides).toFixed(2)
+      maxTide: maxTidePoint.tide.toFixed(2),
+      minTide: minTidePoint.tide.toFixed(2),
+      maxTideTime: maxTidePoint.time,
+      minTideTime: minTidePoint.time,
     };
   }, []);
 
@@ -266,10 +274,10 @@ export default function WarningKeyAreasTab() {
           {/* 四大核心指标行 */}
           <div className="grid grid-cols-4 gap-3 shrink-0">
             {[
-              { label: '累计预警次数', value: '1,284', unit: '次', color: 'text-[#FF7676]', icon: AlertCircle, detail: '高风险占比 12%' },
-              { label: '指挥干预次数', value: '1,156', unit: '次', color: 'text-[#26E5D8]', icon: Pointer, detail: '及时处置率 90.2%' },
-              { label: '时段最高潮位', value: maxTide, unit: 'm', color: 'text-[#45B7D1]', icon: ArrowUpRight, detail: '出现于 12:00' },
-              { label: '时段最低潮位', value: minTide, unit: 'm', color: 'text-[#7C3AED]', icon: ArrowDownRight, detail: '出现于 04:00' },
+              { label: '累计预警次数', value: '1,284', unit: '次', color: 'text-[#FF7676]', icon: AlertCircle },
+              { label: '指挥干预次数', value: '1,156', unit: '次', color: 'text-[#26E5D8]', icon: Pointer },
+              { label: '时段最高潮位', value: maxTide, unit: 'm', time: maxTideTime, color: 'text-[#45B7D1]', icon: ArrowUpRight },
+              { label: '时段最低潮位', value: minTide, unit: 'm', time: minTideTime, color: 'text-[#7C3AED]', icon: ArrowDownRight },
             ].map((item, i) => (
               <Panel key={i} className="px-4 py-3 relative overflow-hidden group">
                 <div className="absolute top-0 right-0 p-1 opacity-5 group-hover:opacity-10 transition-opacity">
@@ -284,10 +292,12 @@ export default function WarningKeyAreasTab() {
                 <div className="flex items-baseline gap-1.5">
                   <span className={`text-2xl font-black ${item.color}`}>{item.value}</span>
                   <span className="text-[10px] text-white/20 font-bold uppercase">{item.unit}</span>
-                </div>
-                <div className="mt-2 text-[9px] text-white/30 font-medium flex items-center gap-1">
-                  <div className="w-1 h-1 rounded-full bg-white/20" />
-                  {item.detail}
+                  {item.time && (
+                    <div className="ml-3 flex items-baseline gap-1 text-[10px] font-medium">
+                      <span className="text-white/25">时间</span>
+                      <span className="text-white/55">{item.time}</span>
+                    </div>
+                  )}
                 </div>
               </Panel>
             ))}
