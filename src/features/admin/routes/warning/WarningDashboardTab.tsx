@@ -342,21 +342,21 @@ export default function WarningDashboardTab({
       </div>
 
       <div className="grid gap-4 xl:grid-cols-[2.2fr_1.1fr]">
-        <Panel className="px-6 py-1.5 flex flex-col justify-center">
+        <Panel className="px-6 py-1 flex flex-col justify-center">
           <div className="grid gap-10 lg:grid-cols-[180px_1fr] items-center">
-            <div className="flex flex-col justify-center py-4 space-y-6">
+            <div className="flex flex-col justify-center py-1 space-y-4">
               <div>
-                <div className="text-[12px] font-bold uppercase tracking-wider text-white/30">总预警次数</div>
-                <div className="mt-1 text-4xl font-black tracking-tighter text-white">
+                <div className="text-[10px] font-bold uppercase tracking-wider text-white/30">总预警次数</div>
+                <div className="mt-0.5 text-3xl font-black tracking-tighter text-white">
                   {summary.totalCount.toLocaleString()}
                 </div>
               </div>
 
               <div className="h-px bg-white/5 w-full" />
 
-              <div className="space-y-4">
-                <div className="text-[10px] font-bold uppercase tracking-wider text-white/20">潮汐统计维度</div>
-                <div className="space-y-3">
+              <div className="space-y-3">
+                <div className="text-[9px] font-bold uppercase tracking-wider text-white/20">潮汐统计维度</div>
+                <div className="space-y-2">
                   <div className="flex items-center justify-between text-[11px]">
                     <span className="text-white/40">当前平均潮位</span>
                     <span className="font-bold text-sky-400">3.42m</span>
@@ -367,27 +367,15 @@ export default function WarningDashboardTab({
                       {Math.round(summary.totalCount * 0.22).toLocaleString()} 次
                     </span>
                   </div>
-                  <div className="flex items-center justify-between text-[11px]">
-                    <span className="text-white/40">潮位变化趋势</span>
-                    <span className="flex items-center gap-1 font-bold text-red-400">
-                      涨潮 <ArrowUpRight size={10} />
-                    </span>
-                  </div>
                 </div>
               </div>
             </div>
 
-            <div className="py-2">
-              <SectionTitle title="预警趋势与潮汐分析" />
-              <div className="h-[210px]">
+            <div className="py-1">
+              <SectionTitle title="预警趋势分析" />
+              <div className="h-[200px]">
                 <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={trendData} margin={{ left: -25, right: -20, top: 10, bottom: 0 }}>
-                    <defs>
-                      <linearGradient id="tideGradient" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#0ea5e9" stopOpacity={0.3} />
-                        <stop offset="95%" stopColor="#0ea5e9" stopOpacity={0} />
-                      </linearGradient>
-                    </defs>
+                  <LineChart data={trendData} margin={{ left: -25, right: -20, top: 5, bottom: 0 }}>
                     <XAxis
                       dataKey="hour"
                       axisLine={false}
@@ -400,15 +388,6 @@ export default function WarningDashboardTab({
                       tickLine={false}
                       tick={{ fill: 'rgba(255,255,255,0.2)', fontSize: 10 }}
                     />
-                    <YAxis
-                      yAxisId="right"
-                      orientation="right"
-                      domain={[0, 6]}
-                      axisLine={false}
-                      tickLine={false}
-                      tick={{ fill: 'rgba(14, 165, 233, 0.4)', fontSize: 9 }}
-                      unit="m"
-                    />
                     <Tooltip
                       contentStyle={{
                         backgroundColor: '#0a1018',
@@ -417,16 +396,6 @@ export default function WarningDashboardTab({
                         fontSize: '11px',
                       }}
                       itemStyle={{ padding: '2px 0' }}
-                    />
-                    <Area
-                      yAxisId="right"
-                      type="monotone"
-                      dataKey="tide"
-                      name="潮汐高度"
-                      stroke="#0ea5e9"
-                      strokeWidth={1}
-                      fillOpacity={1}
-                      fill="url(#tideGradient)"
                     />
                     <Line
                       yAxisId="left"
