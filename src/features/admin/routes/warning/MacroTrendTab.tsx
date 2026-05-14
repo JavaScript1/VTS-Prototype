@@ -1,12 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { 
-  Search, 
   Calendar, 
-  Download,
-  AlertTriangle,
-  Maximize2,
-  Minimize2,
-  Map as MapIcon,
   Flame,
   Play,
   Pause,
@@ -26,7 +20,7 @@ import {
 import { Panel, FilterSelect } from './SharedComponents';
 
 // --- Types ---
-type TimeRange = '24h' | '7d' | '30d' | '自定义';
+type TimeRange = '24h' | '自定义';
 type WarningType = '全部' | '碰撞预警' | '区域入侵' | '超速预警' | '走锚预警';
 type Jurisdiction = '全部' | '外高桥' | '洋山' | '吴淞' | '宝山';
 
@@ -143,7 +137,6 @@ export default function MacroTrendTab() {
   const [timeRange, setTimeRange] = useState<TimeRange>('24h');
   const [warningType, setWarningType] = useState<WarningType>('全部');
   const [jurisdiction, setJurisdiction] = useState<Jurisdiction>('全部');
-  const [isFullscreen, setIsFullscreen] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
   const [playbackProgress, setPlaybackProgress] = useState(35);
 
@@ -241,8 +234,6 @@ export default function MacroTrendTab() {
             <div className="flex bg-[#111823] rounded-lg p-0.5 border border-white/8">
               {([
                 { id: '24h', label: '24小时' },
-                { id: '7d', label: '7天' },
-                { id: '30d', label: '30天' },
                 { id: '自定义', label: '自定义' }
               ] as const).map((t) => (
                 <button
@@ -271,32 +262,8 @@ export default function MacroTrendTab() {
         </div>
       </div>
 
-      <Panel className="relative flex-1 overflow-hidden flex min-h-0 flex-col">
-        <div className="flex items-center justify-between p-4 border-b border-white/5 shrink-0">
-          <div className="flex items-center gap-3">
-            <div className="flex h-6 w-6 items-center justify-center rounded bg-amber-500/10 text-amber-500">
-              <AlertTriangle size={14} />
-            </div>
-            <h3 className="text-xs font-black text-white uppercase tracking-widest">全辖区风险热力拓扑呈现</h3>
-            <div className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-white/5 text-[9px] font-bold text-white/30">
-              <MapIcon size={10} />
-              <span>空间分布统计</span>
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <button className="p-1.5 rounded-lg hover:bg-white/5 text-white/40 hover:text-white transition-colors">
-              <Download size={14} />
-            </button>
-            <button 
-              onClick={() => setIsFullscreen(!isFullscreen)}
-              className="p-1.5 rounded-lg hover:bg-white/5 text-white/40 hover:text-white transition-colors"
-            >
-              {isFullscreen ? <Minimize2 size={14} /> : <Maximize2 size={14} />}
-            </button>
-          </div>
-        </div>
-
-        <div className="flex-1 relative min-h-0">
+      <Panel className="relative flex min-h-0 flex-1 overflow-hidden">
+        <div className="relative flex-1 min-h-0">
           {/* 合并后的 TOP 风险区域统计图面板 */}
           <div className="absolute left-6 top-4 z-[1000] w-[240px]">
             <Panel className="border-white/10 bg-[#07111b]/85 p-3 backdrop-blur-md shadow-2xl">

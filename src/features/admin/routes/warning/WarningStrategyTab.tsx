@@ -38,7 +38,7 @@ export default function WarningStrategyTab({
 
   return (
     <div className="space-y-6">
-      <div className="overflow-hidden rounded-3xl border border-white/5 bg-[#0a101a] shadow-2xl">
+      <div className="overflow-hidden rounded-2xl border border-[#1a2733] bg-[#121821] shadow-xl">
         <div className="flex items-center justify-between border-b border-white/5 bg-white/[0.02] px-6 py-4">
           <div className="flex items-center gap-6">
             <div className="flex items-center gap-3">
@@ -76,53 +76,53 @@ export default function WarningStrategyTab({
         </div>
 
         <div className="overflow-x-auto">
-          <table className="w-full border-collapse text-left">
+          <table className="w-full min-w-[1200px] border-collapse text-left">
             <thead>
-              <tr className="border-b border-white/5 bg-white/5">
-                <th className="px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-white/30">规则名称</th>
-                <th className="px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-white/30">预警类型</th>
-                <th className="px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-white/30">等级</th>
-                <th className="px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-white/30">生效区域</th>
-                <th className="px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-white/30">状态</th>
-                <th className="px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-right text-white/30">操作</th>
+              <tr className="border-b border-white/5 bg-[#1a212d] text-[9px] font-black uppercase tracking-widest text-white/20">
+                <th className="px-4 py-2">规则名称</th>
+                <th className="px-4 py-2">预警类型</th>
+                <th className="px-4 py-2">等级</th>
+                <th className="px-4 py-2">生效区域</th>
+                <th className="px-4 py-2">状态</th>
+                <th className="px-4 py-2 text-right">操作</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-white/5">
+            <tbody>
               {filteredRules.map((rule) => {
                 const areaNames = rule.effectiveAreaIds
                   .map((id) => warningAreaLookup.get(id)?.name)
                   .filter(Boolean) as string[];
 
                 return (
-                  <tr key={rule.id} className="group transition-colors hover:bg-white/5">
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-3">
+                  <tr key={rule.id} className="group border-b border-white/5 transition-colors hover:bg-white/[0.02]">
+                    <td className="px-4 py-2">
+                      <div className="flex items-center gap-2.5">
                         <div
-                          className={`flex h-8 w-8 items-center justify-center rounded-lg border ${
+                          className={`flex h-7 w-7 items-center justify-center rounded-lg border ${
                             rule.enabled
                               ? 'border-sky-500/20 bg-sky-500/10 text-sky-400'
                               : 'border-white/10 bg-white/5 text-white/20'
                           }`}
                         >
-                          <Shield size={14} />
+                          <Shield size={13} />
                         </div>
                         <div className="flex flex-col">
-                          <span className="text-[12px] font-bold text-white/90">{rule.name}</span>
-                          <span className="text-[9px] font-bold uppercase tracking-widest text-white/30">
+                          <span className="text-[12px] font-bold text-white">{rule.name}</span>
+                          <span className="mt-0.5 text-[10px] font-mono text-white/25">
                             {rule.trigger}
                           </span>
                         </div>
                       </div>
                     </td>
-                    <td className="px-6 py-4 text-[11px] font-medium text-white/60">{rule.category}</td>
-                    <td className="px-6 py-4">
+                    <td className="px-4 py-2 text-[12px] text-white/50">{rule.category}</td>
+                    <td className="px-4 py-2">
                       <span
-                        className={`rounded border px-2 py-0.5 text-[9px] font-black uppercase tracking-widest ${SEVERITY_STYLES[rule.severity]}`}
+                        className={`rounded-md border px-2 py-0.5 text-[10px] font-black ${SEVERITY_STYLES[rule.severity]}`}
                       >
                         {rule.severity}
                       </span>
                     </td>
-                    <td className="px-6 py-4">
+                    <td className="px-4 py-2">
                       <div className="flex max-w-[240px] flex-wrap gap-1.5">
                         {areaNames.length > 0 ? (
                           areaNames.slice(0, 3).map((name) => (
@@ -134,7 +134,7 @@ export default function WarningStrategyTab({
                             </span>
                           ))
                         ) : (
-                          <span className="text-[11px] text-white/20">未指定</span>
+                          <span className="text-[12px] text-white/20">未指定</span>
                         )}
                         {areaNames.length > 3 && (
                           <span className="rounded-md border border-sky-500/10 bg-sky-500/5 px-2 py-0.5 text-[10px] font-bold text-sky-400">
@@ -143,7 +143,7 @@ export default function WarningStrategyTab({
                         )}
                       </div>
                     </td>
-                    <td className="px-6 py-4">
+                    <td className="px-4 py-2">
                       <button
                         onClick={() => onToggleRule(rule.id)}
                         className={`relative h-5 w-10 rounded-full transition-all duration-300 ${
@@ -157,12 +157,12 @@ export default function WarningStrategyTab({
                         />
                       </button>
                     </td>
-                    <td className="px-6 py-4 text-right">
+                    <td className="px-4 py-2 text-right">
                       <button
                         onClick={() => onOpenRuleConfig(rule.id)}
-                        className="rounded-lg p-2 text-white/40 transition-all hover:bg-sky-500/20 hover:text-sky-400"
+                        className="rounded-lg border border-[#0a537d] bg-[#083652] px-2.5 py-1 text-[#18c4ff] transition-all hover:border-[#18c4ff] hover:bg-[#0d476b]"
                       >
-                        <Settings size={14} />
+                        <Settings size={13} />
                       </button>
                     </td>
                   </tr>

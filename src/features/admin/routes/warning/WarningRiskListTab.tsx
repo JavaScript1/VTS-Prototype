@@ -37,6 +37,10 @@ export default function WarningRiskListTab({
   onPlayback,
 }: WarningRiskListTabProps) {
   const [timeRange, setTimeRange] = useState('今天');
+  const [customRange, setCustomRange] = useState({
+    start: '2026-05-01',
+    end: '2026-05-07',
+  });
   const [jurisdictionFilter, setJurisdictionFilter] = useState<JurisdictionFilter>('全辖区');
   const [riskTypeFilter, setRiskTypeFilter] = useState('全部');
   const [statusFilter, setStatusFilter] = useState('全部');
@@ -60,7 +64,11 @@ export default function WarningRiskListTab({
         item.name.toLowerCase().includes(keyword) ||
         item.englishName.toLowerCase().includes(keyword) ||
         item.mmsi.includes(keyword);
-      const matchesTime = timeRange === '今天' || timeRange === '近3天' || timeRange === '近7天';
+      const matchesTime =
+        timeRange === '今天' ||
+        timeRange === '近3天' ||
+        timeRange === '近7天' ||
+        timeRange === '自定义';
       const itemJurisdiction = LOCATION_JURISDICTION_MAP[item.snapshot.location];
       const matchesJurisdiction =
         jurisdictionFilter === '全辖区' || itemJurisdiction === jurisdictionFilter;
@@ -115,7 +123,7 @@ export default function WarningRiskListTab({
             <FilterSelect
               icon={<Clock3 size={12} className="text-[#18c4ff]" />}
               value={timeRange}
-              options={['今天', '近3天', '近7天']}
+              options={['今天', '近3天', '近7天', '自定义']}
               onChange={(value) => {
                 setTimeRange(value);
                 setCurrentPage(1);
@@ -169,6 +177,29 @@ export default function WarningRiskListTab({
           </div>
 
           <div className="flex items-center gap-2">
+            {timeRange === '自定义' && (
+              <div className="flex items-center gap-2 rounded-xl border border-white/8 bg-[#111823] px-2.5 py-1.5 text-[10px] font-bold text-white/60">
+                <input
+                  type="date"
+                  value={customRange.start}
+                  onChange={(event) => {
+                    setCustomRange((current) => ({ ...current, start: event.target.value }));
+                    setCurrentPage(1);
+                  }}
+                  className="bg-transparent text-[10px] font-bold text-white outline-none"
+                />
+                <span className="text-white/20">-</span>
+                <input
+                  type="date"
+                  value={customRange.end}
+                  onChange={(event) => {
+                    setCustomRange((current) => ({ ...current, end: event.target.value }));
+                    setCurrentPage(1);
+                  }}
+                  className="bg-transparent text-[10px] font-bold text-white outline-none"
+                />
+              </div>
+            )}
             <div className="group relative">
               <Search
                 size={12}
