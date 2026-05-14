@@ -52,19 +52,19 @@ export default function AreaSettingsRoute({
         <table className="w-full border-collapse text-left">
           <thead>
             <tr className="border-b border-white/10 bg-white/[0.05]">
-              <th className="px-4 py-4 text-[11px] font-bold text-white/40">区域名称</th>
-              <th className="px-4 py-4 text-[11px] font-bold text-white/40">类型</th>
-              <th className="px-4 py-4 text-[11px] font-bold text-white/40">状态</th>
-              <th className="px-4 py-4 text-[11px] font-bold text-white/40">字段数</th>
+              <th className="px-4 py-2.5 text-[11px] font-bold text-white/40">区域名称</th>
+              <th className="px-4 py-2.5 text-[11px] font-bold text-white/40">类型</th>
+              <th className="px-4 py-2.5 text-[11px] font-bold text-white/40">状态</th>
+              <th className="px-4 py-2.5 text-[11px] font-bold text-white/40">字段数</th>
             </tr>
           </thead>
           <tbody>
             {areas.map((area) => (
               <tr key={area.id} className="border-b border-white/5 last:border-b-0 hover:bg-white/[0.03]">
-                <td className="px-4 py-4 text-[13px] text-white/88">{area.name}</td>
-                <td className="px-4 py-4 text-[12px] text-white/55">{area.type}</td>
-                <td className="px-4 py-4 text-[12px] text-white/55">{area.status}</td>
-                <td className="px-4 py-4 text-[12px] text-white/55">{Object.keys(area.fields || {}).length}</td>
+                <td className="px-4 py-2.5 text-[12px] text-white/88">{area.name}</td>
+                <td className="px-4 py-2.5 text-[11px] text-white/55">{area.type}</td>
+                <td className="px-4 py-2.5 text-[11px] text-white/55">{area.status}</td>
+                <td className="px-4 py-2.5 text-[11px] text-white/55">{Object.keys(area.fields || {}).length}</td>
               </tr>
             ))}
           </tbody>

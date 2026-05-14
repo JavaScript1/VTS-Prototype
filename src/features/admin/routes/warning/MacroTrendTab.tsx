@@ -256,10 +256,6 @@ export default function MacroTrendTab() {
               <span>04-11 ~ 05-11</span>
             </div>
           )}
-          <button className="flex items-center gap-2 rounded-lg bg-[#18c4ff] px-4 py-1.5 text-[10px] font-black text-white shadow-lg shadow-sky-500/20 transition-all hover:bg-sky-400 active:scale-95">
-            <Search size={12} />
-            聚合分析
-          </button>
         </div>
       </div>
 
@@ -272,7 +268,7 @@ export default function MacroTrendTab() {
             <h3 className="text-xs font-black text-white uppercase tracking-widest">全辖区风险热力拓扑呈现</h3>
             <div className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-white/5 text-[9px] font-bold text-white/30">
               <MapIcon size={10} />
-              <span>SPATIAL STATISTICS</span>
+              <span>空间分布统计</span>
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -425,7 +421,7 @@ export default function MacroTrendTab() {
                 
                 <div className="flex-1 flex flex-col gap-1.5">
                   <div className="flex justify-between text-[10px] font-black text-white/40 uppercase tracking-widest">
-                    <span>Playback Timeline</span>
+                    <span>回放时间轴</span>
                     <span className="text-sky-400">2026-05-11 12:45:00</span>
                   </div>
                   <div className="relative h-1.5 w-full rounded-full bg-white/10">
@@ -442,7 +438,7 @@ export default function MacroTrendTab() {
                 
                 <div className="flex flex-col items-center">
                   <span className="text-[14px] font-black text-white">1x</span>
-                  <span className="text-[8px] text-white/30 uppercase font-bold">Speed</span>
+                  <span className="text-[8px] text-white/30 uppercase font-bold">倍速</span>
                 </div>
               </div>
             </div>

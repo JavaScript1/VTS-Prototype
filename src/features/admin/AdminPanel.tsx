@@ -104,16 +104,29 @@ export default function AdminPanel({
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[6000] flex flex-col overflow-hidden bg-[#050a10]">
       <header className="flex h-12 shrink-0 items-center justify-between border-b border-white/5 bg-[#0a101a] px-4">
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-6">
           <button onClick={onClose} className="flex items-center gap-2 rounded-full p-2 text-white/60 transition-all hover:bg-white/5 hover:text-white">
             <ArrowLeft size={18} />
             <span className="text-xs font-bold">返回地图</span>
           </button>
+
+          <div className="h-4 w-px bg-white/10" />
+
+          <div className="flex items-center gap-3">
+            <h2 className="flex items-center gap-2.5 text-sm font-black tracking-tight text-white/90">
+              <div className="h-3.5 w-1 rounded-full bg-sky-500" />
+              {activeMenu}
+            </h2>
+            <div className="text-[10px] font-mono text-white/20 pt-0.5">
+              后台管理 / {activeMenu}
+              {playbackData ? ' / 已选回放对象' : ''}
+            </div>
+          </div>
         </div>
       </header>
 
       <div className="flex flex-1 overflow-hidden">
-        <aside className="flex w-56 shrink-0 flex-col border-r border-white/5 bg-[#0a101a]/50">
+        <aside className="flex w-auto min-w-[180px] shrink-0 flex-col border-r border-white/5 bg-[#0a101a]/50">
           <div className="mb-2 flex items-center gap-2 border-b border-white/5 p-4 text-white/80">
             <Settings size={16} className="text-sky-400" />
             <span className="text-sm font-black tracking-widest">后台管理系统</span>
@@ -134,16 +147,6 @@ export default function AdminPanel({
         </aside>
 
         <main className="flex min-h-0 flex-1 flex-col overflow-y-auto bg-[#050a10] p-3">
-          <div className="mb-3 shrink-0 flex items-center justify-between">
-            <h2 className="flex items-center gap-3 text-lg font-black tracking-tight text-white/90">
-              <div className="h-6 w-1 rounded-full bg-sky-500" />
-              {activeMenu}
-            </h2>
-            <div className="text-xs font-mono text-white/30">
-              后台管理 / {activeMenu}
-              {playbackData ? ' / 已选回放对象' : ''}
-            </div>
-          </div>
           <AnimatePresence mode="wait">
             <motion.div
               key={activeMenu}

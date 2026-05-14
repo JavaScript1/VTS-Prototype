@@ -75,12 +75,6 @@ export default function VesselSymbolConfigRoute() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-6">
-          <div className="flex items-center gap-3">
-            <div className="h-4 w-1 rounded-full bg-sky-500" />
-            <h3 className="whitespace-nowrap text-xs font-black uppercase tracking-widest text-white/90">
-              船舶符号图例库配置
-            </h3>
-          </div>
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2 rounded-lg border border-white/5 bg-white/[0.03] px-2.5 py-1">
               <span className="text-[10px] font-black uppercase tracking-wider text-white/20">符号总数</span>
@@ -109,23 +103,23 @@ export default function VesselSymbolConfigRoute() {
         <table className="w-full border-collapse text-left">
           <thead>
             <tr className="border-b border-white/5 bg-white/[0.02]">
-              <th className="px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-white/30">序号</th>
-              <th className="px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-white/30">预览</th>
-              <th className="px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-white/30">名称</th>
-              <th className="px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-white/30">符号代码</th>
-              <th className="px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-white/30">船型分类</th>
-              <th className="px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-white/30">修改时间</th>
-              <th className="px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-white/30">状态</th>
-              <th className="px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-right text-white/30">操作</th>
+              <th className="px-6 py-2.5 text-[10px] font-black uppercase tracking-[0.2em] text-white/30">序号</th>
+              <th className="px-6 py-2.5 text-[10px] font-black uppercase tracking-[0.2em] text-white/30">预览</th>
+              <th className="px-6 py-2.5 text-[10px] font-black uppercase tracking-[0.2em] text-white/30">名称</th>
+              <th className="px-6 py-2.5 text-[10px] font-black uppercase tracking-[0.2em] text-white/30">符号代码</th>
+              <th className="px-6 py-2.5 text-[10px] font-black uppercase tracking-[0.2em] text-white/30">船型分类</th>
+              <th className="px-6 py-2.5 text-[10px] font-black uppercase tracking-[0.2em] text-white/30">修改时间</th>
+              <th className="px-6 py-2.5 text-[10px] font-black uppercase tracking-[0.2em] text-white/30">状态</th>
+              <th className="px-6 py-2.5 text-[10px] font-black uppercase tracking-[0.2em] text-right text-white/30">操作</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-white/5">
             {filteredSymbols.map((symbol, index) => (
               <tr key={symbol.id} className="group transition-colors hover:bg-white/5">
-                <td className="px-6 py-5 text-[11px] font-mono text-white/20">{(index + 1).toString().padStart(2, '0')}</td>
-                <td className="px-6 py-5">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-black/40 border border-white/5">
-                    <div className="ship-marker scale-75" style={{ '--ship-rotation': '45deg', width: '30px', height: '30px', position: 'relative' } as any}>
+                <td className="px-6 py-3 text-[11px] font-mono text-white/20">{(index + 1).toString().padStart(2, '0')}</td>
+                <td className="px-6 py-3">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-black/40 border border-white/5">
+                    <div className="ship-marker scale-[0.6]" style={{ '--ship-rotation': '45deg', width: '30px', height: '30px', position: 'relative' } as any}>
                       <div className="ship-marker__halo" style={{ background: `radial-gradient(circle, ${symbol.haloColor}, transparent 72%)`, position: 'absolute', inset: '6px' }}></div>
                       <div className="ship-marker__body" style={{ background: `linear-gradient(90deg, ${symbol.bodyColor} 0%, ${symbol.color} 100%)`, width: '20px', height: '10px', position: 'absolute', top: '9px', left: '5px' }}>
                         <span className="ship-marker__bridge" style={{ backgroundColor: symbol.bridgeColor, position: 'absolute', top: '2px', left: '4px', width: '5px', height: '5px' }}></span>
@@ -133,34 +127,34 @@ export default function VesselSymbolConfigRoute() {
                     </div>
                   </div>
                 </td>
-                <td className="px-6 py-5">
-                  <span className="text-[12px] font-bold text-white/90">{symbol.name}</span>
+                <td className="px-6 py-3">
+                  <span className="text-[12px] font-bold text-white/80">{symbol.name}</span>
                 </td>
-                <td className="px-6 py-5">
-                  <span className="text-[10px] font-mono text-white/40">{symbol.code}</span>
+                <td className="px-6 py-3">
+                  <span className="text-[10px] font-mono text-white/30">{symbol.code}</span>
                 </td>
-                <td className="px-6 py-5">
-                  <span className="rounded-md border border-white/10 bg-white/5 px-2 py-0.5 text-[10px] font-bold text-white/60">
+                <td className="px-6 py-3">
+                  <span className="rounded-md border border-white/10 bg-white/5 px-2 py-0.5 text-[10px] font-bold text-white/50">
                     {symbol.category}
                   </span>
                 </td>
-                <td className="px-6 py-5 text-[11px] font-mono text-white/30">{symbol.updatedAt}</td>
-                <td className="px-6 py-5">
+                <td className="px-6 py-3 text-[11px] font-mono text-white/25">{symbol.updatedAt}</td>
+                <td className="px-6 py-3">
                   <button
                     onClick={() => handleToggle(symbol.id)}
-                    className={`relative h-5 w-10 rounded-full transition-all duration-300 ${
-                      symbol.enabled ? 'bg-sky-500 shadow-[0_0_10px_rgba(14,165,233,0.4)]' : 'bg-white/10'
+                    className={`relative h-4.5 w-9 rounded-full transition-all duration-300 ${
+                      symbol.enabled ? 'bg-sky-500 shadow-[0_0_8px_rgba(14,165,233,0.3)]' : 'bg-white/10'
                     }`}
                   >
-                    <div className={`absolute top-1 h-3 w-3 rounded-full bg-white transition-all duration-300 ${symbol.enabled ? 'left-6' : 'left-1'}`} />
+                    <div className={`absolute top-0.5 h-2.5 w-2.5 rounded-full bg-white transition-all duration-300 ${symbol.enabled ? 'left-5.5' : 'left-1'}`} />
                   </button>
                 </td>
-                <td className="px-6 py-5 text-right">
+                <td className="px-6 py-3 text-right">
                   <button 
                     onClick={() => setEditingSymbol(symbol)}
-                    className="rounded-lg p-2 text-white/40 transition-all hover:bg-sky-500/20 hover:text-sky-400"
+                    className="rounded-lg p-1.5 text-white/30 transition-all hover:bg-sky-500/20 hover:text-sky-400"
                   >
-                    <Settings size={14} />
+                    <Settings size={13} />
                   </button>
                 </td>
               </tr>

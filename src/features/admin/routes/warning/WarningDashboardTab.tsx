@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { ArrowDownRight, ArrowUpRight, CalendarRange, Check, Download, MapPinned } from 'lucide-react';
 import {
+  Area,
   Cell,
   Line,
   LineChart,
@@ -52,6 +53,7 @@ const TREND_JURISDICTION_WEIGHT: Record<Jurisdiction, number[]> = {
 const RISK_DIMENSION_JURISDICTION_WEIGHT: Record<string, Partial<Record<Jurisdiction, number>>> = {
   航道内偏航: { 外高桥: 0.26, 洋山: 0.14, 吴淞: 0.22, 宝山: 0.38 },
   反航道航行: { 外高桥: 0.24, 洋山: 0.13, 吴淞: 0.34, 宝山: 0.29 },
+  潮汐因素: { 外高桥: 0.25, 洋山: 0.35, 吴淞: 0.2, 宝山: 0.2 },
   非掉头区掉头: { 外高桥: 0.15, 洋山: 0.11, 吴淞: 0.31, 宝山: 0.43 },
   航道内滞航: { 外高桥: 0.36, 洋山: 0.15, 吴淞: 0.18, 宝山: 0.31 },
   进入特定区域: { 外高桥: 0.41, 洋山: 0.17, 吴淞: 0.28, 宝山: 0.14 },
@@ -208,7 +210,7 @@ export default function WarningDashboardTab({
         return {
           ...item,
           warning: roundBySelection(item.warning, weight),
-          handled: Math.max(0, roundBySelection(item.handled, weight)),
+          tide: item.tide,
         };
       }),
     [selectedJurisdictions],
@@ -297,7 +299,7 @@ export default function WarningDashboardTab({
                       : 'text-white/30 hover:text-white/50'
                   }`}
                 >
-                  {item === '昨日分析' ? 'YESTERDAY' : 'CUSTOM'}
+                  {item === '昨日分析' ? '昨日' : '自定义'}
                 </button>
               ))}
             </div>
@@ -325,7 +327,7 @@ export default function WarningDashboardTab({
 
         <div className="flex items-center gap-3">
           <div className="flex flex-col items-end">
-            <span className="text-[9px] uppercase tracking-widest text-white/30 font-bold leading-none">ANALYSIS DATE</span>
+            <span className="text-[9px] uppercase tracking-widest text-white/30 font-bold leading-none">分析日期</span>
             <span className="text-[10px] font-black text-white/60">{periodLabel}</span>
           </div>
           <div className="h-6 w-px bg-white/10" />
@@ -334,34 +336,58 @@ export default function WarningDashboardTab({
             className="flex items-center gap-1.5 rounded-lg bg-sky-500 px-3 py-1.5 text-[10px] font-black text-white shadow-lg shadow-sky-500/20 transition-all hover:bg-sky-400 active:scale-95"
           >
             <Download size={12} />
-            REPORT
+            导出报告
           </button>
         </div>
       </div>
 
       <div className="grid gap-4 xl:grid-cols-[2.2fr_1.1fr]">
-        <Panel className="p-4">
-          <div className="grid gap-5 lg:grid-cols-[160px_1fr]">
-            <div className="flex flex-col justify-center">
-              <div className="text-[11px] font-bold uppercase tracking-wider text-white/30">总预警次数</div>
-              <div className="mt-1 text-3xl font-black tracking-tighter text-white">
-                {summary.totalCount.toLocaleString()}
-              </div>
-              <div className="mt-4 flex items-center gap-2">
-                <div className="flex h-5 w-5 items-center justify-center rounded bg-red-500/20 text-red-400">
-                  <ArrowUpRight size={12} />
+        <Panel className="px-6 py-1.5 flex flex-col justify-center">
+          <div className="grid gap-10 lg:grid-cols-[180px_1fr] items-center">
+            <div className="flex flex-col justify-center py-4 space-y-6">
+              <div>
+                <div className="text-[12px] font-bold uppercase tracking-wider text-white/30">总预警次数</div>
+                <div className="mt-1 text-4xl font-black tracking-tighter text-white">
+                  {summary.totalCount.toLocaleString()}
                 </div>
-                <div className="text-[10px] font-bold text-white/40">
-                  较昨日 <span className="text-red-400">+8.4%</span>
+              </div>
+
+              <div className="h-px bg-white/5 w-full" />
+
+              <div className="space-y-4">
+                <div className="text-[10px] font-bold uppercase tracking-wider text-white/20">潮汐统计维度</div>
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between text-[11px]">
+                    <span className="text-white/40">当前平均潮位</span>
+                    <span className="font-bold text-sky-400">3.42m</span>
+                  </div>
+                  <div className="flex items-center justify-between text-[11px]">
+                    <span className="text-white/40">潮位关联预警</span>
+                    <span className="font-bold text-white/80">
+                      {Math.round(summary.totalCount * 0.22).toLocaleString()} 次
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between text-[11px]">
+                    <span className="text-white/40">潮位变化趋势</span>
+                    <span className="flex items-center gap-1 font-bold text-red-400">
+                      涨潮 <ArrowUpRight size={10} />
+                    </span>
+                  </div>
                 </div>
               </div>
             </div>
 
-            <div>
-              <SectionTitle title="预警趋势分析" />
-              <div className="h-[160px]">
+            <div className="py-2">
+              <SectionTitle title="预警趋势与潮汐分析" />
+              <div className="h-[210px]">
                 <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={trendData} margin={{ left: -25, right: 5, top: 10, bottom: 0 }}>
+                  <LineChart data={trendData} margin={{ left: -25, right: -20, top: 10, bottom: 0 }}>
+                    <defs>
+                      <linearGradient id="tideGradient" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#0ea5e9" stopOpacity={0.3} />
+                        <stop offset="95%" stopColor="#0ea5e9" stopOpacity={0} />
+                      </linearGradient>
+                    </defs>
                     <XAxis
                       dataKey="hour"
                       axisLine={false}
@@ -369,9 +395,19 @@ export default function WarningDashboardTab({
                       tick={{ fill: 'rgba(255,255,255,0.2)', fontSize: 10 }}
                     />
                     <YAxis
+                      yAxisId="left"
                       axisLine={false}
                       tickLine={false}
                       tick={{ fill: 'rgba(255,255,255,0.2)', fontSize: 10 }}
+                    />
+                    <YAxis
+                      yAxisId="right"
+                      orientation="right"
+                      domain={[0, 6]}
+                      axisLine={false}
+                      tickLine={false}
+                      tick={{ fill: 'rgba(14, 165, 233, 0.4)', fontSize: 9 }}
+                      unit="m"
                     />
                     <Tooltip
                       contentStyle={{
@@ -380,8 +416,20 @@ export default function WarningDashboardTab({
                         borderRadius: '12px',
                         fontSize: '11px',
                       }}
+                      itemStyle={{ padding: '2px 0' }}
+                    />
+                    <Area
+                      yAxisId="right"
+                      type="monotone"
+                      dataKey="tide"
+                      name="潮汐高度"
+                      stroke="#0ea5e9"
+                      strokeWidth={1}
+                      fillOpacity={1}
+                      fill="url(#tideGradient)"
                     />
                     <Line
+                      yAxisId="left"
                       type="monotone"
                       dataKey="warning"
                       name="预警次数"
@@ -391,6 +439,7 @@ export default function WarningDashboardTab({
                       activeDot={{ r: 4, strokeWidth: 0, fill: '#18bfff' }}
                     />
                     <Line
+                      yAxisId="left"
                       type="monotone"
                       dataKey="handled"
                       name="干预次数"

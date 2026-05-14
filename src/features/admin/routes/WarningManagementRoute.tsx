@@ -130,16 +130,7 @@ export default function WarningManagementRoute({
     <div className="flex h-full min-h-full flex-col overflow-hidden bg-[#050a10]">
       <div className="flex h-12 shrink-0 items-center justify-between border-b border-white/5 bg-[#0a101a]/30 px-2 backdrop-blur-xl">
         <div className="flex items-center gap-4">
-          <div className="flex items-center gap-2.5">
-            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-sky-500/10 text-sky-400">
-              <Shield size={16} />
-            </div>
-            <span className="text-[13px] font-black uppercase tracking-widest text-white">
-              预警与风险管理
-            </span>
-          </div>
-
-          <nav className="flex items-center gap-1 rounded-xl bg-white/5 p-1">
+          <nav className="flex items-center gap-1 rounded-xl bg-white/5 p-1 ml-1">
             {WARNING_TABS.map((tab) => (
               <button
                 key={tab.id}

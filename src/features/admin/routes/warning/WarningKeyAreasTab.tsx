@@ -61,13 +61,13 @@ const KEY_VESSEL_DATA = [
 ];
 
 const TREND_DATA = [
-  { time: '00:00', warnings: 12, flow: 124 },
-  { time: '04:00', warnings: 8, flow: 98 },
-  { time: '08:00', warnings: 45, flow: 256 },
-  { time: '12:00', warnings: 32, flow: 210 },
-  { time: '16:00', warnings: 58, flow: 288 },
-  { time: '20:00', warnings: 24, flow: 156 },
-  { time: '23:59', warnings: 15, flow: 110 },
+  { time: '00:00', warnings: 12, handled: 10 },
+  { time: '04:00', warnings: 8, handled: 7 },
+  { time: '08:00', warnings: 45, handled: 38 },
+  { time: '12:00', warnings: 32, handled: 28 },
+  { time: '16:00', warnings: 58, handled: 42 },
+  { time: '20:00', warnings: 24, handled: 20 },
+  { time: '23:59', warnings: 15, handled: 12 },
 ];
 
 const COMPARISON_DATA = [
@@ -134,10 +134,6 @@ export default function WarningKeyAreasTab() {
               <span>05-08 ~ 05-09</span>
             </div>
           )}
-          <button className="flex items-center gap-2 rounded-lg bg-[#18c4ff] px-4 py-1.5 text-[10px] font-black text-white shadow-lg shadow-sky-500/20 transition-all hover:bg-sky-400 active:scale-95">
-            <Search size={12} />
-            执行分析
-          </button>
         </div>
       </div>
 
@@ -169,13 +165,12 @@ export default function WarningKeyAreasTab() {
           </div>
 
           <Panel className="flex-1 p-5 flex flex-col min-h-0">
-            <SectionTitle title="预警触发与交通流量趋势" icon={<TrendingUp size={14} />} />
+            <SectionTitle title="预警触发与干预趋势" icon={<TrendingUp size={14} />} />
             <div className="flex-1 min-h-0">
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={TREND_DATA} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                   <XAxis dataKey="time" axisLine={false} tickLine={false} tick={{ fill: 'rgba(255,255,255,0.2)', fontSize: 10 }} />
-                  <YAxis yAxisId="left" axisLine={false} tickLine={false} tick={{ fill: 'rgba(255,255,255,0.2)', fontSize: 10 }} />
-                  <YAxis yAxisId="right" orientation="right" axisLine={false} tickLine={false} tick={{ fill: 'rgba(255,255,255,0.2)', fontSize: 10 }} />
+                  <YAxis axisLine={false} tickLine={false} tick={{ fill: 'rgba(255,255,255,0.2)', fontSize: 10 }} />
                   <Tooltip 
                     contentStyle={{ backgroundColor: '#0a1018', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px', fontSize: '11px' }}
                   />
@@ -186,7 +181,6 @@ export default function WarningKeyAreasTab() {
                     wrapperStyle={{ paddingBottom: '10px', fontSize: '10px' }} 
                   />
                   <Line 
-                    yAxisId="left"
                     type="monotone" 
                     dataKey="warnings" 
                     name="预警次数" 
@@ -196,14 +190,14 @@ export default function WarningKeyAreasTab() {
                     activeDot={{ r: 4, fill: '#ff5e85', strokeWidth: 0 }} 
                   />
                   <Line 
-                    yAxisId="right"
                     type="monotone" 
-                    dataKey="flow" 
-                    name="交通流量" 
-                    stroke="#18c4ff" 
-                    strokeWidth={3} 
+                    dataKey="handled" 
+                    name="干预次数" 
+                    stroke="#17d6a2" 
+                    strokeWidth={2} 
+                    strokeDasharray="4 4"
                     dot={false}
-                    activeDot={{ r: 4, fill: '#18c4ff', strokeWidth: 0 }} 
+                    activeDot={{ r: 4, fill: '#17d6a2', strokeWidth: 0 }} 
                   />
                 </LineChart>
               </ResponsiveContainer>
