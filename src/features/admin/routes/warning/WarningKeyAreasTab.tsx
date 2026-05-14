@@ -143,27 +143,27 @@ function TrendChart({ data }: { data: typeof TREND_DATA }) {
           name: '预警',
           type: 'bar',
           data: data.map(item => item.warnings),
-          barWidth: 14,
+          barWidth: 12,
           itemStyle: {
             color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
               { offset: 0, color: '#FF7676' },
               { offset: 1, color: 'rgba(255, 118, 118, 0.2)' }
             ]),
-            borderRadius: [3, 3, 0, 0]
+            borderRadius: [2, 2, 0, 0]
           }
         },
         {
           name: '干预',
           type: 'bar',
           data: data.map(item => item.handled),
-          barWidth: 10,
-          barGap: '-70%',
+          barWidth: 12,
+          barGap: '30%',
           itemStyle: {
             color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
               { offset: 0, color: '#26E5D8' },
               { offset: 1, color: 'rgba(38, 229, 216, 0.1)' }
             ]),
-            borderRadius: [3, 3, 0, 0]
+            borderRadius: [2, 2, 0, 0]
           }
         },
         {
