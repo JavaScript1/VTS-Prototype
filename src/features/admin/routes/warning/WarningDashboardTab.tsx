@@ -378,14 +378,14 @@ export default function WarningDashboardTab({
                   <LineChart data={trendData} margin={{ left: -25, right: -20, top: 5, bottom: 0 }}>
                     <XAxis
                       dataKey="hour"
-                      axisLine={false}
-                      tickLine={false}
+                      axisLine={{ stroke: 'rgba(255,255,255,0.1)' }}
+                      tickLine={{ stroke: 'rgba(255,255,255,0.1)' }}
                       tick={{ fill: 'rgba(255,255,255,0.2)', fontSize: 10 }}
                     />
                     <YAxis
                       yAxisId="left"
-                      axisLine={false}
-                      tickLine={false}
+                      axisLine={{ stroke: 'rgba(255,255,255,0.1)' }}
+                      tickLine={{ stroke: 'rgba(255,255,255,0.1)' }}
                       tick={{ fill: 'rgba(255,255,255,0.2)', fontSize: 10 }}
                     />
                     <Tooltip

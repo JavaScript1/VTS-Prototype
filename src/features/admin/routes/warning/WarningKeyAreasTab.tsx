@@ -29,6 +29,7 @@ import {
   PolarGrid,
   PolarAngleAxis,
   PolarRadiusAxis,
+  ComposedChart,
 } from 'recharts';
 import { Panel, SectionTitle, FilterSelect } from './SharedComponents';
 
@@ -36,6 +37,17 @@ import { Panel, SectionTitle, FilterSelect } from './SharedComponents';
 type Jurisdiction = '外高桥' | '洋山' | '吴淞' | '宝山';
 type SpecialArea = '圆圆沙警戒区' | '吴淞口警戒区' | '核心航道' | '锚地群';
 type TimeRange = '最近24小时' | '自定义时间';
+
+// --- Color Palette (Modern Cyber/Professional) ---
+const COLORS = {
+  primary: '#00f2ff',    // Electric Cyan
+  secondary: '#7000ff',  // Deep Purple
+  success: '#00ffa3',    // Emerald Green
+  warning: '#ffe600',    // Bright Yellow/Gold
+  danger: '#ff2e63',     // Vivid Pink/Red
+  muted: 'rgba(255, 255, 255, 0.2)',
+  chartBg: '#0a1018'
+};
 
 // --- Mock Data ---
 const JURISDICTIONS: Jurisdiction[] = ['外高桥', '洋山', '吴淞', '宝山'];
@@ -47,27 +59,20 @@ const AREAS_BY_JURISDICTION: Record<Jurisdiction, string[]> = {
 };
 
 const VESSEL_TYPE_DATA = [
-  { name: '集装箱船', value: 45, color: '#18c4ff' },
-  { name: '油船', value: 25, color: '#ff5e85' },
-  { name: '散货船', value: 15, color: '#ffb946' },
-  { name: '其他', value: 15, color: '#7c3aed' },
-];
-
-const KEY_VESSEL_DATA = [
-  { name: '危险品船', value: 12, color: '#ff5e85' },
-  { name: '油船', value: 28, color: '#ffb946' },
-  { name: '客船', value: 8, color: '#18c4ff' },
-  { name: '游轮', value: 5, color: '#17d68d' },
+  { name: '集装箱船', value: 45, color: COLORS.primary },
+  { name: '油船', value: 25, color: COLORS.danger },
+  { name: '散货船', value: 15, color: COLORS.warning },
+  { name: '其他', value: 15, color: COLORS.secondary },
 ];
 
 const TREND_DATA = [
-  { time: '00:00', warnings: 12, handled: 10 },
-  { time: '04:00', warnings: 8, handled: 7 },
-  { time: '08:00', warnings: 45, handled: 38 },
-  { time: '12:00', warnings: 32, handled: 28 },
-  { time: '16:00', warnings: 58, handled: 42 },
-  { time: '20:00', warnings: 24, handled: 20 },
-  { time: '23:59', warnings: 15, handled: 12 },
+  { time: '00:00', warnings: 12, handled: 10, tide: 3.2 },
+  { time: '04:00', warnings: 8, handled: 7, tide: 1.5 },
+  { time: '08:00', warnings: 45, handled: 38, tide: 2.8 },
+  { time: '12:00', warnings: 32, handled: 28, tide: 4.8 },
+  { time: '16:00', warnings: 58, handled: 42, tide: 2.8 },
+  { time: '20:00', warnings: 24, handled: 20, tide: 1.5 },
+  { time: '23:59', warnings: 15, handled: 12, tide: 3.4 },
 ];
 
 const COMPARISON_DATA = [
@@ -142,9 +147,9 @@ export default function WarningKeyAreasTab() {
           {/* 紧凑型指标行 */}
           <div className="grid grid-cols-4 gap-3 shrink-0">
             {[
-              { label: '风险触发', value: '452', unit: '次', color: 'text-[#ff5e85]', icon: AlertCircle, trend: '+12%', up: true },
-              { label: '瞬时流量', value: '1,284', unit: '艘', color: 'text-sky-400', icon: Activity, trend: '256/h', up: true },
-              { label: '监管船舶', value: '53', unit: '艘', color: 'text-amber-400', icon: Anchor, trend: '-3%', up: false },
+              { label: '风险触发', value: '452', unit: '次', color: 'text-[#ff2e63]', icon: AlertCircle, trend: '+12%', up: true },
+              { label: '瞬时流量', value: '1,284', unit: '艘', color: 'text-[#00f2ff]', icon: Activity, trend: '256/h', up: true },
+              { label: '监管船舶', value: '53', unit: '艘', color: 'text-[#ffe600]', icon: Anchor, trend: '-3%', up: false },
               { label: '实时在航', value: '124', unit: '艘', color: 'text-white/90', icon: Users, trend: '稳定', up: null },
             ].map((item, i) => (
               <Panel key={i} className="px-3 py-2">
@@ -168,11 +173,22 @@ export default function WarningKeyAreasTab() {
             <SectionTitle title="预警触发与干预趋势" icon={<TrendingUp size={14} />} />
             <div className="flex-1 min-h-0">
               <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={TREND_DATA} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                  <XAxis dataKey="time" axisLine={false} tickLine={false} tick={{ fill: 'rgba(255,255,255,0.2)', fontSize: 10 }} />
-                  <YAxis axisLine={false} tickLine={false} tick={{ fill: 'rgba(255,255,255,0.2)', fontSize: 10 }} />
+                <ComposedChart data={TREND_DATA} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                  <XAxis 
+                    dataKey="time" 
+                    axisLine={{ stroke: 'rgba(255,255,255,0.1)' }} 
+                    tickLine={{ stroke: 'rgba(255,255,255,0.1)' }} 
+                    tick={{ fill: COLORS.muted, fontSize: 10 }} 
+                  />
+                  <YAxis 
+                    yAxisId="left" 
+                    axisLine={{ stroke: 'rgba(255,255,255,0.1)' }} 
+                    tickLine={{ stroke: 'rgba(255,255,255,0.1)' }} 
+                    tick={{ fill: COLORS.muted, fontSize: 10 }} 
+                  />
+                  <YAxis yAxisId="right" orientation="right" axisLine={false} tickLine={false} tick={{ fill: COLORS.muted, fontSize: 10 }} hide />
                   <Tooltip 
-                    contentStyle={{ backgroundColor: '#0a1018', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px', fontSize: '11px' }}
+                    contentStyle={{ backgroundColor: COLORS.chartBg, border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px', fontSize: '11px' }}
                   />
                   <Legend 
                     verticalAlign="top" 
@@ -180,52 +196,59 @@ export default function WarningKeyAreasTab() {
                     iconType="circle" 
                     wrapperStyle={{ paddingBottom: '10px', fontSize: '10px' }} 
                   />
-                  <Line 
-                    type="monotone" 
+                  <Bar 
+                    yAxisId="left"
                     dataKey="warnings" 
                     name="预警次数" 
-                    stroke="#ff5e85" 
-                    strokeWidth={3} 
-                    dot={false}
-                    activeDot={{ r: 4, fill: '#ff5e85', strokeWidth: 0 }} 
+                    fill={COLORS.primary} 
+                    radius={[2, 2, 0, 0]}
+                    barSize={12}
                   />
-                  <Line 
-                    type="monotone" 
+                  <Bar 
+                    yAxisId="left"
                     dataKey="handled" 
                     name="干预次数" 
-                    stroke="#17d6a2" 
-                    strokeWidth={2} 
-                    strokeDasharray="4 4"
-                    dot={false}
-                    activeDot={{ r: 4, fill: '#17d6a2', strokeWidth: 0 }} 
+                    fill={COLORS.success} 
+                    radius={[2, 2, 0, 0]}
+                    barSize={8}
                   />
-                </LineChart>
+                  <Line 
+                    yAxisId="right"
+                    type="monotone" 
+                    dataKey="tide" 
+                    name="潮汐高度(m)" 
+                    stroke={COLORS.warning} 
+                    strokeWidth={2} 
+                    dot={false}
+                    activeDot={{ r: 4, fill: COLORS.warning, strokeWidth: 0 }} 
+                  />
+                </ComposedChart>
               </ResponsiveContainer>
             </div>
           </Panel>
         </div>
 
         <div className="col-span-4 flex flex-col gap-3 min-h-0">
-          {/* 区域横向对比 - 空间聚焦表达增强 */}
+          {/* 区域横向对比 */}
           <Panel className="p-5 flex flex-col shrink-0 h-[220px]">
             <SectionTitle title="区域风险指数对比" icon={<LayoutDashboard size={12} />} />
             <div className="flex-1 min-h-0 -mt-2">
               <ResponsiveContainer width="100%" height="100%">
                 <RadarChart cx="50%" cy="50%" outerRadius="65%" data={COMPARISON_DATA}>
                   <PolarGrid stroke="rgba(255,255,255,0.05)" />
-                  <PolarAngleAxis dataKey="subject" tick={{ fill: 'rgba(255,255,255,0.3)', fontSize: 9 }} />
+                  <PolarAngleAxis dataKey="subject" tick={{ fill: COLORS.muted, fontSize: 9 }} />
                   <Radar
                     name="当前区域"
                     dataKey="A"
-                    stroke="#18c4ff"
-                    fill="#18c4ff"
+                    stroke={COLORS.primary}
+                    fill={COLORS.primary}
                     fillOpacity={0.3}
                   />
                   <Radar
                     name="全区均值"
                     dataKey="B"
-                    stroke="#ffb946"
-                    fill="#ffb946"
+                    stroke={COLORS.secondary}
+                    fill={COLORS.secondary}
                     fillOpacity={0.1}
                   />
                   <Legend iconType="circle" wrapperStyle={{ fontSize: 9 }} />
@@ -249,12 +272,12 @@ export default function WarningKeyAreasTab() {
                     type="category" 
                     axisLine={false} 
                     tickLine={false} 
-                    tick={{ fill: 'rgba(255,255,255,0.4)', fontSize: 10 }}
+                    tick={{ fill: COLORS.muted, fontSize: 10 }}
                     width={60}
                   />
                   <Tooltip
                     cursor={{ fill: 'rgba(255,255,255,0.03)' }}
-                    contentStyle={{ backgroundColor: '#0a1018', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px', fontSize: '11px' }}
+                    contentStyle={{ backgroundColor: COLORS.chartBg, border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px', fontSize: '11px' }}
                   />
                   <Bar dataKey="value" name="占比 (%)" radius={[0, 4, 4, 0]} barSize={10}>
                     {VESSEL_TYPE_DATA.map((entry, index) => (
