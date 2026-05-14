@@ -1,4 +1,5 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect, useRef } from 'react';
+import * as echarts from 'echarts';
 import { 
   Shield, 
   TrendingUp, 
@@ -11,7 +12,10 @@ import {
   Activity,
   ArrowUpRight,
   ArrowDownRight,
-  LayoutDashboard
+  LayoutDashboard,
+  Waves,
+  Pointer,
+  Navigation
 } from 'lucide-react';
 import {
   Cell,
@@ -20,33 +24,28 @@ import {
   BarChart,
   XAxis,
   YAxis,
-  Tooltip,
+  Tooltip as RechartsTooltip,
   Line,
   LineChart,
-  Legend,
-  Radar,
-  RadarChart,
-  PolarGrid,
-  PolarAngleAxis,
-  PolarRadiusAxis,
+  Legend as RechartsLegend,
+  Area,
+  AreaChart,
   ComposedChart,
 } from 'recharts';
 import { Panel, SectionTitle, FilterSelect } from './SharedComponents';
 
 // --- Types ---
 type Jurisdiction = '外高桥' | '洋山' | '吴淞' | '宝山';
-type SpecialArea = '圆圆沙警戒区' | '吴淞口警戒区' | '核心航道' | '锚地群';
 type TimeRange = '最近24小时' | '自定义时间';
 
-// --- Color Palette (Modern Cyber/Professional) ---
+// --- Color Palette (Professional/Maritime) ---
 const COLORS = {
-  primary: '#00f2ff',    // Electric Cyan
-  secondary: '#7000ff',  // Deep Purple
-  success: '#00ffa3',    // Emerald Green
-  warning: '#ffe600',    // Bright Yellow/Gold
-  danger: '#ff2e63',     // Vivid Pink/Red
-  muted: 'rgba(255, 255, 255, 0.2)',
-  chartBg: '#0a1018'
+  warning: '#FF6B6B',    // Sunset Coral (Warnings)
+  handled: '#4ECDC4',    // Seafoam Teal (Interventions)
+  tide: '#45B7D1',       // Sky Blue (Tide)
+  bg: 'transparent',
+  text: 'rgba(255, 255, 255, 0.4)',
+  axis: 'rgba(255, 255, 255, 0.1)'
 };
 
 // --- Mock Data ---
@@ -59,10 +58,11 @@ const AREAS_BY_JURISDICTION: Record<Jurisdiction, string[]> = {
 };
 
 const VESSEL_TYPE_DATA = [
-  { name: '集装箱船', value: 45, color: COLORS.primary },
-  { name: '油船', value: 25, color: COLORS.danger },
-  { name: '散货船', value: 15, color: COLORS.warning },
-  { name: '其他', value: 15, color: COLORS.secondary },
+  { name: '集装箱船', value: 45, color: '#18c4ff' },
+  { name: '油船', value: 25, color: '#ff5e85' },
+  { name: '散货船', value: 15, color: '#ffb946' },
+  { name: '危险品船', value: 10, color: '#7c3aed' },
+  { name: '其他', value: 5, color: 'rgba(255,255,255,0.1)' },
 ];
 
 const TREND_DATA = [
@@ -75,13 +75,128 @@ const TREND_DATA = [
   { time: '23:59', warnings: 15, handled: 12, tide: 3.4 },
 ];
 
-const COMPARISON_DATA = [
-  { subject: '碰撞风险', A: 85, B: 65, fullMark: 100 },
-  { subject: '区域流速', A: 70, B: 80, fullMark: 100 },
-  { subject: '违规频率', A: 90, B: 45, fullMark: 100 },
-  { subject: '靠泊压力', A: 65, B: 75, fullMark: 100 },
-  { subject: '通航密度', A: 88, B: 70, fullMark: 100 },
-];
+// --- Sub-component: ECharts Trend ---
+function TrendChart({ data }: { data: typeof TREND_DATA }) {
+  const chartRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!chartRef.current) return;
+
+    const myChart = echarts.init(chartRef.current);
+    
+    const option: echarts.EChartsOption = {
+      backgroundColor: 'transparent',
+      tooltip: {
+        trigger: 'axis',
+        backgroundColor: 'rgba(10, 16, 24, 0.95)',
+        borderColor: 'rgba(255, 255, 255, 0.1)',
+        borderWidth: 1,
+        textStyle: { color: '#fff', fontSize: 11 },
+        padding: [8, 12],
+        axisPointer: { type: 'shadow' }
+      },
+      legend: {
+        right: 0,
+        top: 0,
+        itemWidth: 10,
+        itemHeight: 10,
+        textStyle: { color: 'rgba(255, 255, 255, 0.5)', fontSize: 10 },
+        icon: 'rect'
+      },
+      grid: {
+        left: '2%',
+        right: '2%',
+        bottom: '3%',
+        top: '15%',
+        containLabel: true
+      },
+      xAxis: {
+        type: 'category',
+        data: data.map(item => item.time),
+        axisLine: { lineStyle: { color: COLORS.axis } },
+        axisTick: { show: false },
+        axisLabel: { color: COLORS.text, fontSize: 10 }
+      },
+      yAxis: [
+        {
+          type: 'value',
+          name: '次数',
+          nameTextStyle: { color: COLORS.text, fontSize: 9 },
+          axisLine: { show: false },
+          axisTick: { show: false },
+          splitLine: { lineStyle: { color: COLORS.axis, type: 'dashed' } },
+          axisLabel: { color: COLORS.text, fontSize: 10 }
+        },
+        {
+          type: 'value',
+          name: '潮位(m)',
+          nameTextStyle: { color: COLORS.text, fontSize: 9 },
+          position: 'right',
+          axisLine: { show: false },
+          axisTick: { show: false },
+          splitLine: { show: false },
+          axisLabel: { color: COLORS.text, fontSize: 10 }
+        }
+      ],
+      series: [
+        {
+          name: '预警',
+          type: 'bar',
+          data: data.map(item => item.warnings),
+          barWidth: 14,
+          itemStyle: {
+            color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+              { offset: 0, color: '#FF7676' },
+              { offset: 1, color: 'rgba(255, 118, 118, 0.2)' }
+            ]),
+            borderRadius: [3, 3, 0, 0]
+          }
+        },
+        {
+          name: '干预',
+          type: 'bar',
+          data: data.map(item => item.handled),
+          barWidth: 10,
+          barGap: '-70%',
+          itemStyle: {
+            color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+              { offset: 0, color: '#26E5D8' },
+              { offset: 1, color: 'rgba(38, 229, 216, 0.1)' }
+            ]),
+            borderRadius: [3, 3, 0, 0]
+          }
+        },
+        {
+          name: '潮汐',
+          type: 'line',
+          yAxisIndex: 1,
+          smooth: true,
+          data: data.map(item => item.tide),
+          showSymbol: false,
+          lineStyle: { width: 3, color: '#45B7D1', shadowBlur: 10, shadowColor: 'rgba(69, 183, 209, 0.5)' },
+          areaStyle: {
+            color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+              { offset: 0, color: 'rgba(69, 183, 209, 0.2)' },
+              { offset: 1, color: 'transparent' }
+            ])
+          }
+        }
+      ]
+    };
+
+    myChart.setOption(option);
+
+    const handleResize = () => myChart.resize();
+    window.addEventListener('resize', handleResize);
+
+    return () => {
+      window.removeEventListener('resize', handleResize);
+      myChart.dispose();
+    };
+  }, [data]);
+
+  return <div ref={chartRef} className="w-full h-full" />;
+}
 
 // --- Main Component ---
 export default function WarningKeyAreasTab() {
@@ -94,6 +209,14 @@ export default function WarningKeyAreasTab() {
     setJurisdiction(j);
     setArea(AREAS_BY_JURISDICTION[j][0]);
   };
+
+  const { maxTide, minTide } = useMemo(() => {
+    const tides = TREND_DATA.map(d => d.tide);
+    return {
+      maxTide: Math.max(...tides).toFixed(2),
+      minTide: Math.min(...tides).toFixed(2)
+    };
+  }, []);
 
   return (
     <div className="flex flex-col gap-3 h-full overflow-hidden">
@@ -132,171 +255,100 @@ export default function WarningKeyAreasTab() {
           </div>
         </div>
 
-        <div className="flex items-center gap-3">
-          {timeRange === '自定义时间' && (
-            <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-white/8 bg-[#111823] text-[10px] font-bold text-white/60">
-              <Calendar size={12} className="text-sky-400" />
-              <span>05-08 ~ 05-09</span>
-            </div>
-          )}
+        <div className="flex items-center gap-3 text-[10px] font-bold text-white/40">
+          <Calendar size={12} className="text-sky-400" />
+          <span>数据实时更新: 2026-05-14 14:30</span>
         </div>
       </div>
 
       <div className="grid grid-cols-12 gap-3 flex-1 min-h-0">
-        <div className="col-span-8 flex flex-col gap-3 min-h-0">
-          {/* 紧凑型指标行 */}
+        <div className="col-span-12 flex flex-col gap-3 min-h-0">
+          {/* 四大核心指标行 */}
           <div className="grid grid-cols-4 gap-3 shrink-0">
             {[
-              { label: '风险触发', value: '452', unit: '次', color: 'text-[#ff2e63]', icon: AlertCircle, trend: '+12%', up: true },
-              { label: '瞬时流量', value: '1,284', unit: '艘', color: 'text-[#00f2ff]', icon: Activity, trend: '256/h', up: true },
-              { label: '监管船舶', value: '53', unit: '艘', color: 'text-[#ffe600]', icon: Anchor, trend: '-3%', up: false },
-              { label: '实时在航', value: '124', unit: '艘', color: 'text-white/90', icon: Users, trend: '稳定', up: null },
+              { label: '累计预警次数', value: '1,284', unit: '次', color: 'text-[#FF7676]', icon: AlertCircle, detail: '高风险占比 12%' },
+              { label: '指挥干预次数', value: '1,156', unit: '次', color: 'text-[#26E5D8]', icon: Pointer, detail: '及时处置率 90.2%' },
+              { label: '时段最高潮位', value: maxTide, unit: 'm', color: 'text-[#45B7D1]', icon: ArrowUpRight, detail: '出现于 12:00' },
+              { label: '时段最低潮位', value: minTide, unit: 'm', color: 'text-[#7C3AED]', icon: ArrowDownRight, detail: '出现于 04:00' },
             ].map((item, i) => (
-              <Panel key={i} className="px-3 py-2">
-                <div className="flex items-center justify-between mb-1">
-                  <span className="text-[9px] text-white/20 font-bold uppercase tracking-widest">{item.label}</span>
-                  <item.icon size={11} className={item.color} />
+              <Panel key={i} className="px-4 py-3 relative overflow-hidden group">
+                <div className="absolute top-0 right-0 p-1 opacity-5 group-hover:opacity-10 transition-opacity">
+                  <item.icon size={64} />
                 </div>
-                <div className="flex items-baseline gap-1">
-                  <span className={`text-lg font-black ${item.color}`}>{item.value}</span>
-                  <span className="text-[8px] text-white/20 font-bold">{item.unit}</span>
+                <div className="flex items-center gap-2 mb-2">
+                  <div className={`p-1.5 rounded-lg bg-white/5 ${item.color}`}>
+                    <item.icon size={14} />
+                  </div>
+                  <span className="text-[10px] text-white/40 font-bold uppercase tracking-widest">{item.label}</span>
                 </div>
-                <div className="mt-1 flex items-center gap-1">
-                  {item.up === true ? <ArrowUpRight size={9} className="text-red-400/80" /> : item.up === false ? <ArrowDownRight size={9} className="text-green-400/80" /> : null}
-                  <span className="text-[8px] text-white/20 font-medium">{item.trend}</span>
+                <div className="flex items-baseline gap-1.5">
+                  <span className={`text-2xl font-black ${item.color}`}>{item.value}</span>
+                  <span className="text-[10px] text-white/20 font-bold uppercase">{item.unit}</span>
+                </div>
+                <div className="mt-2 text-[9px] text-white/30 font-medium flex items-center gap-1">
+                  <div className="w-1 h-1 rounded-full bg-white/20" />
+                  {item.detail}
                 </div>
               </Panel>
             ))}
           </div>
 
-          <Panel className="flex-1 p-5 flex flex-col min-h-0">
-            <SectionTitle title="预警触发与干预趋势" icon={<TrendingUp size={14} />} />
-            <div className="flex-1 min-h-0">
-              <ResponsiveContainer width="100%" height="100%">
-                <ComposedChart data={TREND_DATA} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                  <XAxis 
-                    dataKey="time" 
-                    axisLine={{ stroke: 'rgba(255,255,255,0.1)' }} 
-                    tickLine={{ stroke: 'rgba(255,255,255,0.1)' }} 
-                    tick={{ fill: COLORS.muted, fontSize: 10 }} 
-                  />
-                  <YAxis 
-                    yAxisId="left" 
-                    axisLine={{ stroke: 'rgba(255,255,255,0.1)' }} 
-                    tickLine={{ stroke: 'rgba(255,255,255,0.1)' }} 
-                    tick={{ fill: COLORS.muted, fontSize: 10 }} 
-                  />
-                  <YAxis yAxisId="right" orientation="right" axisLine={false} tickLine={false} tick={{ fill: COLORS.muted, fontSize: 10 }} hide />
-                  <Tooltip 
-                    contentStyle={{ backgroundColor: COLORS.chartBg, border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px', fontSize: '11px' }}
-                  />
-                  <Legend 
-                    verticalAlign="top" 
-                    align="right" 
-                    iconType="circle" 
-                    wrapperStyle={{ paddingBottom: '10px', fontSize: '10px' }} 
-                  />
-                  <Bar 
-                    yAxisId="left"
-                    dataKey="warnings" 
-                    name="预警次数" 
-                    fill={COLORS.primary} 
-                    radius={[2, 2, 0, 0]}
-                    barSize={12}
-                  />
-                  <Bar 
-                    yAxisId="left"
-                    dataKey="handled" 
-                    name="干预次数" 
-                    fill={COLORS.success} 
-                    radius={[2, 2, 0, 0]}
-                    barSize={8}
-                  />
-                  <Line 
-                    yAxisId="right"
-                    type="monotone" 
-                    dataKey="tide" 
-                    name="潮汐高度(m)" 
-                    stroke={COLORS.warning} 
-                    strokeWidth={2} 
-                    dot={false}
-                    activeDot={{ r: 4, fill: COLORS.warning, strokeWidth: 0 }} 
-                  />
-                </ComposedChart>
-              </ResponsiveContainer>
-            </div>
-          </Panel>
-        </div>
+          <div className="grid grid-cols-12 gap-3 flex-1 min-h-0">
+            {/* 左侧：预警、干预与潮汐综合趋势 (ECharts) */}
+            <Panel className="col-span-8 p-6 flex flex-col min-h-0">
+              <SectionTitle title="预警触发、干预与潮汐关联分析" icon={<TrendingUp size={16} />} />
+              <div className="flex-1 min-h-0 mt-4">
+                <TrendChart data={TREND_DATA} />
+              </div>
+            </Panel>
 
-        <div className="col-span-4 flex flex-col gap-3 min-h-0">
-          {/* 区域横向对比 */}
-          <Panel className="p-5 flex flex-col shrink-0 h-[220px]">
-            <SectionTitle title="区域风险指数对比" icon={<LayoutDashboard size={12} />} />
-            <div className="flex-1 min-h-0 -mt-2">
-              <ResponsiveContainer width="100%" height="100%">
-                <RadarChart cx="50%" cy="50%" outerRadius="65%" data={COMPARISON_DATA}>
-                  <PolarGrid stroke="rgba(255,255,255,0.05)" />
-                  <PolarAngleAxis dataKey="subject" tick={{ fill: COLORS.muted, fontSize: 9 }} />
-                  <Radar
-                    name="当前区域"
-                    dataKey="A"
-                    stroke={COLORS.primary}
-                    fill={COLORS.primary}
-                    fillOpacity={0.3}
-                  />
-                  <Radar
-                    name="全区均值"
-                    dataKey="B"
-                    stroke={COLORS.secondary}
-                    fill={COLORS.secondary}
-                    fillOpacity={0.1}
-                  />
-                  <Legend iconType="circle" wrapperStyle={{ fontSize: 9 }} />
-                </RadarChart>
-              </ResponsiveContainer>
-            </div>
-          </Panel>
-
-          <Panel className="flex-1 p-5 flex flex-col min-h-0">
-            <SectionTitle title="预警船舶类型分布" icon={<BarChart3 size={12} />} />
-            <div className="flex-1 min-h-0 mt-2">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart
-                  layout="vertical"
-                  data={VESSEL_TYPE_DATA}
-                  margin={{ left: -10, right: 20, top: 0, bottom: 0 }}
-                >
-                  <XAxis type="number" hide />
-                  <YAxis 
-                    dataKey="name" 
-                    type="category" 
-                    axisLine={false} 
-                    tickLine={false} 
-                    tick={{ fill: COLORS.muted, fontSize: 10 }}
-                    width={60}
-                  />
-                  <Tooltip
-                    cursor={{ fill: 'rgba(255,255,255,0.03)' }}
-                    contentStyle={{ backgroundColor: COLORS.chartBg, border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px', fontSize: '11px' }}
-                  />
-                  <Bar dataKey="value" name="占比 (%)" radius={[0, 4, 4, 0]} barSize={10}>
-                    {VESSEL_TYPE_DATA.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} />
-                    ))}
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-            <div className="grid grid-cols-2 gap-x-3 gap-y-2 mt-4 pt-4 border-t border-white/5">
-              {VESSEL_TYPE_DATA.map((item) => (
-                <div key={item.name} className="flex items-center gap-2 text-[10px]">
-                  <div className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: item.color }} />
-                  <span className="text-white/30 truncate flex-1">{item.name}</span>
-                  <span className="text-white/70 font-black">{item.value}%</span>
-                </div>
-              ))}
-            </div>
-          </Panel>
+            {/* 右侧：预警船舶分布 */}
+            <Panel className="col-span-4 p-6 flex flex-col min-h-0">
+              <SectionTitle title="预警船舶类型分布" icon={<BarChart3 size={16} />} />
+              <div className="flex-1 min-h-0 mt-6">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart
+                    layout="vertical"
+                    data={VESSEL_TYPE_DATA}
+                    margin={{ left: -10, right: 30, top: 0, bottom: 0 }}
+                  >
+                    <XAxis type="number" hide />
+                    <YAxis 
+                      dataKey="name" 
+                      type="category" 
+                      axisLine={false} 
+                      tickLine={false} 
+                      tick={{ fill: 'rgba(255,255,255,0.4)', fontSize: 11 }}
+                      width={80}
+                    />
+                    <RechartsTooltip
+                      cursor={{ fill: 'rgba(255,255,255,0.03)' }}
+                      contentStyle={{ backgroundColor: '#0a1018', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px', fontSize: '11px' }}
+                    />
+                    <Bar dataKey="value" name="占比 (%)" radius={[0, 4, 4, 0]} barSize={12}>
+                      {VESSEL_TYPE_DATA.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} />
+                      ))}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+              <div className="space-y-3 mt-6 pt-6 border-t border-white/5">
+                {VESSEL_TYPE_DATA.map((item) => (
+                  <div key={item.name} className="flex items-center justify-between group cursor-pointer">
+                    <div className="flex items-center gap-3">
+                      <div className="h-2 w-2 rounded-full shadow-[0_0_8px_currentColor]" style={{ backgroundColor: item.color, color: item.color }} />
+                      <span className="text-[11px] text-white/40 group-hover:text-white/70 transition-colors">{item.name}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-[11px] text-white/80 font-black">{item.value}%</span>
+                      <ArrowUpRight size={10} className="text-white/20" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </Panel>
+          </div>
         </div>
       </div>
     </div>
