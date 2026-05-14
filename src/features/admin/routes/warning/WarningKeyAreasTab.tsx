@@ -231,47 +231,40 @@ export default function WarningKeyAreasTab() {
       {/* 紧凑型 Header */}
       <div className="flex flex-wrap items-center justify-between gap-4 rounded-xl border border-white/5 bg-white/[0.02] p-2.5 backdrop-blur-md shrink-0">
         <div className="flex items-center gap-4">
-          <div className="flex flex-col gap-1">
-            <span className="ml-1 text-[9px] uppercase tracking-wider text-white/30">所属辖区</span>
-            <div className="flex items-center gap-1 rounded-xl border border-white/5 bg-[#151c27] p-0.5">
-              {JURISDICTIONS.map((item) => (
-                <button
-                  key={item}
-                  onClick={() => handleJurisdictionChange(item)}
-                  className={`rounded-lg px-3 py-1 text-[10px] font-black transition-all ${
-                    jurisdiction === item
-                      ? 'bg-sky-500 text-white shadow-sm'
-                      : 'text-white/30 hover:text-white/60'
-                  }`}
-                >
-                  {item}
-                </button>
-              ))}
-            </div>
+          <div className="flex items-center gap-1 rounded-xl border border-white/5 bg-[#151c27] p-0.5">
+            {JURISDICTIONS.map((item) => (
+              <button
+                key={item}
+                onClick={() => handleJurisdictionChange(item)}
+                className={`rounded-lg px-3 py-1 text-[10px] font-black transition-all ${
+                  jurisdiction === item
+                    ? 'bg-sky-500 text-white shadow-sm'
+                    : 'text-white/30 hover:text-white/60'
+                }`}
+              >
+                {item}
+              </button>
+            ))}
           </div>
           <FilterSelect 
-            label="监控区域" 
             value={area} 
             options={AREAS_BY_JURISDICTION[jurisdiction]} 
             onChange={setArea} 
           />
-          <div className="flex flex-col gap-1">
-            <span className="text-[9px] uppercase tracking-wider text-white/30 ml-1">分析周期</span>
-            <div className="flex bg-[#111823] rounded-lg p-0.5 border border-white/8">
-              {(['最近24小时', '自定义时间'] as const).map((t) => (
-                <button
-                  key={t}
-                  onClick={() => setTimeRange(t)}
-                  className={`px-3 py-1 rounded-md text-[10px] font-black transition-all ${
-                    timeRange === t 
-                      ? 'bg-sky-500 text-white shadow-sm' 
-                      : 'text-white/30 hover:text-white/60'
-                  }`}
-                >
-                  {t}
-                </button>
-              ))}
-            </div>
+          <div className="flex bg-[#111823] rounded-lg p-0.5 border border-white/8">
+            {(['最近24小时', '自定义时间'] as const).map((t) => (
+              <button
+                key={t}
+                onClick={() => setTimeRange(t)}
+                className={`px-3 py-1 rounded-md text-[10px] font-black transition-all ${
+                  timeRange === t 
+                    ? 'bg-sky-500 text-white shadow-sm' 
+                    : 'text-white/30 hover:text-white/60'
+                }`}
+              >
+                {t}
+              </button>
+            ))}
           </div>
         </div>
 

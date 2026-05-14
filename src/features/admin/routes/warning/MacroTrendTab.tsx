@@ -205,50 +205,43 @@ export default function MacroTrendTab() {
       {/* 紧凑型 Header */}
       <div className="flex flex-wrap items-center justify-between gap-4 rounded-xl border border-white/5 bg-white/[0.02] p-2.5 backdrop-blur-md shrink-0">
         <div className="flex items-center gap-4">
-          <div className="flex flex-col gap-1">
-            <span className="ml-1 text-[9px] uppercase tracking-wider text-white/30">管理辖区</span>
-            <div className="flex items-center gap-1 rounded-xl border border-white/5 bg-[#151c27] p-0.5">
-              {(['全部', '外高桥', '洋山', '吴淞', '宝山'] as const).map((item) => (
-                <button
-                  key={item}
-                  onClick={() => setJurisdiction(item)}
-                  className={`rounded-lg px-3 py-1 text-[10px] font-black transition-all ${
-                    jurisdiction === item
-                      ? 'bg-sky-500 text-white shadow-sm'
-                      : 'text-white/30 hover:text-white/60'
-                  }`}
-                >
-                  {item}
-                </button>
-              ))}
-            </div>
+          <div className="flex items-center gap-1 rounded-xl border border-white/5 bg-[#151c27] p-0.5">
+            {(['全部', '外高桥', '洋山', '吴淞', '宝山'] as const).map((item) => (
+              <button
+                key={item}
+                onClick={() => setJurisdiction(item)}
+                className={`rounded-lg px-3 py-1 text-[10px] font-black transition-all ${
+                  jurisdiction === item
+                    ? 'bg-sky-500 text-white shadow-sm'
+                    : 'text-white/30 hover:text-white/60'
+                }`}
+              >
+                {item}
+              </button>
+            ))}
           </div>
           <FilterSelect 
-            label="预警统计类型" 
             value={warningType} 
             options={['全部', '碰撞预警', '区域入侵', '超速预警', '走锚预警']} 
             onChange={setWarningType} 
           />
-          <div className="flex flex-col gap-1">
-            <span className="text-[9px] uppercase tracking-wider text-white/30 ml-1">统计回溯</span>
-            <div className="flex bg-[#111823] rounded-lg p-0.5 border border-white/8">
-              {([
-                { id: '24h', label: '24小时' },
-                { id: '自定义', label: '自定义' }
-              ] as const).map((t) => (
-                <button
-                  key={t.id}
-                  onClick={() => setTimeRange(t.id)}
-                  className={`px-3 py-1 rounded-md text-[10px] font-black transition-all ${
-                    timeRange === t.id 
-                      ? 'bg-sky-500 text-white shadow-sm' 
-                      : 'text-white/30 hover:text-white/60'
-                  }`}
-                >
-                  {t.label}
-                </button>
-              ))}
-            </div>
+          <div className="flex bg-[#111823] rounded-lg p-0.5 border border-white/8">
+            {([
+              { id: '24h', label: '24小时' },
+              { id: '自定义', label: '自定义' }
+            ] as const).map((t) => (
+              <button
+                key={t.id}
+                onClick={() => setTimeRange(t.id)}
+                className={`px-3 py-1 rounded-md text-[10px] font-black transition-all ${
+                  timeRange === t.id 
+                    ? 'bg-sky-500 text-white shadow-sm' 
+                    : 'text-white/30 hover:text-white/60'
+                }`}
+              >
+                {t.label}
+              </button>
+            ))}
           </div>
         </div>
 

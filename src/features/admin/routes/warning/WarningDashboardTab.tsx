@@ -1,10 +1,11 @@
 import React, { useMemo, useState } from 'react';
 import { ArrowDownRight, ArrowUpRight, CalendarRange, Check, Download, MapPinned } from 'lucide-react';
 import {
-  Area,
+  Bar,
+  Brush,
   Cell,
+  ComposedChart,
   Line,
-  LineChart,
   Pie,
   PieChart,
   ResponsiveContainer,
@@ -216,6 +217,20 @@ export default function WarningDashboardTab({
     [selectedJurisdictions],
   );
 
+  const tideExtremes = useMemo(() => {
+    const maxPoint = trendData.reduce((max, current) => (
+      current.tide > max.tide ? current : max
+    ), trendData[0]);
+    const minPoint = trendData.reduce((min, current) => (
+      current.tide < min.tide ? current : min
+    ), trendData[0]);
+
+    return {
+      max: { value: maxPoint.tide.toFixed(2), hour: maxPoint.hour },
+      min: { value: minPoint.tide.toFixed(2), hour: minPoint.hour },
+    };
+  }, [trendData]);
+
   const shipTypeData = useMemo(
     () =>
       SHIP_TYPE_DATA.map((item) => {
@@ -358,13 +373,17 @@ export default function WarningDashboardTab({
                 <div className="text-[9px] font-bold uppercase tracking-wider text-white/20">潮汐统计维度</div>
                 <div className="space-y-2">
                   <div className="flex items-center justify-between text-[11px]">
-                    <span className="text-white/40">当前平均潮位</span>
-                    <span className="font-bold text-sky-400">3.42m</span>
+                    <span className="text-white/40">最高潮位</span>
+                    <span className="font-bold text-sky-400">
+                      {tideExtremes.max.value}m
+                      <span className="ml-1.5 text-[10px] font-medium text-white/30">{tideExtremes.max.hour}:00</span>
+                    </span>
                   </div>
                   <div className="flex items-center justify-between text-[11px]">
-                    <span className="text-white/40">潮位关联预警</span>
-                    <span className="font-bold text-white/80">
-                      {Math.round(summary.totalCount * 0.22).toLocaleString()} 次
+                    <span className="text-white/40">最低潮位</span>
+                    <span className="font-bold text-[#7c87ff]">
+                      {tideExtremes.min.value}m
+                      <span className="ml-1.5 text-[10px] font-medium text-white/30">{tideExtremes.min.hour}:00</span>
                     </span>
                   </div>
                 </div>
@@ -373,9 +392,9 @@ export default function WarningDashboardTab({
 
             <div className="py-1">
               <SectionTitle title="预警趋势分析" />
-              <div className="h-[200px]">
+              <div className="h-[230px]">
                 <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={trendData} margin={{ left: -25, right: -20, top: 5, bottom: 0 }}>
+                  <ComposedChart data={trendData} barGap="45%" barCategoryGap="32%" margin={{ left: -25, right: -20, top: 5, bottom: 18 }}>
                     <XAxis
                       dataKey="hour"
                       axisLine={{ stroke: 'rgba(255,255,255,0.1)' }}
@@ -384,8 +403,19 @@ export default function WarningDashboardTab({
                     />
                     <YAxis
                       yAxisId="left"
-                      axisLine={{ stroke: 'rgba(255,255,255,0.1)' }}
-                      tickLine={{ stroke: 'rgba(255,255,255,0.1)' }}
+                      name="预警"
+                      axisLine={false}
+                      tickLine={false}
+                      splitLine={{ stroke: 'rgba(255,255,255,0.08)', strokeDasharray: '4 4' }}
+                      tick={{ fill: 'rgba(255,255,255,0.2)', fontSize: 10 }}
+                    />
+                    <YAxis
+                      yAxisId="right"
+                      orientation="right"
+                      name="潮位(m)"
+                      tickLine={false}
+                      axisLine={false}
+                      splitLine={false}
                       tick={{ fill: 'rgba(255,255,255,0.2)', fontSize: 10 }}
                     />
                     <Tooltip
@@ -397,27 +427,53 @@ export default function WarningDashboardTab({
                       }}
                       itemStyle={{ padding: '2px 0' }}
                     />
-                    <Line
+                    <Bar
                       yAxisId="left"
-                      type="monotone"
                       dataKey="warning"
                       name="预警次数"
+                      barSize={12}
+                      radius={[2, 2, 0, 0]}
+                      fill="url(#warningBarFill)"
+                    />
+                    <Bar
+                      yAxisId="left"
+                      dataKey="handled"
+                      name="指挥次数"
+                      barSize={12}
+                      radius={[2, 2, 0, 0]}
+                      fill="url(#handledBarFill)"
+                    />
+                    <Line
+                      yAxisId="right"
+                      type="monotone"
+                      dataKey="tide"
+                      name="潮位"
                       stroke="#18bfff"
                       strokeWidth={3}
                       dot={false}
                       activeDot={{ r: 4, strokeWidth: 0, fill: '#18bfff' }}
                     />
-                    <Line
-                      yAxisId="left"
-                      type="monotone"
-                      dataKey="handled"
-                      name="干预次数"
-                      stroke="#17d6a2"
-                      strokeWidth={2}
-                      strokeDasharray="4 4"
-                      dot={false}
+                    <Brush
+                      dataKey="hour"
+                      height={20}
+                      startIndex={0}
+                      endIndex={11}
+                      travellerWidth={10}
+                      stroke="#18bfff"
+                      fill="rgba(17,24,35,0.92)"
+                      tickFormatter={() => ''}
                     />
-                  </LineChart>
+                    <defs>
+                      <linearGradient id="warningBarFill" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="#ff7b7b" />
+                        <stop offset="100%" stopColor="rgba(255,123,123,0.18)" />
+                      </linearGradient>
+                      <linearGradient id="handledBarFill" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="#26E5D8" />
+                        <stop offset="100%" stopColor="rgba(38,229,216,0.12)" />
+                      </linearGradient>
+                    </defs>
+                  </ComposedChart>
                 </ResponsiveContainer>
               </div>
             </div>
