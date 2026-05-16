@@ -343,3 +343,12 @@ export interface MockVesselDynamic {
   destination: string;
   events: VesselDynamicEvent[];
 }
+
+export interface PushMessage {
+  id: string;
+  type: 'intent' | 'warning' | 'weather';
+  title: string;
+  content: string;
+  time: string;
+  level?: 'info' | 'warning' | 'emergency';
+}

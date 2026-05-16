@@ -70,6 +70,12 @@
   主页面装配层。只保留页面状态、派生数据和 feature 拼装，不再承载大段内联 UI。
 - `components/`
   首页壳层子组件，例如顶部栏、底部栏、侧栏装配、地图装配等。
+  - `AppBottomBar.tsx`
+  - `AppHomeMap.tsx`
+  - `AppSidebar.tsx`
+  - `AppTopBar.tsx`
+  - `MarqueeText.tsx`
+  - `MessagePushPanel.tsx`
 - `utils/`
   首页相关工具函数，按锚地、船舶、VHF、回放等主题拆分。
 - `index.ts`

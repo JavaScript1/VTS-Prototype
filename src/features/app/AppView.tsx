@@ -28,6 +28,7 @@ import AppBottomBar from './components/AppBottomBar';
 import AppHomeMap from './components/AppHomeMap';
 import AppSidebar from './components/AppSidebar';
 import AppTopBar from './components/AppTopBar';
+import MessagePushPanel from './components/MessagePushPanel';
 import {
   createHomeShipDynamicEvents,
   createHomeShipTrack,
@@ -463,6 +464,8 @@ export default function AppView() {
           onSelectHomeShip={handleSelectHomeShip}
           onSelectTrackPoint={setSelectedHomeShipTrackPointId}
         />
+        
+        <MessagePushPanel />
       </main>
 
       <AppBottomBar
