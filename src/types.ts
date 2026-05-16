@@ -349,6 +349,8 @@ export interface PushMessage {
   type: 'intent' | 'warning' | 'weather';
   title: string;
   content: string;
+  suggestion?: string;
+  hasActions?: boolean;
   time: string;
   level?: 'info' | 'warning' | 'emergency';
 }

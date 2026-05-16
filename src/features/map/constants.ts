@@ -7,7 +7,7 @@
 export const VTS_CHART_TILE_URL = 'https://test.shipdt.com/vts/chart/{z}/{y}/{x}.png';
 export const VTS_CHART_TILE_ATTRIBUTION = '&copy; ShipDT';
 
-export const HOME_MAP_DEFAULT_CENTER: [number, number] = [31.316261, 121.723495];
+export const HOME_MAP_DEFAULT_CENTER: [number, number] = [31.357522, 121.635475];
 export const HOME_MAP_BASE_CENTER: [number, number] = [31.425, 121.565];
 
 export const HOME_MAP_LAT_OFFSET = HOME_MAP_DEFAULT_CENTER[0] - HOME_MAP_BASE_CENTER[0];

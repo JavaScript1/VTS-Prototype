@@ -32,8 +32,9 @@ const createShipIcon = (ship: ShipPosition, isSelected = false) =>
   L.divIcon({
     className: 'ship-marker-icon',
     html: `
-      <div class="ship-marker ${isSelected ? 'ship-marker--selected' : ''}" style="--ship-rotation:${ship.heading}deg">
+      <div class="ship-marker ${isSelected ? 'ship-marker--selected' : ''} ship-marker--${ship.status}" style="--ship-rotation:${ship.heading}deg">
         <div class="ship-marker__halo"></div>
+        <div class="ship-marker__vector"></div>
         <div class="ship-marker__body">
           <span class="ship-marker__bridge"></span>
         </div>

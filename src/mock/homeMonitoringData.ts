@@ -10,6 +10,10 @@ export interface HomeMapOverlayBadge {
 }
 
 export const SHIP_POSITIONS: ShipPosition[] = ([
+  { id: 'ship-new-001', lat: 31.425, lng: 121.565, heading: 45, name: '海巡 01', englishName: 'HAI XUN 01', callsign: 'B1234', mmsi: '413000101', type: '巡逻船', speed: 18.5, destination: '警戒区 A', status: 'normal' },
+  { id: 'ship-new-002', lat: 31.428, lng: 121.572, heading: 120, name: '中远上海', englishName: 'COSCO SHANGHAI', callsign: 'CSH01', mmsi: '413000102', type: '集装箱船', speed: 12.0, destination: '洋山港', status: 'warning' },
+  { id: 'ship-new-003', lat: 31.422, lng: 121.558, heading: 210, name: '苏意 66', englishName: 'SU YI 66', callsign: 'SY66', mmsi: '413000103', type: '散货船', speed: 8.5, destination: '南通', status: 'caution' },
+  { id: 'ship-new-004', lat: 31.426, lng: 121.562, heading: 330, name: '时代 9', englishName: 'ERA 9', callsign: 'TIME9', mmsi: '413000104', type: '油轮', speed: 0.1, destination: '临时锚位', status: 'risk' },
   { id: 'ship-001', lat: 31.4382, lng: 121.5618, heading: 32, name: '远洋 123', englishName: 'OCEAN PIONEER 123', callsign: 'BARD1', mmsi: '413000001', type: '货轮', speed: 12.4, destination: '外高桥码头', status: 'normal' },
   { id: 'ship-002', lat: 31.4315, lng: 121.5742, heading: 218, name: '海丰 77', englishName: 'HAI FENG 77', callsign: 'VRGT5', mmsi: '413000002', type: '集装箱船', speed: 9.8, destination: '圆圆沙锚地', status: 'warning' },
   { id: 'ship-003', lat: 31.4236, lng: 121.5484, heading: 84, name: '振华 15', englishName: 'ZHEN HUA 15', callsign: 'BHKS3', mmsi: '413000003', type: '工程船', speed: 4.1, destination: '作业区 B5', status: 'caution' },
@@ -197,11 +201,11 @@ export const INTENT_DATA: IntentItem[] = [
     intentEta: '预计 6 分钟后完成解缆离泊',
     risks: [
       { level: '警告', text: '港池机动空间有限：拖轮作业窗口较短', action: '保持低速离泊', counterparty: '沪港拖08', location: '外高桥港池出口', timeToEncounter: '约 9 分钟后' },
-      { level: '警告', text: '艏向调整中：旋回余度不足', action: '优先校正船首方向' },
+      { level: '警告', text: '菏向调整中：旋回余度不足', action: '优先校正船首方向' },
       { level: '注意', text: '后方交通可控：无紧迫追越船', action: '按计划离泊' },
     ],
     situation: { sog: '4.2kn', hdg: '128°', cpa: '0.46nm', tcpa: '09:10', xtd: '+12m', rot: '2.2°/min', trend: 'ROT ↑' },
-    recommendation: { action: '保持低速解缆，先完成艏向修正，再进入离港航道。', priority: '优先' },
+    recommendation: { action: '保持低速解缆，先完成菏向修正，再进入离港航道。', priority: '优先' },
     anchorTime: '2026-03-18 10:30',
     path: [
       { label: '外高桥', status: 'active', action: '离泊中' },
@@ -234,7 +238,7 @@ export const INTENT_DATA: IntentItem[] = [
     risks: [
       { level: '警告', text: '锚地内相邻船距收缩：左舷船间距不足', action: '限制横移', counterparty: '海巡21', location: '10号锚地西侧入锚点', timeToEncounter: '约 11 分钟后' },
       { level: '警告', text: '航速 2.5kn：抛锚前减速不足', action: '继续降至 1kn 以下' },
-      { level: '注意', text: '风流可控：当前不影响锚泊', action: '维持艏向稳定' },
+      { level: '注意', text: '风流可控：当前不影响锚泊', action: '维持菏向稳定' },
     ],
     situation: { sog: '2.5kn', hdg: '071°', cpa: '0.62nm', tcpa: '11:40', xtd: '+18m', rot: '0.5°/min', trend: 'SOG ↓' },
     recommendation: { action: '继续减速并限制横移，确认锚位后再执行抛锚。', priority: '优先' },
