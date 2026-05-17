@@ -343,9 +343,6 @@ export default function AppView() {
         mapOverlay={smartDutyAvatarOverlay}
       />
 
-      {/* Floating Message Push Panel for Non-Smart-Duty Modes */}
-      {viewMode !== 'smart-duty' && <MessagePushPanel variant="floating" />}
-
       <style
         dangerouslySetInnerHTML={{
           __html: `

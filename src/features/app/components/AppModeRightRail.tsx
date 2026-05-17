@@ -4,6 +4,7 @@ import { MOCK_ALERTS, MOCK_RISK_STATS } from '../../../mockData';
 import type { HomeShipDetail } from '../../../types';
 import type { HomeViewMode } from '../utils/viewModes';
 import MessagePushPanel from './MessagePushPanel';
+import RiskAnalysisDashboard from './RiskAnalysisDashboard';
 import type { MessageFeedItem } from './messagePushConfig';
 
 type AppModeRightRailProps = {
@@ -26,13 +27,13 @@ function PanelShell({
   children: ReactNode;
 }) {
   return (
-    <aside className="flex h-full w-[420px] shrink-0 flex-col border-l border-white/10 bg-[#060606]/92 p-4 backdrop-blur-xl">
+    <aside className="flex h-full w-[420px] shrink-0 flex-col border-l border-white/10 bg-[#060606]/92 p-4 backdrop-blur-xl transition-all duration-500 group-[.vts-theme--light]/shell:bg-slate-50 group-[.vts-theme--light]/shell:border-slate-200">
       {!hideHeader ? (
-        <div className="mb-4 border-b border-white/8 pb-4">
-          <div className="text-[13px] font-black uppercase tracking-[0.2em] text-white/85">
+        <div className="mb-4 border-b border-white/8 pb-4 group-[.vts-theme--light]/shell:border-slate-200">
+          <div className="text-[13px] font-black uppercase tracking-[0.2em] text-white/85 group-[.vts-theme--light]/shell:text-slate-900">
             {title}
           </div>
-          <div className="mt-2 text-xs leading-5 text-white/45">{subtitle}</div>
+          <div className="mt-2 text-xs leading-5 text-white/45 group-[.vts-theme--light]/shell:text-slate-400">{subtitle}</div>
         </div>
       ) : null}
       <div className="min-h-0 flex-1">{children}</div>
@@ -67,56 +68,13 @@ function SmartDutyRail({
   );
 }
 
-function RiskAnalysisRail({ onOpenPlayback }: { onOpenPlayback: (index: number) => void }) {
-  const emergencyCount = MOCK_ALERTS.filter((item) => item.level === 'emergency').length;
-  const riskScores = MOCK_RISK_STATS.map((item) => Number(item.riskScore)).filter((item) =>
-    Number.isFinite(item),
-  );
-  const avgRisk = riskScores.length
-    ? Math.round(riskScores.reduce((sum, item) => sum + item, 0) / riskScores.length)
-    : '--';
-
+function RiskAnalysisRail() {
   return (
     <PanelShell
-      title="风险分析"
-      subtitle="聚焦高风险船舶、风险评分和回放入口，作为地图主页上的专题分析视图。"
+      title="风险大数据分析"
+      subtitle="面向宏观管理层，从长期态势角度把握全局安全。利用 AI 进行空间与时间聚类分析。"
     >
-      <div className="mb-4 grid grid-cols-3 gap-3">
-        {[
-          { label: '高风险船', value: 5, tone: 'text-red-300' },
-          { label: '紧急告警', value: emergencyCount, tone: 'text-orange-300' },
-          { label: '均值评分', value: avgRisk, tone: 'text-sky-300' },
-        ].map((item) => (
-          <div key={item.label} className="rounded-xl border border-white/10 bg-white/5 p-3">
-            <div className="text-[11px] text-white/45">{item.label}</div>
-            <div className={`mt-3 text-2xl font-black ${item.tone}`}>{item.value}</div>
-          </div>
-        ))}
-      </div>
-
-      <div className="custom-scrollbar h-[calc(100%-126px)] space-y-3 overflow-y-auto pr-1">
-        {MOCK_RISK_STATS.slice(0, 5).map((item, index) => (
-          <div key={item.name} className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                <div className="text-sm font-bold text-white">{item.name}</div>
-                <div className="mt-1 text-xs text-white/45">{item.snapshot.location}</div>
-              </div>
-              <div className="rounded-full bg-red-500/15 px-2.5 py-1 text-[11px] font-bold text-red-300">
-                {item.riskScore}
-              </div>
-            </div>
-            <div className="mt-3 text-xs leading-5 text-white/70">{item.risk}</div>
-            <button
-              onClick={() => onOpenPlayback(index)}
-              className="mt-4 flex items-center gap-2 rounded-lg border border-sky-500/20 bg-sky-500/10 px-3 py-2 text-xs font-semibold text-sky-300 transition-colors hover:bg-sky-500/15"
-            >
-              <PlayCircle size={14} />
-              打开风险回放
-            </button>
-          </div>
-        ))}
-      </div>
+      <RiskAnalysisDashboard />
     </PanelShell>
   );
 }
@@ -233,7 +191,7 @@ export default function AppModeRightRail({
   }
 
   if (mode === 'risk-analysis') {
-    return <RiskAnalysisRail onOpenPlayback={onOpenPlayback} />;
+    return <RiskAnalysisRail />;
   }
 
   if (mode === 'case-playback') {
