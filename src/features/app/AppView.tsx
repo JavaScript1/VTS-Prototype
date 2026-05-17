@@ -23,6 +23,9 @@ import DynamicPlaybackView from '../../components/Panels/DynamicPlaybackView';
 import AppHomeWorkspace from './components/AppHomeWorkspace';
 import AppModeRightRail from './components/AppModeRightRail';
 import AppTopBar from './components/AppTopBar';
+import MessagePushAvatar from './components/MessagePushAvatar';
+import MessagePushPanel from './components/MessagePushPanel';
+import type { MessageFeedItem } from './components/messagePushConfig';
 import {
   buildHomeShipDetails,
   buildVhfSessions,
@@ -68,6 +71,7 @@ export default function AppView() {
   const [playbackData, setPlaybackData] = useState<AppPlaybackSession | null>(null);
   const [dynamicPlaybackSession, setDynamicPlaybackSession] =
     useState<AppPlaybackSession | null>(null);
+  const [smartDutyMessages, setSmartDutyMessages] = useState<MessageFeedItem[]>([]);
   const [vhfMessages] = useState<VHFMessage[]>(MOCK_VHF_MESSAGES_RAW);
   const [selectedVhfSessionId, setSelectedVhfSessionId] = useState<string | null>(null);
 
@@ -187,6 +191,7 @@ export default function AppView() {
       return;
     }
 
+    setSmartDutyMessages([]);
     setSidebarOpen(true);
     setSidebarPosition('left');
 
@@ -206,8 +211,19 @@ export default function AppView() {
         currentTime={currentTime}
         selectedHomeShip={selectedHomeShip}
         onOpenPlayback={openRiskPlaybackByIndex}
+        onSmartDutyMessagesChange={setSmartDutyMessages}
       />
     );
+
+  const smartDutyAvatarOverlay =
+    viewMode === 'smart-duty' ? (
+      <div className="pointer-events-none absolute bottom-4 right-4 z-[410]">
+        <MessagePushAvatar
+          messages={smartDutyMessages}
+          className="w-[170px] drop-shadow-[0_10px_30px_rgba(0,0,0,0.5)]"
+        />
+      </div>
+    ) : null;
 
   const sidebarProps = {
     activeTab,
@@ -324,7 +340,11 @@ export default function AppView() {
         mapProps={mapProps}
         bottomBarProps={bottomBarProps}
         rightRail={rightRail}
+        mapOverlay={smartDutyAvatarOverlay}
       />
+
+      {/* Floating Message Push Panel for Non-Smart-Duty Modes */}
+      {viewMode !== 'smart-duty' && <MessagePushPanel variant="floating" />}
 
       <style
         dangerouslySetInnerHTML={{

@@ -7,88 +7,18 @@ import { useEffect, useState } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
 import { AlertTriangle, Ban, Check, CloudRain, Compass, RotateCcw, X } from 'lucide-react';
 import { type PushMessage } from '../../../types';
+import { createMessageFeedItem, type MessageFeedItem } from './messagePushConfig';
 
 const AUTO_APPROVE_SECONDS = 20;
-const PUSH_INTERVAL_MS = 5500;
-const WARMUP_PUSH_DELAYS = [1800, 3600];
-
-const MOCK_INTENTS = [
-  {
-    title: '意图识别',
-    content: "识别到 'COSCO SHIPPING' 意图：靠泊 粮油码头 A1",
-    level: 'info',
-    suggestion: '建议批准靠泊申请，并指派拖轮“沪港拖01”协助。',
-    hasActions: true,
-  },
-  {
-    title: '意图识别',
-    content: "识别到 'EVER GIVEN' 意图：通过 苏伊士运河",
-    level: 'info',
-    suggestion: '建议保持当前航速，注意河道窄段。',
-    hasActions: false,
-  },
-  {
-    title: '意图识别',
-    content: "识别到 'MAERSK ALABAMA' 意图：前往 锚地 A2",
-    level: 'info',
-    suggestion: '建议引导其进入 A2 锚地 3 号位。',
-    hasActions: true,
-  },
-];
-
-const MOCK_WARNINGS = [
-  {
-    title: '预警信息',
-    content: "预警：'SHIP A' 偏离航道 0.5nm",
-    level: 'warning',
-    suggestion: '系统已发出修正指令，建议值班员持续观察。',
-    hasActions: true,
-  },
-  {
-    title: '碰撞风险',
-    content: "预警：'SHIP B' 与 'SHIP C' 存在碰撞风险 (CPA < 0.1nm)",
-    level: 'emergency',
-    suggestion: '立即通过 VHF 呼叫双方避让。',
-    hasActions: true,
-  },
-  {
-    title: '进入禁区',
-    content: "警报：'SHIP D' 进入禁航区",
-    level: 'emergency',
-    suggestion: '立即指派海巡船进行干预。',
-    hasActions: true,
-  },
-];
-
-const MOCK_WEATHER = [
-  {
-    title: '天气提醒',
-    content: '区域 A 预计 10 分钟后有强降雨',
-    level: 'info',
-    suggestion: '建议周边船舶减速航行。',
-    hasActions: false,
-  },
-  {
-    title: '能见度提醒',
-    content: '港口能见度下降至 500m',
-    level: 'warning',
-    suggestion: '建议启动大雾天气航行管制预案。',
-    hasActions: true,
-  },
-  {
-    title: '大风预警',
-    content: '阵风达到 7 级，请注意航行安全',
-    level: 'warning',
-    suggestion: '建议锚泊船加强值班，防止走锚。',
-    hasActions: false,
-  },
-];
+const PUSH_INTERVAL_MS = 10000;
+const WARMUP_PUSH_DELAYS: number[] = [];
 
 export type MessagePushPanelProps = {
   variant?: 'floating' | 'embedded';
   maxMessages?: number;
   title?: string;
   className?: string;
+  onMessagesChange?: (messages: MessageFeedItem[]) => void;
 };
 
 function MessageItem({
@@ -223,34 +153,15 @@ function MessageItem({
 export default function MessagePushPanel({
   variant = 'floating',
   maxMessages = 8,
-  title,
+  title: _title,
   className = '',
+  onMessagesChange,
 }: MessagePushPanelProps) {
-  const [messages, setMessages] = useState<PushMessage[]>([]);
+  const [messages, setMessages] = useState<MessageFeedItem[]>([]);
 
   useEffect(() => {
     const addRandomMessage = () => {
-      const types: Array<'intent' | 'warning' | 'weather'> = ['intent', 'warning', 'weather'];
-      const type = types[Math.floor(Math.random() * types.length)];
-
-      const source =
-        type === 'intent' ? MOCK_INTENTS : type === 'warning' ? MOCK_WARNINGS : MOCK_WEATHER;
-      const template = source[Math.floor(Math.random() * source.length)];
-
-      const newMessage: PushMessage = {
-        id: Math.random().toString(36).slice(2, 11),
-        type,
-        title: template.title,
-        content: template.content,
-        level: template.level,
-        suggestion: template.suggestion,
-        hasActions: template.hasActions,
-        time: new Date().toLocaleTimeString([], {
-          hour: '2-digit',
-          minute: '2-digit',
-          second: '2-digit',
-        }),
-      };
+      const newMessage = createMessageFeedItem(new Date());
 
       setMessages((prev) => [newMessage, ...prev].slice(0, maxMessages));
     };
@@ -270,6 +181,10 @@ export default function MessagePushPanel({
   const removeMessage = (id: string) => {
     setMessages((prev) => prev.filter((message) => message.id !== id));
   };
+
+  useEffect(() => {
+    onMessagesChange?.(messages);
+  }, [messages, onMessagesChange]);
 
   const handleAutoApprove = (message: PushMessage) => {
     if (message.hasActions) {

@@ -4,12 +4,14 @@ import { MOCK_ALERTS, MOCK_RISK_STATS } from '../../../mockData';
 import type { HomeShipDetail } from '../../../types';
 import type { HomeViewMode } from '../utils/viewModes';
 import MessagePushPanel from './MessagePushPanel';
+import type { MessageFeedItem } from './messagePushConfig';
 
 type AppModeRightRailProps = {
   mode: Exclude<HomeViewMode, 'normal'>;
   currentTime: Date;
   selectedHomeShip: HomeShipDetail | null;
   onOpenPlayback: (index: number) => void;
+  onSmartDutyMessagesChange?: (messages: MessageFeedItem[]) => void;
 };
 
 function PanelShell({
@@ -38,7 +40,13 @@ function PanelShell({
   );
 }
 
-function SmartDutyRail({ currentTime }: { currentTime: Date }) {
+function SmartDutyRail({
+  currentTime,
+  onMessagesChange,
+}: {
+  currentTime: Date;
+  onMessagesChange?: (messages: MessageFeedItem[]) => void;
+}) {
   return (
     <PanelShell
       title="智能值班"
@@ -48,7 +56,13 @@ function SmartDutyRail({ currentTime }: { currentTime: Date }) {
       })}，右侧集中承载消息推送与值班摘要。`}
       hideHeader
     >
-      <MessagePushPanel variant="embedded" title="消息推送" maxMessages={8} className="h-full" />
+      <MessagePushPanel
+        variant="embedded"
+        title="消息推送"
+        maxMessages={8}
+        className="h-full"
+        onMessagesChange={onMessagesChange}
+      />
     </PanelShell>
   );
 }
@@ -212,9 +226,10 @@ export default function AppModeRightRail({
   currentTime,
   selectedHomeShip,
   onOpenPlayback,
+  onSmartDutyMessagesChange,
 }: AppModeRightRailProps) {
   if (mode === 'smart-duty') {
-    return <SmartDutyRail currentTime={currentTime} />;
+    return <SmartDutyRail currentTime={currentTime} onMessagesChange={onSmartDutyMessagesChange} />;
   }
 
   if (mode === 'risk-analysis') {

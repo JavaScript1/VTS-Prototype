@@ -77,11 +77,14 @@
   - `AppSidebar.tsx`
   - `AppTopBar.tsx`
   - `MarqueeText.tsx`
+  - `MessagePushAvatar.tsx`
   - `MessagePushPanel.tsx`
 - `utils/`
   首页相关工具函数，按锚地、船舶、VHF、回放等主题拆分。
   - `homeViewData.ts`
     首页常规模式和多模式工作台共用的数据派生逻辑。
+  - `messagePushConfig.ts`
+    智能值班消息推送的频率、权重模板和数字人状态映射。
   - `viewModes.ts`
     主页面顶部模式路由定义，例如常规模式、智能值班模式、风险分析等。
 - `index.ts`
