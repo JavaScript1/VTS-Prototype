@@ -11,7 +11,7 @@ import { AnimatePresence, motion } from 'motion/react';
 
 type SidebarPosition = 'left' | 'right';
 
-type AppBottomBarProps = {
+export type AppBottomBarProps = {
   showBars: boolean;
   mouseCoords: { lat: number; lng: number } | null;
   isControlPanelExpanded: boolean;

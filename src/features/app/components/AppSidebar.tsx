@@ -28,7 +28,7 @@ import { getCompactIntentLine, getCompactRiskLines } from '../utils/intent';
 
 type SidebarPosition = 'left' | 'right';
 
-type AppSidebarProps = {
+export type AppSidebarProps = {
   activeTab: SidebarTab;
   sidebarOpen: boolean;
   sidebarPosition: SidebarPosition;

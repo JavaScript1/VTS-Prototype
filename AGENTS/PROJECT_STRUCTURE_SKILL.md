@@ -72,12 +72,18 @@
   首页壳层子组件，例如顶部栏、底部栏、侧栏装配、地图装配等。
   - `AppBottomBar.tsx`
   - `AppHomeMap.tsx`
+  - `AppHomeWorkspace.tsx`
+  - `AppModeRightRail.tsx`
   - `AppSidebar.tsx`
   - `AppTopBar.tsx`
   - `MarqueeText.tsx`
   - `MessagePushPanel.tsx`
 - `utils/`
   首页相关工具函数，按锚地、船舶、VHF、回放等主题拆分。
+  - `homeViewData.ts`
+    首页常规模式和多模式工作台共用的数据派生逻辑。
+  - `viewModes.ts`
+    主页面顶部模式路由定义，例如常规模式、智能值班模式、风险分析等。
 - `index.ts`
   feature 对外统一出口。
 

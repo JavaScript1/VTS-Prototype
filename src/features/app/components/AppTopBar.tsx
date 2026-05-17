@@ -1,9 +1,12 @@
-import { Settings, User, LogOut } from 'lucide-react';
+import { LogOut, Settings, User } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
+import { HOME_VIEW_MODE_OPTIONS, type HomeViewMode } from '../utils/viewModes';
 
-type AppTopBarProps = {
+export type AppTopBarProps = {
   showBars: boolean;
   showUserMenu: boolean;
+  currentMode: HomeViewMode;
+  onModeChange: (mode: HomeViewMode) => void;
   onOpenAdmin: () => void;
   onToggleUserMenu: () => void;
   onCloseUserMenu: () => void;
@@ -12,10 +15,19 @@ type AppTopBarProps = {
 export default function AppTopBar({
   showBars,
   showUserMenu,
+  currentMode,
+  onModeChange,
   onOpenAdmin,
   onToggleUserMenu,
   onCloseUserMenu,
 }: AppTopBarProps) {
+  const primaryModes = HOME_VIEW_MODE_OPTIONS.filter(
+    (option) => option.id === 'normal' || option.id === 'smart-duty',
+  );
+  const routeModes = HOME_VIEW_MODE_OPTIONS.filter(
+    (option) => option.id !== 'normal' && option.id !== 'smart-duty',
+  );
+
   return (
     <AnimatePresence>
       {showBars && (
@@ -23,18 +35,48 @@ export default function AppTopBar({
           initial={{ height: 0, opacity: 0 }}
           animate={{ height: 'var(--vts-topbar-height)', opacity: 1 }}
           exit={{ height: 0, opacity: 0 }}
-          className="z-[3000] flex shrink-0 items-center justify-between border-b border-white/10 bg-[#0a0a0a] px-4"
+          className="z-[3000] flex shrink-0 items-center justify-between border-b border-white/10 bg-[#0a0a0a] px-4 py-0"
         >
-          <div className="flex items-center gap-4" />
+          <div className="flex min-w-0 flex-1 items-center">
+            <div className="flex max-w-[calc(100vw-260px)] items-center gap-4 overflow-x-auto">
+              <div className="flex items-center gap-1 rounded-full border border-white/10 bg-[#111111]/90 px-2 py-1 backdrop-blur-xl">
+                {primaryModes.map((option) => {
+                  const active = option.id === currentMode;
+                  return (
+                    <button
+                      key={option.id}
+                      onClick={() => onModeChange(option.id)}
+                      className={`whitespace-nowrap rounded-full px-4 py-1.5 text-xs font-bold tracking-[0.08em] transition-all ${
+                        active
+                          ? 'bg-sky-500/20 text-sky-300 shadow-[0_0_18px_rgba(14,165,233,0.18)]'
+                          : 'text-white/55 hover:bg-white/5 hover:text-white'
+                      }`}
+                    >
+                      {option.label}
+                    </button>
+                  );
+                })}
+              </div>
 
-          <div className="absolute left-1/2 flex -translate-x-1/2 items-center gap-3">
-            <div className="relative">
-              <div className="h-3 w-1.5 rounded-full bg-sky-500 shadow-[0_0_15px_rgba(14,165,233,0.6)]" />
-              <div className="absolute inset-0 animate-pulse bg-sky-400 opacity-50 blur-sm" />
+              <div className="flex items-center gap-1">
+                {routeModes.map((option) => {
+                  const active = option.id === currentMode;
+                  return (
+                    <button
+                      key={option.id}
+                      onClick={() => onModeChange(option.id)}
+                      className={`whitespace-nowrap rounded-lg px-3 py-1.5 text-xs font-bold tracking-[0.08em] transition-all ${
+                        active
+                          ? 'bg-white/5 text-white'
+                          : 'text-white/45 hover:text-white/80'
+                      }`}
+                    >
+                      {option.label}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
-            <h1 className="text-base font-black uppercase tracking-[0.24em] text-white/90">
-              VTS智能辅助系统
-            </h1>
           </div>
 
           <div className="flex items-center gap-4">
@@ -60,10 +102,7 @@ export default function AppTopBar({
               <AnimatePresence>
                 {showUserMenu && (
                   <>
-                    <div
-                      className="fixed inset-0 z-40 cursor-pointer"
-                      onClick={onCloseUserMenu}
-                    />
+                    <div className="fixed inset-0 z-40 cursor-pointer" onClick={onCloseUserMenu} />
                     <motion.div
                       initial={{ opacity: 0, y: 10, scale: 0.95 }}
                       animate={{ opacity: 1, y: 0, scale: 1 }}

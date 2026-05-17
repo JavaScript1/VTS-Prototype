@@ -16,7 +16,7 @@ import {
   VTS_CHART_TILE_URL,
 } from '../../map/constants';
 
-type AppHomeMapProps = {
+export type AppHomeMapProps = {
   playbackData: { vessel: any; event: any } | null;
   homeMapFocusTarget: [number, number] | null;
   selectedHomeShip: HomeShipDetail | null;
