@@ -11,6 +11,7 @@ type AppHomeWorkspaceProps = {
   bottomBarProps: AppBottomBarProps;
   rightRail?: ReactNode;
   mapOverlay?: ReactNode;
+  onModeChange?: (mode: HomeViewMode) => void;
 };
 
 export default function AppHomeWorkspace({
@@ -20,6 +21,7 @@ export default function AppHomeWorkspace({
   bottomBarProps,
   rightRail,
   mapOverlay,
+  onModeChange,
 }: AppHomeWorkspaceProps) {
   const showSidebar = true;
   const effectiveSidebarPosition = mode === 'normal' ? sidebarProps.sidebarPosition : 'left';
@@ -35,7 +37,7 @@ export default function AppHomeWorkspace({
           {showSidebar ? <AppSidebar {...sidebarProps} sidebarPosition={effectiveSidebarPosition} /> : null}
 
           <div className="relative flex min-w-0 flex-1 overflow-hidden">
-            <AppHomeMap {...mapProps} />
+            <AppHomeMap {...mapProps} mode={mode} onModeChange={onModeChange} />
             {mapOverlay}
           </div>
         </div>

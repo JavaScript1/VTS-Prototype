@@ -15,8 +15,11 @@ import {
   VTS_CHART_TILE_ATTRIBUTION,
   VTS_CHART_TILE_URL,
 } from '../../map/constants';
+import LawEnforcementPanel from './LawEnforcementPanel';
+import type { HomeViewMode } from '../utils/viewModes';
 
 export type AppHomeMapProps = {
+  mode: HomeViewMode;
   playbackData: { vessel: any; event: any } | null;
   homeMapFocusTarget: [number, number] | null;
   selectedHomeShip: HomeShipDetail | null;
@@ -24,6 +27,7 @@ export type AppHomeMapProps = {
   onMouseMove: (coords: { lat: number; lng: number } | null) => void;
   onSelectHomeShip: (shipId: string) => void;
   onSelectTrackPoint: (trackPointId: string) => void;
+  onModeChange?: (mode: HomeViewMode) => void;
 };
 
 const DEFAULT_HOME_MAP_ZOOM = 11;
@@ -97,6 +101,7 @@ const readPersistedMapZoom = (): number => {
 };
 
 export default function AppHomeMap({
+  mode,
   playbackData,
   homeMapFocusTarget,
   selectedHomeShip,
@@ -104,6 +109,7 @@ export default function AppHomeMap({
   onMouseMove,
   onSelectHomeShip,
   onSelectTrackPoint,
+  onModeChange,
 }: AppHomeMapProps) {
   return (
     <div className="relative flex-1 overflow-hidden bg-[#0a0a0a]">
@@ -216,7 +222,11 @@ export default function AppHomeMap({
         ))}
       </MapContainer>
 
-      <div className="absolute left-4 top-4 z-[1500] flex flex-col gap-4" />
+      <div className="absolute left-4 top-4 z-[1500] flex flex-col gap-4">
+        {(mode === 'normal' || mode === 'smart-duty') && (
+          <LawEnforcementPanel onEnterSystem={() => onModeChange?.('case-playback')} />
+        )}
+      </div>
     </div>
   );
 }

@@ -108,6 +108,13 @@
   VHF 功能出口。
 - 当前主要实现复用 `src/components/Panels/VhfPanel.tsx`
 
+### `src/features/law-enforcement/`
+
+- `LawEnforcementView.tsx`
+  执法力量主页面，集成违法甄别、证据链分析与拦截规划功能。
+- `index.ts`
+  对外出口。
+
 ### `src/features/ship-detail/`
 
 - `index.ts`
