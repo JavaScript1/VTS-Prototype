@@ -21,7 +21,10 @@ export default function AppTopBar({
   onToggleUserMenu,
   onCloseUserMenu,
 }: AppTopBarProps) {
-  const isLight = currentMode === 'risk-analysis';
+  const isLight =
+    currentMode === 'risk-analysis' ||
+    currentMode === 'case-playback' ||
+    currentMode === 'emergency-rescue';
   const primaryModes = HOME_VIEW_MODE_OPTIONS.filter(
     (option) => option.id === 'normal' || option.id === 'smart-duty',
   );

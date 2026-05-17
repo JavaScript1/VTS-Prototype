@@ -304,7 +304,7 @@ export default function AppView() {
 
   return (
     <div className={`vts-home-shell flex h-screen w-screen flex-col overflow-hidden font-sans transition-colors duration-500 ${
-      viewMode === 'risk-analysis' 
+      viewMode === 'risk-analysis' || viewMode === 'case-playback' || viewMode === 'emergency-rescue'
         ? 'bg-slate-50 text-slate-900 vts-theme--light group/shell' 
         : 'bg-[#0a0a0a] text-white'
     }`}>
@@ -341,6 +341,8 @@ export default function AppView() {
 
       {viewMode === 'risk-analysis' ? (
         <RiskAnalysisView />
+      ) : viewMode === 'case-playback' || viewMode === 'emergency-rescue' ? (
+        <main className="flex-1 bg-slate-50" />
       ) : (
         <AppHomeWorkspace
           mode={viewMode}
