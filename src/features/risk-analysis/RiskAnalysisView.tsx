@@ -1,0 +1,125 @@
+import { useState } from 'react';
+import { 
+  BarChart3, 
+  Globe, 
+  Settings, 
+  Shield, 
+  LayoutDashboard,
+  ArrowRight,
+  Database,
+  Users,
+  Lock,
+  Map as MapIcon,
+  Activity,
+  Ship,
+  BookOpen,
+  Volume2,
+  Monitor,
+  Presentation
+} from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
+import RiskMacroTrend from './RiskMacroTrend';
+import RiskWarningManagement from './RiskWarningManagement';
+import RiskAdminConsole from './RiskAdminConsole';
+
+type RiskAnalysisTab = 'macro-trend' | 'warning-mgmt' | 'admin-console';
+
+export default function RiskAnalysisView() {
+  const [activeTab, setActiveTab] = useState<RiskAnalysisTab>('macro-trend');
+
+  const menuItems = [
+    { id: 'macro-trend', label: '宏观态势', icon: Globe, description: '全辖区风险分布与趋势分析' },
+    { id: 'warning-mgmt', label: '预警管理', icon: Shield, description: '实时预警策略与风险列表' },
+    { id: 'admin-console', label: '后台管理', icon: Settings, description: '系统配置与基础数据维护' },
+  ];
+
+  return (
+    <div className="flex h-full w-full overflow-hidden bg-slate-50">
+      {/* Sidebar */}
+      <aside className="flex w-64 shrink-0 flex-col border-r border-slate-200 bg-white">
+        <div className="flex h-14 items-center gap-3 border-b border-slate-100 px-6">
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-sky-500 text-white shadow-lg shadow-sky-500/20">
+            <LayoutDashboard size={18} />
+          </div>
+          <span className="text-sm font-black tracking-widest text-slate-800">风险分析中心</span>
+        </div>
+
+        <div className="flex-1 space-y-1 overflow-y-auto p-4">
+          <div className="mb-2 px-2 text-[10px] font-bold uppercase tracking-widest text-slate-400">主要模块</div>
+          {menuItems.map((item) => {
+            const active = activeTab === item.id;
+            return (
+              <button
+                key={item.id}
+                onClick={() => setActiveTab(item.id as RiskAnalysisTab)}
+                className={`group flex w-full flex-col gap-1 rounded-xl px-4 py-3 transition-all ${
+                  active 
+                    ? 'bg-sky-50 text-sky-600 shadow-sm ring-1 ring-inset ring-sky-200' 
+                    : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900'
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <item.icon size={18} className={active ? 'text-sky-500' : 'text-slate-400 group-hover:text-slate-600'} />
+                  <span className="text-xs font-bold">{item.label}</span>
+                  {active && <ArrowRight size={12} className="ml-auto" />}
+                </div>
+                <div className={`pl-7 text-[10px] leading-relaxed ${active ? 'text-sky-500/70' : 'text-slate-400'}`}>
+                  {item.description}
+                </div>
+              </button>
+            );
+          })}
+
+          <div className="my-6 h-px bg-slate-100" />
+          
+          <div className="mb-2 px-2 text-[10px] font-bold uppercase tracking-widest text-slate-400">数据资源</div>
+          <div className="space-y-1">
+            {[
+              { label: '基础物标库', icon: Database },
+              { label: '船舶档案', icon: Ship },
+              { label: '历史轨迹', icon: Activity },
+            ].map((item) => (
+              <button key={item.label} className="flex w-full items-center gap-3 rounded-lg px-4 py-2 text-xs font-medium text-slate-500 hover:bg-slate-50 hover:text-slate-700 transition-colors">
+                <item.icon size={14} className="text-slate-300" />
+                {item.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="border-t border-slate-100 p-4">
+          <div className="rounded-xl bg-slate-50 p-3">
+            <div className="flex items-center justify-between text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+              <span>系统状态</span>
+              <span className="text-emerald-500 flex items-center gap-1">
+                <span className="h-1 w-1 rounded-full bg-emerald-500" />
+                在线
+              </span>
+            </div>
+            <div className="mt-2 text-[10px] text-slate-500">
+              数据同步于 2026-05-11
+            </div>
+          </div>
+        </div>
+      </aside>
+
+      {/* Main Content */}
+      <main className="flex min-w-0 flex-1 flex-col overflow-hidden">
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={activeTab}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.2 }}
+            className="flex min-h-0 flex-1 flex-col"
+          >
+            {activeTab === 'macro-trend' && <RiskMacroTrend />}
+            {activeTab === 'warning-mgmt' && <RiskWarningManagement />}
+            {activeTab === 'admin-console' && <RiskAdminConsole />}
+          </motion.div>
+        </AnimatePresence>
+      </main>
+    </div>
+  );
+}

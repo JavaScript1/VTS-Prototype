@@ -69,14 +69,7 @@ function SmartDutyRail({
 }
 
 function RiskAnalysisRail() {
-  return (
-    <PanelShell
-      title="风险大数据分析"
-      subtitle="面向宏观管理层，从长期态势角度把握全局安全。利用 AI 进行空间与时间聚类分析。"
-    >
-      <RiskAnalysisDashboard />
-    </PanelShell>
-  );
+  return null;
 }
 
 function CasePlaybackRail({

@@ -34,6 +34,7 @@ import {
 import { getRiskPlaybackSession, type AppPlaybackSession } from './utils/playback';
 import { type HomeViewMode } from './utils/viewModes';
 import { normalizeVhfShipName } from './utils/vhf';
+import RiskAnalysisView from '../risk-analysis/RiskAnalysisView';
 
 export default function AppView() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -302,7 +303,11 @@ export default function AppView() {
   };
 
   return (
-    <div className="vts-home-shell flex h-screen w-screen flex-col overflow-hidden bg-[#0a0a0a] font-sans text-white">
+    <div className={`vts-home-shell flex h-screen w-screen flex-col overflow-hidden font-sans transition-colors duration-500 ${
+      viewMode === 'risk-analysis' 
+        ? 'bg-slate-50 text-slate-900 vts-theme--light group/shell' 
+        : 'bg-[#0a0a0a] text-white'
+    }`}>
       <AnimatePresence>
         {dynamicPlaybackSession && (
           <DynamicPlaybackView
@@ -334,14 +339,18 @@ export default function AppView() {
         onCloseUserMenu={() => setShowUserMenu(false)}
       />
 
-      <AppHomeWorkspace
-        mode={viewMode}
-        sidebarProps={sidebarProps}
-        mapProps={mapProps}
-        bottomBarProps={bottomBarProps}
-        rightRail={rightRail}
-        mapOverlay={smartDutyAvatarOverlay}
-      />
+      {viewMode === 'risk-analysis' ? (
+        <RiskAnalysisView />
+      ) : (
+        <AppHomeWorkspace
+          mode={viewMode}
+          sidebarProps={sidebarProps}
+          mapProps={mapProps}
+          bottomBarProps={bottomBarProps}
+          rightRail={rightRail}
+          mapOverlay={smartDutyAvatarOverlay}
+        />
+      )}
 
       <style
         dangerouslySetInnerHTML={{
