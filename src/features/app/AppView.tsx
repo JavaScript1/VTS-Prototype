@@ -341,7 +341,7 @@ export default function AppView() {
       />
 
       {viewMode === 'risk-analysis' ? (
-        <RiskAnalysisView />
+        <RiskAnalysisView onOpenPlayback={openRiskPlaybackByIndex} />
       ) : viewMode === 'case-playback' ? (
         <CasePlaybackView onOpenPlayback={openRiskPlaybackByIndex} />
       ) : viewMode === 'emergency-rescue' ? (

@@ -81,8 +81,8 @@ function CasePlaybackRail({
 }) {
   return (
     <PanelShell
-      title="案情回放"
-      subtitle="保留地图主页视角，同时在右侧列出可直接进入的典型案情回放样本。"
+      title="执法力量"
+      subtitle="保留地图主页视角，同时在右侧列出可直接进入的典型执法样本。"
     >
       <div className="mb-4 rounded-2xl border border-white/10 bg-white/[0.03] p-4">
         <div className="flex items-center gap-2 text-white/80">
@@ -93,7 +93,7 @@ function CasePlaybackRail({
           {selectedHomeShip?.name ?? '未选择船舶'}
         </div>
         <div className="mt-1 text-xs text-white/45">
-          {selectedHomeShip?.riskSummary ?? '点击地图船舶后可联动案情回放入口。'}
+          {selectedHomeShip?.riskSummary ?? '点击地图船舶后可联动执法回放入口。'}
         </div>
       </div>
 
@@ -115,7 +115,7 @@ function CasePlaybackRail({
               className="mt-4 flex items-center gap-2 rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-xs font-semibold text-white/80 transition-colors hover:bg-white/10"
             >
               <PlayCircle size={14} />
-              进入案情回放
+              进入执法回放
             </button>
           </div>
         ))}
@@ -131,7 +131,7 @@ function EmergencyRescueRail({ onOpenPlayback }: { onOpenPlayback: (index: numbe
 
   return (
     <PanelShell
-      title="紧急救援"
+      title="应急力量"
       subtitle="以应急联动为主，整合重点告警、处置建议与快捷回放入口。"
     >
       <div className="mb-4 grid grid-cols-2 gap-3">

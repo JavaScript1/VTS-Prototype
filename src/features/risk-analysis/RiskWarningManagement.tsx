@@ -15,13 +15,17 @@ const WARNING_TABS: Array<{ id: WarningTabId; label: string; icon: any }> = [
   { id: '重点区域', label: '重点区域', icon: MapIcon },
 ];
 
-export default function RiskWarningManagement() {
+type RiskWarningManagementProps = {
+  onOpenPlayback: (index: number) => void;
+};
+
+export default function RiskWarningManagement({ onOpenPlayback }: RiskWarningManagementProps) {
   const [activeTab, setActiveTab] = useState<WarningTabId>('风险列表');
   const [selectedRiskId, setSelectedRiskId] = useState<string | null>(MOCK_RISK_STATS[0]?.id ?? null);
 
   const handlePlayback = (item: MockRiskStat) => {
-    console.log('Playback risk:', item);
-    // In a real app, this would trigger the global playback session
+    const riskIndex = MOCK_RISK_STATS.findIndex((risk) => risk.id === item.id);
+    onOpenPlayback(riskIndex >= 0 ? riskIndex : 0);
   };
 
   return (

@@ -1,36 +1,31 @@
 import { useState } from 'react';
 import { 
-  BarChart3, 
+  AlertTriangle,
   Globe, 
-  Settings, 
-  Shield, 
   LayoutDashboard,
   ArrowRight,
   Database,
-  Users,
-  Lock,
-  Map as MapIcon,
   Activity,
   Ship,
-  BookOpen,
-  Volume2,
-  Monitor,
-  Presentation
+  History,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import RiskMacroTrend from './RiskMacroTrend';
-import RiskWarningManagement from './RiskWarningManagement';
-import RiskAdminConsole from './RiskAdminConsole';
+import RiskPlaybackCenter from './RiskPlaybackCenter';
 
-type RiskAnalysisTab = 'macro-trend' | 'warning-mgmt' | 'admin-console';
+type RiskAnalysisTab = 'macro-trend' | 'risk-playback' | 'collision-playback';
 
-export default function RiskAnalysisView() {
+type RiskAnalysisViewProps = {
+  onOpenPlayback: (index: number) => void;
+};
+
+export default function RiskAnalysisView({ onOpenPlayback }: RiskAnalysisViewProps) {
   const [activeTab, setActiveTab] = useState<RiskAnalysisTab>('macro-trend');
 
   const menuItems = [
     { id: 'macro-trend', label: '宏观态势', icon: Globe, description: '全辖区风险分布与趋势分析' },
-    { id: 'warning-mgmt', label: '预警管理', icon: Shield, description: '实时预警策略与风险列表' },
-    { id: 'admin-console', label: '后台管理', icon: Settings, description: '系统配置与基础数据维护' },
+    { id: 'risk-playback', label: '预警回放', icon: History, description: '普通预警案例筛选、快照查看与回放入口' },
+    { id: 'collision-playback', label: '碰撞预警', icon: AlertTriangle, description: '独立承载多船碰撞态势回放与高危预警复盘' },
   ];
 
   return (
@@ -115,8 +110,8 @@ export default function RiskAnalysisView() {
             className="flex min-h-0 flex-1 flex-col"
           >
             {activeTab === 'macro-trend' && <RiskMacroTrend />}
-            {activeTab === 'warning-mgmt' && <RiskWarningManagement />}
-            {activeTab === 'admin-console' && <RiskAdminConsole />}
+            {activeTab === 'risk-playback' && <RiskPlaybackCenter onOpenPlayback={onOpenPlayback} mode="warning" />}
+            {activeTab === 'collision-playback' && <RiskPlaybackCenter onOpenPlayback={onOpenPlayback} mode="collision" />}
           </motion.div>
         </AnimatePresence>
       </main>

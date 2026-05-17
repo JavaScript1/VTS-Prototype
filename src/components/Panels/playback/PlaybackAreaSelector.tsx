@@ -10,6 +10,7 @@ type PlaybackAreaSelectorProps = {
   onToggleCategory: (category: string) => void;
   onToggleAllInCategory: (category: string, areas: MockArea[]) => void;
   onReset: () => void;
+  embedded?: boolean;
 };
 
 export default function PlaybackAreaSelector({
@@ -20,18 +21,33 @@ export default function PlaybackAreaSelector({
   onToggleCategory,
   onToggleAllInCategory,
   onReset,
+  embedded = false,
 }: PlaybackAreaSelectorProps) {
   return (
-    <div className="rounded-2xl border border-white/5 bg-[#11161f] p-3">
+    <div
+      className={`rounded-2xl p-3 ${
+        embedded ? 'border border-slate-200 bg-slate-50' : 'border border-white/5 bg-[#11161f]'
+      }`}
+    >
       <div className="mb-3 flex items-center justify-between">
-        <div className="text-[13px] font-bold text-white/88">关联辖区</div>
+        <div className={`text-[13px] font-bold ${embedded ? 'text-slate-800' : 'text-white/88'}`}>
+          关联辖区
+        </div>
         <div className="flex items-center gap-2">
-          <span className="rounded-md bg-[#0c3751] px-2 py-0.5 text-[11px] text-[#18c4ff]">
+          <span
+            className={`rounded-md px-2 py-0.5 text-[11px] ${
+              embedded ? 'bg-sky-100 text-sky-600' : 'bg-[#0c3751] text-[#18c4ff]'
+            }`}
+          >
             已选 {selectedAreas.size}
           </span>
           <button
             onClick={onReset}
-            className="rounded-md bg-[#123243] px-2 py-0.5 text-[11px] text-[#18c4ff] transition-all hover:bg-[#18455b]"
+            className={`rounded-md px-2 py-0.5 text-[11px] transition-all ${
+              embedded
+                ? 'bg-slate-200 text-slate-600 hover:bg-slate-300'
+                : 'bg-[#123243] text-[#18c4ff] hover:bg-[#18455b]'
+            }`}
           >
             重置
           </button>
@@ -46,10 +62,18 @@ export default function PlaybackAreaSelector({
 
           return (
             <div key={category} className="mb-1">
-              <div className="flex items-center gap-2 rounded-lg px-2 py-2 text-[12px] text-white/70 hover:bg-white/[0.03]">
+              <div
+                className={`flex items-center gap-2 rounded-lg px-2 py-2 text-[12px] ${
+                  embedded
+                    ? 'text-slate-600 hover:bg-white'
+                    : 'text-white/70 hover:bg-white/[0.03]'
+                }`}
+              >
                 <button
                   onClick={() => onToggleCategory(category)}
-                  className="rounded p-0.5 text-white/45 transition-all hover:bg-white/[0.06]"
+                  className={`rounded p-0.5 transition-all ${
+                    embedded ? 'text-slate-400 hover:bg-slate-100' : 'text-white/45 hover:bg-white/[0.06]'
+                  }`}
                 >
                   {isExpanded ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
                 </button>
@@ -63,7 +87,9 @@ export default function PlaybackAreaSelector({
                         ? 'border-[#18c4ff] bg-[#18c4ff]'
                         : someSelected
                           ? 'border-[#18c4ff] bg-[#18c4ff]/45'
-                          : 'border-white/18'
+                          : embedded
+                            ? 'border-slate-300'
+                            : 'border-white/18'
                     }`}
                   >
                     {allSelected && <Check size={10} className="text-white" strokeWidth={3} />}
@@ -85,20 +111,34 @@ export default function PlaybackAreaSelector({
                       <button
                         key={area.id}
                         onClick={() => onToggleArea(area.id)}
-                        className="flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left text-[12px] hover:bg-white/[0.03]"
+                        className={`flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left text-[12px] ${
+                          embedded ? 'hover:bg-white' : 'hover:bg-white/[0.03]'
+                        }`}
                       >
                         <span
                           className={`flex h-3.5 w-3.5 items-center justify-center rounded border ${
                             selectedAreas.has(area.id)
                               ? 'border-[#18c4ff] bg-[#18c4ff]'
-                              : 'border-white/18'
+                              : embedded
+                                ? 'border-slate-300'
+                                : 'border-white/18'
                           }`}
                         >
                           {selectedAreas.has(area.id) && (
                             <Check size={10} className="text-white" strokeWidth={3} />
                           )}
                         </span>
-                        <span className={selectedAreas.has(area.id) ? 'text-white' : 'text-white/48'}>
+                        <span
+                          className={
+                            selectedAreas.has(area.id)
+                              ? embedded
+                                ? 'text-slate-800'
+                                : 'text-white'
+                              : embedded
+                                ? 'text-slate-400'
+                                : 'text-white/48'
+                          }
+                        >
                           {area.name}
                         </span>
                       </button>

@@ -85,8 +85,8 @@
     首页常规模式和多模式工作台共用的数据派生逻辑。
   - `messagePushConfig.ts`
     智能值班消息推送的频率、权重模板和数字人状态映射。
-  - `viewModes.ts`
-    主页面顶部模式路由定义，例如常规模式、智能值班模式、风险分析等。
+- `viewModes.ts`
+    主页面顶部模式路由定义，例如常规模式、智能值班模式、风险分析、执法力量、应急力量等。
 - `index.ts`
   feature 对外统一出口。
 
@@ -150,6 +150,21 @@
 - `index.ts`
   对外出口。
 
+### `src/features/risk-analysis/`
+
+- `RiskAnalysisView.tsx`
+  风险分析模式主壳，负责左侧导航和子模块切换。
+- `RiskMacroTrend.tsx`
+  宏观态势主视图，承载热力地图、热点排行与时间轴回放。
+- `RiskPlaybackCenter.tsx`
+  风险分析模式下的回放中心，支持按普通预警与碰撞预警两种模式复用，右侧主内容区内直接嵌入回放。
+- `riskMacroTrendData.ts`
+  宏观态势的假数据、热区配置与时间帧序列。
+- `RiskWarningManagement.tsx`
+  风险分析模式下的预警管理子页。
+- `RiskAdminConsole.tsx`
+  风险分析模式下的后台管理子页。
+
 当前后台路由文件包括：
 
 - `AreaSettingsRoute.tsx`
@@ -178,6 +193,8 @@
 当前可见的关键文件：
 
 - `DynamicPlaybackView.tsx`
+- `playback/PlaybackMapHelpers.tsx`
+- `playback/collisionPlayback.ts`
 - `playback/PlaybackAreaSelector.tsx`
 - `playback/PlaybackInfoSidebar.tsx`
 - `playback/PlaybackStatusSidebar.tsx`
@@ -192,6 +209,7 @@
 
 - 后台管理旧版大文件 `components/Panels/AdminPanel.tsx` 已移除，当前统一使用 `src/features/admin/`。
 - 若需要继续重构，优先把 `components/Panels` 中仍然偏业务型的大组件继续下沉到 `src/features/`。
+- `DynamicPlaybackView.tsx` 的地图辅助逻辑已拆到 `playback/PlaybackMapHelpers.tsx`，碰撞回放态势假数据与预警多边形计算放在 `playback/collisionPlayback.ts`。
 - `components/` 更适合放通用展示组件，不适合继续堆叠页面级业务逻辑。
 
 ## 6. 代码定位规则
