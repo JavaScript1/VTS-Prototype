@@ -35,6 +35,7 @@ import { getRiskPlaybackSession, type AppPlaybackSession } from './utils/playbac
 import { type HomeViewMode } from './utils/viewModes';
 import { normalizeVhfShipName } from './utils/vhf';
 import RiskAnalysisView from '../risk-analysis/RiskAnalysisView';
+import CasePlaybackView from '../case-playback/CasePlaybackView';
 
 export default function AppView() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -341,7 +342,9 @@ export default function AppView() {
 
       {viewMode === 'risk-analysis' ? (
         <RiskAnalysisView />
-      ) : viewMode === 'case-playback' || viewMode === 'emergency-rescue' ? (
+      ) : viewMode === 'case-playback' ? (
+        <CasePlaybackView onOpenPlayback={openRiskPlaybackByIndex} />
+      ) : viewMode === 'emergency-rescue' ? (
         <main className="flex-1 bg-slate-50" />
       ) : (
         <AppHomeWorkspace

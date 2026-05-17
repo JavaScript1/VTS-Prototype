@@ -10,7 +10,7 @@ import { type PushMessage } from '../../../types';
 import { createMessageFeedItem, type MessageFeedItem } from './messagePushConfig';
 
 const AUTO_APPROVE_SECONDS = 20;
-const PUSH_INTERVAL_MS = 10000;
+const PUSH_INTERVAL_MS = 15000;
 const WARMUP_PUSH_DELAYS: number[] = [];
 
 export type MessagePushPanelProps = {
