@@ -367,7 +367,7 @@ export default function RealShipMap({
   );
 
   return (
-    <div className="relative flex-1 overflow-hidden bg-[#0a0a0a]">
+    <div className="absolute inset-0 overflow-hidden bg-[#0a0a0a]">
       <div ref={containerRef} className="h-full w-full" />
       {overlay}
     </div>
