@@ -23,6 +23,7 @@ import DynamicPlaybackView from '../../components/Panels/DynamicPlaybackView';
 import AppHomeWorkspace from './components/AppHomeWorkspace';
 import AppModeRightRail from './components/AppModeRightRail';
 import MessagePushAvatar from './components/MessagePushAvatar';
+import MessagePushPanel from './components/MessagePushPanel';
 import type { MessageFeedItem } from './components/messagePushConfig';
 import {
   buildHomeShipDetails,
@@ -206,7 +207,7 @@ export default function AppView() {
   }, [viewMode]);
 
   const rightRail =
-    viewMode === 'normal' || viewMode === 'auto' ? null : (
+    viewMode === 'normal' || viewMode === 'auto' || viewMode === 'smart-duty' ? null : (
       <AppModeRightRail
         mode={viewMode}
         currentTime={currentTime}
@@ -218,14 +219,37 @@ export default function AppView() {
 
   const smartDutyAvatarOverlay =
     viewMode === 'smart-duty' || viewMode === 'auto' ? (
-      <div className="pointer-events-none absolute bottom-4 right-4 z-[410]">
-        <MessagePushAvatar
-          messages={smartDutyMessages}
-          onMessagesChange={viewMode === 'auto' ? setSmartDutyMessages : undefined}
-          showBubble={viewMode === 'auto'}
-          className={viewMode === 'auto' ? "w-[420px] drop-shadow-[0_10px_30px_rgba(0,0,0,0.5)]" : "w-[170px] drop-shadow-[0_10px_30px_rgba(0,0,0,0.5)]"}
-        />
-      </div>
+      <>
+        {viewMode === 'smart-duty' ? (
+          <>
+            <div className="pointer-events-none absolute right-4 top-4 z-[410]">
+              <MessagePushPanel
+                variant="floating"
+                maxMessages={8}
+                className="right-0 top-0 w-[380px]"
+                onMessagesChange={setSmartDutyMessages}
+              />
+            </div>
+            <div className="pointer-events-none absolute bottom-4 right-4 z-[410]">
+              <MessagePushAvatar
+                messages={smartDutyMessages}
+                showBubble={false}
+                className="w-[170px] drop-shadow-[0_10px_30px_rgba(0,0,0,0.5)]"
+              />
+            </div>
+          </>
+        ) : (
+          <div className="pointer-events-none absolute bottom-4 right-4 z-[410]">
+            <MessagePushAvatar
+              messages={smartDutyMessages}
+              onMessagesChange={setSmartDutyMessages}
+              showBubble
+              messageMode="auto"
+              className="w-[420px] drop-shadow-[0_10px_30px_rgba(0,0,0,0.5)]"
+            />
+          </div>
+        )}
+      </>
     ) : null;
 
   const sidebarProps = {

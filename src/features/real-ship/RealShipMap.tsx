@@ -1,7 +1,8 @@
-import { useEffect, useMemo, useRef } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import loongship from 'loongship-web';
 import { HOME_MAP_OVERLAY_BADGES, type HomeMapOverlayBadge } from '../../mockData';
 import type { HomeShipDetail, HomeShipTrackPoint } from '../../types';
+import type { HomeViewMode } from '../app/utils/viewModes';
 import {
   HOME_MAP_CENTER_STORAGE_KEY,
   HOME_MAP_DEFAULT_CENTER,
@@ -13,6 +14,7 @@ import { useRealShips } from './useRealShips';
 import type { MessageFeedItem } from '../app/components/messagePushConfig';
 
 type RealShipMapProps = {
+  mode?: HomeViewMode;
   playbackData: { vessel: any; event: any } | null;
   homeMapFocusTarget: [number, number] | null;
   selectedHomeShip: HomeShipDetail | null;
@@ -131,18 +133,55 @@ const createPlaybackIcon = (playbackData: any) => {
   });
 };
 
-const createIntentBubbleIcon = (message: MessageFeedItem) => {
+const createMessageBubbleIcon = (message: MessageFeedItem) => {
+  const accentClass =
+    message.level === 'emergency'
+      ? 'border-red-500/45'
+      : message.level === 'warning'
+        ? 'border-orange-500/45'
+        : 'border-sky-500/40';
+  const dotClass =
+    message.level === 'emergency'
+      ? 'bg-red-400'
+      : message.level === 'warning'
+        ? 'bg-orange-400'
+        : 'bg-sky-400';
+
   return (loongship as any).divIcon({
     className: 'custom-div-icon',
     html: `
-      <div class="relative -translate-x-1/2 -translate-y-[110%] min-w-[180px]">
-        <div class="bg-sky-500/10 backdrop-blur-md border border-sky-500/40 rounded-xl p-3 shadow-xl ring-1 ring-white/5">
+      <div class="relative -translate-x-1/2 -translate-y-[110%] min-w-[210px] max-w-[210px]">
+        <div class="backdrop-blur-md border ${accentClass} rounded-xl bg-[#101418]/85 p-3 shadow-xl ring-1 ring-white/5">
           <div class="flex items-center gap-1.5 mb-1.5">
-            <div class="w-1.5 h-1.5 rounded-full bg-sky-400"></div>
+            <div class="w-1.5 h-1.5 rounded-full ${dotClass}"></div>
             <span class="text-[9px] font-black text-sky-300 uppercase tracking-[0.1em]">${message.title}</span>
           </div>
-          <p class="text-[11px] text-white/90 leading-snug font-bold line-clamp-2">${message.content}</p>
-          <div class="absolute -bottom-2 left-1/2 -translate-x-1/2 w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-t-[6px] border-t-sky-500/40"></div>
+          <p class="text-[11px] text-white/90 leading-snug font-bold">${message.content}</p>
+          <div class="mt-1 text-[10px] italic leading-tight text-sky-400/80">${message.suggestion ? `策略：${message.suggestion}` : ''}</div>
+          <div class="absolute -bottom-2 left-1/2 -translate-x-1/2 w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-t-[6px] border-t-[#101418]"></div>
+        </div>
+      </div>
+    `,
+    iconSize: [0, 0],
+    iconAnchor: [0, 0],
+  });
+};
+
+const createAutoShipQuestionBubbleIcon = (message: MessageFeedItem) => {
+  const text = message.shipQuestion ?? message.content;
+  return (loongship as any).divIcon({
+    className: 'custom-div-icon',
+    html: `
+      <div class="relative -translate-x-1/2 -translate-y-[110%] min-w-[230px] max-w-[230px]">
+        <div class="backdrop-blur-md border border-sky-400/45 rounded-xl bg-[#0b1824]/90 p-3 shadow-xl ring-1 ring-white/5">
+          <div class="mb-1.5 flex items-center gap-1.5">
+            <div class="h-1.5 w-1.5 rounded-full bg-sky-300"></div>
+            <span class="text-[9px] font-black uppercase tracking-[0.12em] text-sky-200">
+              船舶提问
+            </span>
+          </div>
+          <p class="text-[11px] font-bold leading-snug text-white/92">${text}</p>
+          <div class="absolute -bottom-2 left-8 h-0 w-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-t-[6px] border-t-[#0b1824]"></div>
         </div>
       </div>
     `,
@@ -162,6 +201,7 @@ const removeLayer = (layer: any) => {
 };
 
 export default function RealShipMap({
+  mode,
   playbackData,
   homeMapFocusTarget,
   selectedHomeShip,
@@ -171,6 +211,7 @@ export default function RealShipMap({
   onSelectHomeShip,
   onSelectTrackPoint,
 }: RealShipMapProps) {
+  const [viewportVersion, setViewportVersion] = useState(0);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<any>(null);
   const shipLayerRef = useRef<any>(null);
@@ -210,10 +251,12 @@ export default function RealShipMap({
         HOME_MAP_CENTER_STORAGE_KEY,
         JSON.stringify([center.lat, center.lng]),
       );
+      setViewportVersion((value) => value + 1);
     });
 
     map.on('zoomend', () => {
       window.localStorage.setItem(HOME_MAP_ZOOM_STORAGE_KEY, String(map.getZoom()));
+      setViewportVersion((value) => value + 1);
     });
 
     map.on('mousemove', (event: any) => {
@@ -370,7 +413,7 @@ export default function RealShipMap({
     playbackLayerRef.current = marker;
   }, [playbackData]);
 
-  // 新增：在意图消息中随机船只上方显示气泡
+  // 自动托管模式下，让地图气泡与消息列表一一对应，并保持在当前视野安全区内。
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
@@ -378,19 +421,58 @@ export default function RealShipMap({
     removeLayer(intentBubbleLayerRef.current);
     intentBubbleLayerRef.current = null;
 
-    const intentMessages = smartDutyMessages.filter(msg => msg.type === 'intent');
-    if (intentMessages.length === 0 || ships.length === 0) return;
+    if (mode === 'smart-duty') return;
+
+    const bubbleMessages =
+      mode === 'auto'
+        ? smartDutyMessages
+        : smartDutyMessages.filter((msg) => msg.type === 'intent');
+    if (bubbleMessages.length === 0 || ships.length === 0) return;
+
+    const mapSize = map.getSize?.();
+    const mapBounds = map.getBounds?.();
+    const safeShips =
+      mapSize && mapBounds
+        ? ships.filter((ship) => {
+            if (!mapBounds.contains([ship.lat, ship.lng])) return false;
+            const point = map.latLngToContainerPoint([ship.lat, ship.lng]);
+            return (
+              point.x >= 150 &&
+              point.x <= mapSize.x - 150 &&
+              point.y >= 90 &&
+              point.y <= mapSize.y - 120
+            );
+          })
+        : [];
+    const visibleShips =
+      mapBounds
+        ? ships.filter((ship) => mapBounds.contains([ship.lat, ship.lng]))
+        : [];
+    const candidateShips =
+      safeShips.length >= bubbleMessages.length
+        ? safeShips
+        : visibleShips.length > 0
+          ? visibleShips
+          : ships;
 
     const bubbleLayer = (loongship as any).layerGroup();
-    
-    intentMessages.slice(0, 3).forEach((message, index) => {
-      // 随机选一搜船，或者根据 index 选不同的船
-      const shipIndex = (index * 7 + 3) % ships.length;
-      const ship = ships[shipIndex];
+
+    bubbleMessages.forEach((message, index) => {
+      const ship = candidateShips[index % candidateShips.length];
       if (!ship) return;
 
+      if (mode === 'auto') {
+        const questionMarker = (loongship as any).marker([ship.lat, ship.lng], {
+          icon: createAutoShipQuestionBubbleIcon(message),
+          zIndexOffset: 1000,
+        });
+
+        bubbleLayer.addLayer(questionMarker);
+        return;
+      }
+
       const marker = (loongship as any).marker([ship.lat, ship.lng], {
-        icon: createIntentBubbleIcon(message),
+        icon: createMessageBubbleIcon(message),
         zIndexOffset: 1000,
       });
       bubbleLayer.addLayer(marker);
@@ -398,7 +480,7 @@ export default function RealShipMap({
 
     bubbleLayer.addTo(map);
     intentBubbleLayerRef.current = bubbleLayer;
-  }, [smartDutyMessages, ships]);
+  }, [mode, smartDutyMessages, ships, viewportVersion]);
 
   useEffect(() => {
     const map = mapRef.current;

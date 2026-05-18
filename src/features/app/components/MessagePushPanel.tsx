@@ -7,10 +7,14 @@ import { useEffect, useState } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
 import { AlertTriangle, Ban, Check, CloudRain, Compass, RotateCcw, X } from 'lucide-react';
 import { type PushMessage } from '../../../types';
-import { createMessageFeedItem, type MessageFeedItem } from './messagePushConfig';
+import {
+  createMessageFeedItem,
+  type MessageFeedItem,
+  type MessageFeedMode,
+} from './messagePushConfig';
 
 const AUTO_APPROVE_SECONDS = 20;
-const PUSH_INTERVAL_MS = 15000;
+const PUSH_INTERVAL_MS = 20000;
 const WARMUP_PUSH_DELAYS: number[] = [];
 
 export type MessagePushPanelProps = {
@@ -18,15 +22,18 @@ export type MessagePushPanelProps = {
   maxMessages?: number;
   title?: string;
   className?: string;
+  messageMode?: MessageFeedMode;
   onMessagesChange?: (messages: MessageFeedItem[]) => void;
 };
 
 function MessageItem({
   message,
+  messageMode,
   onRemove,
   onAutoApprove,
 }: {
   message: PushMessage;
+  messageMode: MessageFeedMode;
   onRemove: (id: string) => void;
   onAutoApprove: (message: PushMessage) => void;
 }) {
@@ -88,7 +95,8 @@ function MessageItem({
 
           {message.suggestion && (
             <p className="line-clamp-1 text-[10px] italic leading-tight text-sky-400/80">
-              建议：{message.suggestion}
+              {messageMode === 'auto' ? '策略：' : '建议：'}
+              {message.suggestion}
             </p>
           )}
         </div>
@@ -101,18 +109,20 @@ function MessageItem({
                 className="flex h-6 items-center justify-center rounded border border-emerald-500/30 bg-emerald-500/20 text-emerald-400 transition-all hover:bg-emerald-500/30"
               >
                 <Check size={12} className="mr-1" />
-                <span className="text-[9px] font-black">批准({timeLeft})</span>
+                <span className="text-[9px] font-black">
+                  {messageMode === 'auto' ? `执行(${timeLeft})` : `批准(${timeLeft})`}
+                </span>
               </button>
               <button className="flex h-6 items-center justify-center rounded border border-amber-500/20 bg-amber-500/10 text-amber-400/80 transition-all hover:bg-amber-500/20">
                 <RotateCcw size={10} className="mr-1" />
-                <span className="text-[9px] font-black">重办</span>
+                <span className="text-[9px] font-black">{messageMode === 'auto' ? '改派' : '重办'}</span>
               </button>
               <button
                 onClick={() => onRemove(message.id)}
                 className="flex h-6 items-center justify-center rounded border border-rose-500/30 bg-rose-500/20 text-rose-400 transition-all hover:bg-rose-500/30"
               >
                 <Ban size={12} className="mr-1" />
-                <span className="text-[9px] font-black">拒绝</span>
+                <span className="text-[9px] font-black">{messageMode === 'auto' ? '终止' : '拒绝'}</span>
               </button>
             </>
           ) : (
@@ -120,7 +130,7 @@ function MessageItem({
               onClick={() => onRemove(message.id)}
               className="flex h-6 items-center justify-center rounded border border-white/5 bg-white/5 text-[9px] font-black uppercase tracking-widest text-white/40 transition-all hover:bg-white/10"
             >
-              忽略
+              {messageMode === 'auto' ? '已托管' : '忽略'}
             </button>
           )}
         </div>
@@ -155,13 +165,14 @@ export default function MessagePushPanel({
   maxMessages = 8,
   title: _title,
   className = '',
+  messageMode = 'manual',
   onMessagesChange,
 }: MessagePushPanelProps) {
   const [messages, setMessages] = useState<MessageFeedItem[]>([]);
 
   useEffect(() => {
     const addRandomMessage = () => {
-      const newMessage = createMessageFeedItem(new Date());
+      const newMessage = createMessageFeedItem(new Date(), messageMode);
 
       setMessages((prev) => [newMessage, ...prev].slice(0, maxMessages));
     };
@@ -176,7 +187,7 @@ export default function MessagePushPanel({
       warmupTimers.forEach((timer) => window.clearTimeout(timer));
       window.clearInterval(interval);
     };
-  }, [maxMessages]);
+  }, [maxMessages, messageMode]);
 
   const removeMessage = (id: string) => {
     setMessages((prev) => prev.filter((message) => message.id !== id));
@@ -196,12 +207,14 @@ export default function MessagePushPanel({
   const list = (
     <AnimatePresence initial={false}>
       {messages.map((message) => (
-        <MessageItem
-          key={message.id}
-          message={message}
-          onRemove={removeMessage}
-          onAutoApprove={handleAutoApprove}
-        />
+        <div key={message.id} className="contents">
+          <MessageItem
+            message={message}
+            messageMode={messageMode}
+            onRemove={removeMessage}
+            onAutoApprove={handleAutoApprove}
+          />
+        </div>
       ))}
     </AnimatePresence>
   );

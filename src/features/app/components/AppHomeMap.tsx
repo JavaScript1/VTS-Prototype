@@ -31,6 +31,7 @@ export default function AppHomeMap({
   return (
     <div className="relative flex-1 overflow-hidden bg-[#0a0a0a]">
       <RealShipMap
+        mode={mode}
         playbackData={playbackData}
         homeMapFocusTarget={homeMapFocusTarget}
         selectedHomeShip={selectedHomeShip}

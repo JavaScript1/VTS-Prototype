@@ -64,7 +64,7 @@ export function CollisionPlaybackMapController({
   const map = useMap();
 
   useEffect(() => {
-    const padding =
+    const padding: [number, number] =
       severity === 'critical' ? [40, 40] : severity === 'warning' ? [80, 80] : [130, 130];
     map.flyToBounds(polygon, {
       paddingTopLeft: padding,

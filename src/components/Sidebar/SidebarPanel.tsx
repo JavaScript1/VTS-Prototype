@@ -3,8 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useRef } from 'react';
-import { Search, Radio, LocateFixed, AlertTriangle, Anchor, Ship, X, LayoutGrid } from 'lucide-react';
+import React, { useState } from 'react';
+import { Search, Radio, LocateFixed, AlertTriangle, Anchor, Ship, X, LayoutGrid, Sparkles, Bot } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import type { ShipSearchResult, SidebarTab } from '../../types';
 import { HOME_PRIMARY_MODE_OPTIONS, type HomeViewMode } from '../../features/app/utils/viewModes';
@@ -25,6 +25,8 @@ type SidebarPanelProps = {
   onModeChange: (mode: HomeViewMode) => void;
   children: React.ReactNode;
 };
+
+type PrimaryHomeViewMode = Extract<HomeViewMode, 'normal' | 'smart-duty' | 'auto'>;
 
 export default function SidebarPanel({
   activeTab,
@@ -52,29 +54,22 @@ export default function SidebarPanel({
 
   const isLeft = position === 'left';
   const [isSearchExpanded, setIsSearchExpanded] = useState(false);
-  const [isModeHovered, setIsModeHovered] = useState(false);
-  const modeHoverTimeoutRef = useRef<number | null>(null);
+
+  const modeIconMap = {
+    normal: LayoutGrid,
+    'smart-duty': Sparkles,
+    auto: Bot,
+  } satisfies Record<PrimaryHomeViewMode, typeof LayoutGrid>;
 
   const handleRailShipSelect = (shipId: string) => {
     onShipSearchSelect(shipId);
     setIsSearchExpanded(false);
   };
 
-  const handleModeMouseEnter = () => {
-    if (modeHoverTimeoutRef.current) window.clearTimeout(modeHoverTimeoutRef.current);
-    setIsModeHovered(true);
-  };
-
-  const handleModeMouseLeave = () => {
-    modeHoverTimeoutRef.current = window.setTimeout(() => {
-      setIsModeHovered(false);
-    }, 300);
-  };
-
   return (
     <div className={`z-[3000] flex h-full ${isLeft ? 'flex-row' : 'flex-row-reverse'}`}>
       <div
-        className={`flex h-full flex-col items-center bg-[#050505] border-${isLeft ? 'r' : 'l'} border-white/10`}
+        className={`relative z-20 flex h-full flex-col items-center bg-[#050505] border-${isLeft ? 'r' : 'l'} border-white/10`}
         style={{
           width: 'var(--vts-sidebar-rail-width)',
           gap: 'var(--vts-sidebar-gap)',
@@ -182,52 +177,42 @@ export default function SidebarPanel({
 
         <div className='my-2 h-px w-[60%] bg-white/10' />
 
-        <div className='flex flex-col gap-4 pb-2'>
-          <div 
-            className='relative'
-            onMouseEnter={handleModeMouseEnter}
-            onMouseLeave={handleModeMouseLeave}
-          >
-            <button
-              className={`rounded-xl p-2.5 transition-all ${isModeHovered ? 'bg-sky-500/10 text-sky-400' : 'text-white/30 hover:text-white/60'}`}
-              title='切换模式'
-            >
-              <LayoutGrid size={22} />
-            </button>
-            <AnimatePresence>
-              {isModeHovered && (
-                <motion.div
-                  initial={{ opacity: 0, x: isLeft ? -20 : 20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: isLeft ? -20 : 20 }}
-                  className={`absolute bottom-0 z-50 w-48 space-y-1 rounded-2xl border border-white/10 bg-[#05080d]/95 p-2 shadow-2xl backdrop-blur-xl ${isLeft ? 'left-full ml-3' : 'right-full mr-3'}`}
-                >
-                  <div className='px-3 py-2 text-[10px] font-black uppercase tracking-[0.2em] text-white/30'>模式切换</div>
-                  {HOME_PRIMARY_MODE_OPTIONS.map((option) => {
-                    const active = option.id === currentMode;
-                    return (
-                      <button
-                        key={option.id}
-                        onClick={() => {
-                          onModeChange(option.id);
-                          setIsModeHovered(false);
-                        }}
-                        className={`flex w-full items-center justify-between rounded-lg px-3 py-2 text-[11px] font-bold transition-all ${
-                          active
-                            ? 'bg-sky-500/20 text-sky-400 shadow-[0_0_15px_rgba(14,165,233,0.1)]'
-                            : 'text-white/60 hover:bg-white/5 hover:text-white'
-                        }`}
-                      >
-                        {option.label}
-                        {active && <div className='h-1.5 w-1.5 rounded-full bg-sky-500' />}
-                      </button>
-                    );
-                  })}
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
+        <div className='flex flex-col items-center gap-1.5 rounded-2xl border border-white/5 bg-white/[0.02] p-1 pb-1.5'>
+          {HOME_PRIMARY_MODE_OPTIONS.map((option) => {
+            const Icon = modeIconMap[option.id as PrimaryHomeViewMode];
+            const active = option.id === currentMode;
 
+            return (
+              <button
+                key={option.id}
+                type='button'
+                onClick={() => onModeChange(option.id)}
+                className={`group relative flex h-10 w-10 items-center justify-center rounded-xl transition-all ${
+                  active
+                    ? 'bg-sky-500/15 text-sky-400 shadow-[0_0_18px_rgba(14,165,233,0.14)]'
+                    : 'text-white/30 hover:bg-white/5 hover:text-white/70'
+                }`}
+                aria-label={option.label}
+              >
+                <Icon size={20} />
+                {active && (
+                  <motion.div
+                    layoutId='activeModeSwitch'
+                    className={`absolute top-1/2 h-4 w-0.5 -translate-y-1/2 rounded-full bg-sky-400 ${isLeft ? 'left-0' : 'right-0'}`}
+                  />
+                )}
+                <span
+                  className={`pointer-events-none absolute top-1/2 z-[60] -translate-y-1/2 whitespace-nowrap rounded-lg border border-white/10 bg-[#05080d]/95 px-2.5 py-1.5 text-[11px] font-bold text-white/85 opacity-0 shadow-xl backdrop-blur-xl transition-all group-hover:opacity-100 ${
+                    isLeft
+                      ? 'left-full ml-3 translate-x-[-4px] group-hover:translate-x-0'
+                      : 'right-full mr-3 translate-x-[4px] group-hover:translate-x-0'
+                  }`}
+                >
+                  {option.label}
+                </span>
+              </button>
+            );
+          })}
         </div>
       </div>
 
@@ -237,7 +222,7 @@ export default function SidebarPanel({
             initial={{ width: 0, opacity: 0 }}
             animate={{ width: 'var(--vts-sidebar-panel-width)', opacity: 1 }}
             exit={{ width: 0, opacity: 0 }}
-            className={`flex flex-col overflow-hidden transition-colors duration-500 h-full border-${isLeft ? 'r' : 'l'} border-white/10 ${
+            className={`relative z-10 flex flex-col overflow-hidden transition-colors duration-500 h-full border-${isLeft ? 'r' : 'l'} border-white/10 ${
               activeTab === 'vhf' || activeTab === 'ship'
                 ? 'bg-[#0a0a0a]/90 backdrop-blur-md'
                 : 'bg-transparent backdrop-blur-none'

@@ -1,8 +1,59 @@
-import { Bot, X, Send, Sparkles } from 'lucide-react';
+import { Mic, MicOff, X, Send, Sparkles } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type PointerEvent } from 'react';
 
-const relaxedHotImage = new URL('../../../../AGENTS/image/悠闲-高温度.png', import.meta.url).href;
+const relaxedHotImage = new URL('../../../../AGENTS/image/悠闲-高温度.gif', import.meta.url).href;
+
+type AssistantMessage = {
+  role: 'assistant' | 'user';
+  content: string;
+};
+
+type SpeechRecognitionAlternativeLike = {
+  transcript: string;
+};
+
+type SpeechRecognitionResultLike = {
+  isFinal: boolean;
+  [index: number]: SpeechRecognitionAlternativeLike;
+};
+
+type SpeechRecognitionEventLike = {
+  resultIndex: number;
+  results: {
+    length: number;
+    [index: number]: SpeechRecognitionResultLike;
+  };
+};
+
+type SpeechRecognitionErrorEventLike = {
+  error: string;
+};
+
+type SpeechRecognitionLike = {
+  lang: string;
+  continuous: boolean;
+  interimResults: boolean;
+  maxAlternatives: number;
+  onresult: ((event: SpeechRecognitionEventLike) => void) | null;
+  onerror: ((event: SpeechRecognitionErrorEventLike) => void) | null;
+  onend: (() => void) | null;
+  start: () => void;
+  stop: () => void;
+  abort: () => void;
+};
+
+type SpeechRecognitionConstructorLike = new () => SpeechRecognitionLike;
+
+const getSpeechRecognitionConstructor = (): SpeechRecognitionConstructorLike | null => {
+  if (typeof window === 'undefined') return null;
+  const speechWindow = window as typeof window & {
+    SpeechRecognition?: SpeechRecognitionConstructorLike;
+    webkitSpeechRecognition?: SpeechRecognitionConstructorLike;
+  };
+
+  return speechWindow.SpeechRecognition ?? speechWindow.webkitSpeechRecognition ?? null;
+};
 
 export type AssistantDialogProps = {
   isOpen: boolean;
@@ -10,13 +61,18 @@ export type AssistantDialogProps = {
 };
 
 export default function AssistantDialog({ isOpen, onClose }: AssistantDialogProps) {
-  const [messages, setMessages] = useState([
+  const [messages, setMessages] = useState<AssistantMessage[]>([
     { role: 'assistant', content: '您好！我是您的智能航运助手。有什么我可以帮您的吗？' }
   ]);
   const [inputValue, setInputValue] = useState('');
   const [position, setPosition] = useState<{ x: number; y: number } | null>(null);
   const [isDragging, setIsDragging] = useState(false);
+  const [isListening, setIsListening] = useState(false);
+  const [speechSupported, setSpeechSupported] = useState(false);
+  const [voiceStatus, setVoiceStatus] = useState('');
   const dialogRef = useRef<HTMLDivElement | null>(null);
+  const recognitionRef = useRef<SpeechRecognitionLike | null>(null);
+  const voiceBaseInputRef = useRef('');
   const dragStateRef = useRef({
     pointerId: -1,
     startX: 0,
@@ -62,7 +118,19 @@ export default function AssistantDialog({ isOpen, onClose }: AssistantDialogProp
     };
   }, [isDragging, isOpen]);
 
-  const handleDragStart = (event: React.PointerEvent<HTMLDivElement>) => {
+  useEffect(() => {
+    setSpeechSupported(Boolean(getSpeechRecognitionConstructor()));
+  }, []);
+
+  useEffect(() => {
+    if (isOpen) return;
+    recognitionRef.current?.abort();
+    recognitionRef.current = null;
+    setIsListening(false);
+    setVoiceStatus('');
+  }, [isOpen]);
+
+  const handleDragStart = (event: PointerEvent<HTMLDivElement>) => {
     if (!dialogRef.current) return;
     dragStateRef.current = {
       pointerId: event.pointerId,
@@ -74,9 +142,79 @@ export default function AssistantDialog({ isOpen, onClose }: AssistantDialogProp
     setIsDragging(true);
   };
 
+  const stopVoiceInput = () => {
+    recognitionRef.current?.stop();
+    recognitionRef.current = null;
+    setIsListening(false);
+  };
+
+  const handleVoiceToggle = () => {
+    if (!speechSupported) {
+      setVoiceStatus('当前浏览器不支持语音输入');
+      return;
+    }
+
+    if (isListening) {
+      stopVoiceInput();
+      setVoiceStatus('');
+      return;
+    }
+
+    const SpeechRecognitionConstructor = getSpeechRecognitionConstructor();
+    if (!SpeechRecognitionConstructor) {
+      setSpeechSupported(false);
+      setVoiceStatus('当前浏览器不支持语音输入');
+      return;
+    }
+
+    const recognition = new SpeechRecognitionConstructor();
+    voiceBaseInputRef.current = inputValue.trim();
+    recognition.lang = 'zh-CN';
+    recognition.continuous = false;
+    recognition.interimResults = true;
+    recognition.maxAlternatives = 1;
+
+    recognition.onresult = (event) => {
+      let transcript = '';
+      for (let index = event.resultIndex; index < event.results.length; index += 1) {
+        transcript += event.results[index]?.[0]?.transcript ?? '';
+      }
+
+      const baseInput = voiceBaseInputRef.current;
+      setInputValue(`${baseInput}${baseInput && transcript ? ' ' : ''}${transcript}`.trim());
+      setVoiceStatus(transcript ? '正在识别语音...' : '请开始说话');
+    };
+
+    recognition.onerror = (event) => {
+      setIsListening(false);
+      recognitionRef.current = null;
+      setVoiceStatus(event.error === 'not-allowed' ? '麦克风权限被拒绝' : '语音识别失败，请重试');
+    };
+
+    recognition.onend = () => {
+      setIsListening(false);
+      recognitionRef.current = null;
+      setVoiceStatus('');
+    };
+
+    recognitionRef.current = recognition;
+    setIsListening(true);
+    setVoiceStatus('请开始说话');
+
+    try {
+      recognition.start();
+    } catch {
+      setIsListening(false);
+      recognitionRef.current = null;
+      setVoiceStatus('语音输入启动失败，请重试');
+    }
+  };
+
   const handleSend = () => {
-    if (!inputValue.trim()) return;
-    const newMessages = [...messages, { role: 'user', content: inputValue }];
+    const messageContent = inputValue.trim();
+    if (!messageContent) return;
+    stopVoiceInput();
+    const newMessages: AssistantMessage[] = [...messages, { role: 'user', content: messageContent }];
     setMessages(newMessages);
     setInputValue('');
     
@@ -138,11 +276,31 @@ export default function AssistantDialog({ isOpen, onClose }: AssistantDialogProp
 
           <div className="border-t border-white/5 bg-black/40 p-3">
             <div className="relative flex items-center">
-              <input type="text" value={inputValue} onChange={(e) => setInputValue(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleSend()} placeholder="输入您的问题..." className="w-full rounded-full border border-white/10 bg-white/5 py-2 pl-4 pr-10 text-xs text-white placeholder:text-white/20 focus:border-sky-500/50 focus:outline-none focus:ring-1 focus:ring-sky-500/50" />
+              <input type="text" value={inputValue} onChange={(e) => setInputValue(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleSend()} placeholder="输入您的问题..." className="w-full rounded-full border border-white/10 bg-white/5 py-2 pl-4 pr-[4.75rem] text-xs text-white placeholder:text-white/20 focus:border-sky-500/50 focus:outline-none focus:ring-1 focus:ring-sky-500/50" />
+              <button
+                type="button"
+                onClick={handleVoiceToggle}
+                disabled={!speechSupported}
+                title={speechSupported ? (isListening ? '停止语音输入' : '语音输入') : '当前浏览器不支持语音输入'}
+                className={`absolute right-9 flex h-7 w-7 items-center justify-center rounded-full transition-transform active:scale-95 ${
+                  isListening
+                    ? 'bg-red-500 text-white shadow-[0_0_18px_rgba(239,68,68,0.35)] hover:scale-110'
+                    : speechSupported
+                      ? 'bg-white/10 text-sky-300 hover:scale-110 hover:bg-sky-500/20'
+                      : 'cursor-not-allowed bg-white/5 text-white/20'
+                }`}
+              >
+                {isListening ? <MicOff size={14} /> : <Mic size={14} />}
+              </button>
               <button onClick={handleSend} className="absolute right-1 flex h-7 w-7 items-center justify-center rounded-full bg-sky-500 text-white transition-transform hover:scale-110 active:scale-95">
                 <Send size={14} />
               </button>
             </div>
+            {voiceStatus && (
+              <div className={`mt-2 px-2 text-[10px] ${isListening ? 'text-sky-300' : 'text-white/35'}`}>
+                {voiceStatus}
+              </div>
+            )}
           </div>
         </motion.div>
       )}
