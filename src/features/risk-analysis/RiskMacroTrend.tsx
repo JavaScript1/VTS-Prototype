@@ -1,9 +1,6 @@
 import { Fragment, useEffect, useMemo, useState } from 'react';
 import {
-  ArrowDownRight,
-  ArrowUpRight,
   Calendar,
-  Flame,
   Pause,
   Play,
   SkipBack,
@@ -13,7 +10,7 @@ import { Circle, CircleMarker, MapContainer, Marker, TileLayer, Tooltip } from '
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { VTS_CHART_TILE_ATTRIBUTION, VTS_CHART_TILE_URL, HOME_MAP_DEFAULT_CENTER } from '../map/constants';
-import { FilterSelect, Panel } from './RiskSharedComponents';
+import { FilterSelect } from './RiskSharedComponents';
 import {
   HOTSPOT_CONFIGS,
   JURISDICTION_OPTIONS,
@@ -24,6 +21,7 @@ import {
   type TimeRange,
   type WarningType,
 } from './riskMacroTrendData';
+import RiskTopRankingCard, { type RiskTopRankingSnapshot } from './RiskTopRankingCard';
 
 const PLAYBACK_STEP_MS = 1200;
 
@@ -78,6 +76,7 @@ type RiskMacroTrendProps = {
   showTopRanking?: boolean;
   showLegend?: boolean;
   showTimeline?: boolean;
+  onTopRankingChange?: (snapshot: RiskTopRankingSnapshot | null) => void;
 };
 
 export default function RiskMacroTrend({
@@ -85,6 +84,7 @@ export default function RiskMacroTrend({
   showTopRanking = true,
   showLegend = true,
   showTimeline = true,
+  onTopRankingChange,
 }: RiskMacroTrendProps) {
   const [timeRange, setTimeRange] = useState<TimeRange>('24h');
   const [warningType, setWarningType] = useState<WarningType>('全部');
@@ -157,6 +157,25 @@ export default function RiskMacroTrend({
 
   const highlightedHotspot = hotspotSummaries.find((item) => item.id === activeFocusHotspotId);
 
+  useEffect(() => {
+    if (!onTopRankingChange) return;
+
+    onTopRankingChange({
+      timeLabel: currentFrame.timeLabel,
+      activeFocusHotspotId,
+      hotspots: hotspotSummaries.slice(0, 4).map((hotspot) => ({
+        id: hotspot.id,
+        name: hotspot.name,
+        eventCount: hotspot.eventCount,
+        trend: hotspot.trend,
+      })),
+    });
+
+    return () => {
+      onTopRankingChange(null);
+    };
+  }, [activeFocusHotspotId, currentFrame.timeLabel, hotspotSummaries, onTopRankingChange]);
+
   const jumpFrame = (nextIndex: number) => {
     setFrameIndex(Math.max(0, Math.min(PLAYBACK_FRAMES.length - 1, nextIndex)));
   };
@@ -219,152 +238,108 @@ export default function RiskMacroTrend({
         </div>
       ) : null}
 
-      <div className="relative flex min-h-0 flex-1 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-        <div className="relative min-h-0 flex-1">
-          {showTopRanking ? (
-            <div className="absolute left-6 top-4 z-[1000] w-[240px]">
-              <Panel className="border-slate-200 bg-white/90 p-3 shadow-xl backdrop-blur-md">
-                <div className="mb-3 flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <div className="flex h-5 w-5 items-center justify-center rounded bg-red-100 text-red-500">
-                      <Flame size={12} />
-                    </div>
-                    <span className="text-[10px] font-black uppercase tracking-widest text-slate-700">
-                      TOP 风险区域
-                    </span>
-                  </div>
-                  <span className="text-[8px] font-bold text-sky-500">{currentFrame.timeLabel}</span>
-                </div>
+      <div className="flex min-h-0 flex-1 gap-3 overflow-hidden">
+        {showTopRanking ? (
+          <div className="w-[248px] shrink-0">
+            <RiskTopRankingCard
+              className="h-full"
+              snapshot={{
+                timeLabel: currentFrame.timeLabel,
+                activeFocusHotspotId,
+                hotspots: hotspotSummaries.slice(0, 4).map((hotspot) => ({
+                  id: hotspot.id,
+                  name: hotspot.name,
+                  eventCount: hotspot.eventCount,
+                  trend: hotspot.trend,
+                })),
+              }}
+            />
+          </div>
+        ) : null}
 
-                <div className="space-y-3">
-                  {hotspotSummaries.slice(0, 4).map((hotspot, index) => {
-                    const maxCount = hotspotSummaries[0]?.eventCount || 1;
-                    const percentage = (hotspot.eventCount / maxCount) * 100;
-                    const active = hotspot.id === activeFocusHotspotId;
+        <div className="relative flex min-h-0 flex-1 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+          <div className="relative min-h-0 flex-1">
+            <MapContainer
+              center={HOME_MAP_DEFAULT_CENTER}
+              zoom={11}
+              className="h-full w-full grayscale-[0.16] brightness-[1.04]"
+              zoomControl={false}
+            >
+              <TileLayer url={VTS_CHART_TILE_URL} attribution={VTS_CHART_TILE_ATTRIBUTION} />
 
-                    return (
-                      <div key={hotspot.id} className="space-y-1.5 transition-all">
-                        <div className="flex items-center justify-between gap-3 text-[10px]">
-                          <div className="flex min-w-0 items-center gap-2">
-                            <span className="w-3 font-mono font-black italic text-slate-300">
-                              0{index + 1}
-                            </span>
-                            <span
-                              className={`truncate font-bold transition-colors ${
-                                active ? 'text-slate-900' : 'text-slate-600'
-                              }`}
-                            >
-                              {hotspot.name}
-                            </span>
-                          </div>
-                          <div className="flex shrink-0 items-center gap-1.5">
-                            <span className="font-black text-slate-900">{hotspot.eventCount}</span>
-                            {hotspot.trend === 'up' ? (
-                              <ArrowUpRight size={10} className="text-red-500" />
-                            ) : (
-                              <ArrowDownRight size={10} className="text-emerald-500" />
-                            )}
-                          </div>
-                        </div>
-                        <div className="h-1 overflow-hidden rounded-full bg-slate-100">
-                          <div
-                            className={`h-full rounded-full shadow-sm transition-all duration-700 ${
-                              active
-                                ? 'bg-gradient-to-r from-sky-400 to-sky-600'
-                                : 'bg-gradient-to-r from-slate-300 to-slate-400'
-                            }`}
-                            style={{ width: `${percentage}%` }}
-                          />
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </Panel>
-            </div>
-          ) : null}
+              {hotspotSummaries.map((hotspot) => {
+                const heatColor = getHeatColor(hotspot.avgIntensity);
+                const active = hotspot.id === activeFocusHotspotId;
 
-          <MapContainer
-            center={HOME_MAP_DEFAULT_CENTER}
-            zoom={11}
-            className="h-full w-full grayscale-[0.16] brightness-[1.04]"
-            zoomControl={false}
-          >
-            <TileLayer url={VTS_CHART_TILE_URL} attribution={VTS_CHART_TILE_ATTRIBUTION} />
-
-            {hotspotSummaries.map((hotspot) => {
-              const heatColor = getHeatColor(hotspot.avgIntensity);
-              const active = hotspot.id === activeFocusHotspotId;
-
-              return (
-                <Fragment key={hotspot.id}>
-                  <Circle
-                    key={`${hotspot.id}-outer`}
-                    center={hotspot.center}
-                    radius={1700 + hotspot.avgIntensity * 4200}
-                    pathOptions={{
-                      stroke: false,
-                      fillColor: heatColor,
-                      fillOpacity: active ? 0.14 : 0.09,
-                    }}
-                  />
-                  <Circle
-                    key={`${hotspot.id}-inner`}
-                    center={hotspot.center}
-                    radius={420 + hotspot.avgIntensity * 1200}
-                    pathOptions={{
-                      stroke: false,
-                      fillColor: heatColor,
-                      fillOpacity: active ? 0.22 : 0.15,
-                    }}
-                  />
-                  <Marker
-                    key={`${hotspot.id}-marker`}
-                    position={hotspot.center}
-                    icon={createHotspotIcon({
-                      label: hotspot.name,
-                      count: hotspot.eventCount,
-                      color: heatColor,
-                      active,
-                    })}
-                  >
-                    <Tooltip
-                      direction="top"
-                      offset={[0, -24]}
-                      opacity={1}
-                      className="custom-map-popup-light"
+                return (
+                  <Fragment key={hotspot.id}>
+                    <Circle
+                      key={`${hotspot.id}-outer`}
+                      center={hotspot.center}
+                      radius={1700 + hotspot.avgIntensity * 4200}
+                      pathOptions={{
+                        stroke: false,
+                        fillColor: heatColor,
+                        fillOpacity: active ? 0.14 : 0.09,
+                      }}
+                    />
+                    <Circle
+                      key={`${hotspot.id}-inner`}
+                      center={hotspot.center}
+                      radius={420 + hotspot.avgIntensity * 1200}
+                      pathOptions={{
+                        stroke: false,
+                        fillColor: heatColor,
+                        fillOpacity: active ? 0.22 : 0.15,
+                      }}
+                    />
+                    <Marker
+                      key={`${hotspot.id}-marker`}
+                      position={hotspot.center}
+                      icon={createHotspotIcon({
+                        label: hotspot.name,
+                        count: hotspot.eventCount,
+                        color: heatColor,
+                        active,
+                      })}
                     >
-                      <div className="min-w-[170px] rounded-lg border border-slate-100 bg-white p-2 shadow-xl">
-                        <div className="text-[10px] font-black text-sky-600">{hotspot.name}</div>
-                        <div className="mt-1 text-[9px] text-slate-500">{hotspot.focus}</div>
-                        <div className="mt-2 flex items-center justify-between text-[9px] text-slate-400">
-                          <span>预警 {hotspot.eventCount} 起</span>
-                          <span>热度 {hotspot.heatLevel}</span>
+                      <Tooltip
+                        direction="top"
+                        offset={[0, -24]}
+                        opacity={1}
+                        className="custom-map-popup-light"
+                      >
+                        <div className="min-w-[170px] rounded-lg border border-slate-100 bg-white p-2 shadow-xl">
+                          <div className="text-[10px] font-black text-sky-600">{hotspot.name}</div>
+                          <div className="mt-1 text-[9px] text-slate-500">{hotspot.focus}</div>
+                          <div className="mt-2 flex items-center justify-between text-[9px] text-slate-400">
+                            <span>预警 {hotspot.eventCount} 起</span>
+                            <span>热度 {hotspot.heatLevel}</span>
+                          </div>
                         </div>
-                      </div>
-                    </Tooltip>
-                  </Marker>
-                </Fragment>
-              );
-            })}
+                      </Tooltip>
+                    </Marker>
+                  </Fragment>
+                );
+              })}
 
-            {filteredLocations.map((location) => (
-              <CircleMarker
-                key={location.id}
-                center={[location.lat, location.lng]}
-                radius={2 + location.intensity * 4}
-                pathOptions={{
-                  fillColor: getHeatColor(location.intensity),
-                  color: 'transparent',
-                  fillOpacity: location.hotspotId === activeFocusHotspotId ? 0.28 : 0.16,
-                  stroke: false,
-                }}
-              />
-            ))}
-          </MapContainer>
+              {filteredLocations.map((location) => (
+                <CircleMarker
+                  key={location.id}
+                  center={[location.lat, location.lng]}
+                  radius={2 + location.intensity * 4}
+                  pathOptions={{
+                    fillColor: getHeatColor(location.intensity),
+                    color: 'transparent',
+                    fillOpacity: location.hotspotId === activeFocusHotspotId ? 0.28 : 0.16,
+                    stroke: false,
+                  }}
+                />
+              ))}
+            </MapContainer>
 
-          {showTimeline ? (
-            <div className="absolute bottom-6 left-1/2 z-[1000] w-[640px] -translate-x-1/2">
+            {showTimeline ? (
+              <div className="absolute bottom-6 left-1/2 z-[1000] w-[640px] -translate-x-1/2">
               <div className="rounded-2xl border border-slate-200 bg-white/92 p-3 shadow-2xl backdrop-blur-xl">
                 <div className="flex items-center gap-4">
                   <div className="flex items-center gap-2">
@@ -437,35 +412,36 @@ export default function RiskMacroTrend({
                   </div>
                 </div>
               </div>
-            </div>
-          ) : null}
+              </div>
+            ) : null}
 
-          {showLegend ? (
-            <div className="absolute bottom-6 right-6 z-[1000] flex flex-col gap-2 rounded-xl border border-slate-200 bg-white/90 p-3 shadow-xl backdrop-blur-md">
-              <div className="mb-1 text-[9px] font-bold uppercase tracking-widest text-slate-400">
-                风险热力图例
-              </div>
-              <div className="flex flex-col gap-1.5">
-                {[
-                  { label: '极高风险', color: 'bg-red-500' },
-                  { label: '预警频发', color: 'bg-orange-500' },
-                  { label: '中度波动', color: 'bg-yellow-500' },
-                  { label: '常规密度', color: 'bg-sky-500' },
-                ].map((item) => (
-                  <div key={item.label} className="flex items-center gap-2">
-                    <div className={`h-2 w-4 rounded-full ${item.color} shadow-sm`} />
-                    <span className="text-[9px] text-slate-600">{item.label}</span>
-                  </div>
-                ))}
-              </div>
-              {highlightedHotspot ? (
-                <div className="mt-2 rounded-lg bg-slate-50 p-2 text-[9px] leading-4 text-slate-500">
-                  <div className="font-bold text-slate-700">{highlightedHotspot.name}</div>
-                  <div className="mt-1">{highlightedHotspot.focus}</div>
+            {showLegend ? (
+              <div className="absolute bottom-6 right-6 z-[1000] flex flex-col gap-2 rounded-xl border border-slate-200 bg-white/90 p-3 shadow-xl backdrop-blur-md">
+                <div className="mb-1 text-[9px] font-bold uppercase tracking-widest text-slate-400">
+                  风险热力图例
                 </div>
-              ) : null}
-            </div>
-          ) : null}
+                <div className="flex flex-col gap-1.5">
+                  {[
+                    { label: '极高风险', color: 'bg-red-500' },
+                    { label: '预警频发', color: 'bg-orange-500' },
+                    { label: '中度波动', color: 'bg-yellow-500' },
+                    { label: '常规密度', color: 'bg-sky-500' },
+                  ].map((item) => (
+                    <div key={item.label} className="flex items-center gap-2">
+                      <div className={`h-2 w-4 rounded-full ${item.color} shadow-sm`} />
+                      <span className="text-[9px] text-slate-600">{item.label}</span>
+                    </div>
+                  ))}
+                </div>
+                {highlightedHotspot ? (
+                  <div className="mt-2 rounded-lg bg-slate-50 p-2 text-[9px] leading-4 text-slate-500">
+                    <div className="font-bold text-slate-700">{highlightedHotspot.name}</div>
+                    <div className="mt-1">{highlightedHotspot.focus}</div>
+                  </div>
+                ) : null}
+              </div>
+            ) : null}
+          </div>
         </div>
       </div>
     </div>

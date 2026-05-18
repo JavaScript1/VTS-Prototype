@@ -9,6 +9,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import RiskMacroTrend from './RiskMacroTrend';
 import RiskPlaybackCenter from './RiskPlaybackCenter';
 import { useRiskPlaybackState } from './useRiskPlaybackState';
+import RiskTopRankingCard, { type RiskTopRankingSnapshot } from './RiskTopRankingCard';
 
 type RiskAnalysisTab = 'macro-trend' | 'risk-playback';
 
@@ -18,6 +19,7 @@ type RiskAnalysisViewProps = {
 
 export default function RiskAnalysisView({ onOpenPlayback: _onOpenPlayback }: RiskAnalysisViewProps) {
   const [activeTab, setActiveTab] = useState<RiskAnalysisTab>('macro-trend');
+  const [macroTrendRanking, setMacroTrendRanking] = useState<RiskTopRankingSnapshot | null>(null);
   const {
     filteredCases,
     isCollisionRisk,
@@ -70,6 +72,10 @@ export default function RiskAnalysisView({ onOpenPlayback: _onOpenPlayback }: Ri
           })}
 
           <div className="my-6 h-px bg-slate-100" />
+
+          {activeTab === 'macro-trend' && macroTrendRanking ? (
+            <RiskTopRankingCard snapshot={macroTrendRanking} />
+          ) : null}
 
           {activeTab === 'risk-playback' ? (
             <div className="space-y-2">
@@ -145,7 +151,12 @@ export default function RiskAnalysisView({ onOpenPlayback: _onOpenPlayback }: Ri
             transition={{ duration: 0.2 }}
             className="flex min-h-0 flex-1 flex-col"
           >
-            {activeTab === 'macro-trend' && <RiskMacroTrend />}
+            {activeTab === 'macro-trend' && (
+              <RiskMacroTrend
+                showTopRanking={false}
+                onTopRankingChange={setMacroTrendRanking}
+              />
+            )}
             {activeTab === 'risk-playback' && <RiskPlaybackCenter playbackSession={playbackSession} />}
           </motion.div>
         </AnimatePresence>
