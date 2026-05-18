@@ -207,7 +207,7 @@ export default function AppView() {
   }, [viewMode]);
 
   const rightRail =
-    viewMode === 'normal' ? null : (
+    viewMode === 'normal' || viewMode === 'auto' || viewMode === 'smart-duty' ? null : (
       <AppModeRightRail
         mode={viewMode}
         currentTime={currentTime}
@@ -219,12 +219,20 @@ export default function AppView() {
 
   const smartDutyAvatarOverlay =
     viewMode === 'smart-duty' ? (
-      <div className="pointer-events-none absolute bottom-4 right-4 z-[410]">
-        <MessagePushAvatar
-          messages={smartDutyMessages}
-          className="w-[170px] drop-shadow-[0_10px_30px_rgba(0,0,0,0.5)]"
+      <>
+        <MessagePushPanel
+          variant="floating"
+          maxMessages={8}
+          className="right-4 top-4 w-[380px]"
+          onMessagesChange={setSmartDutyMessages}
         />
-      </div>
+        <div className="pointer-events-none absolute bottom-4 right-4 z-[410]">
+          <MessagePushAvatar
+            messages={smartDutyMessages}
+            className="w-[170px] drop-shadow-[0_10px_30px_rgba(0,0,0,0.5)]"
+          />
+        </div>
+      </>
     ) : null;
 
   const sidebarProps = {

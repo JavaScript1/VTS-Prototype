@@ -26,10 +26,12 @@ export default function AppTopBar({
     currentMode === 'case-playback' ||
     currentMode === 'emergency-rescue';
   const primaryModes = HOME_VIEW_MODE_OPTIONS.filter(
-    (option) => option.id === 'normal' || option.id === 'smart-duty',
+    (option) =>
+      option.id === 'normal' || option.id === 'smart-duty' || option.id === 'auto',
   );
   const routeModes = HOME_VIEW_MODE_OPTIONS.filter(
-    (option) => option.id !== 'normal' && option.id !== 'smart-duty',
+    (option) =>
+      option.id !== 'normal' && option.id !== 'smart-duty' && option.id !== 'auto',
   );
 
   return (

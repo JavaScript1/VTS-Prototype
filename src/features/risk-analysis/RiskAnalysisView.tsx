@@ -42,7 +42,7 @@ export default function RiskAnalysisView({ onOpenPlayback: _onOpenPlayback }: Ri
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-sky-500 text-white shadow-lg shadow-sky-500/20">
             <LayoutDashboard size={18} />
           </div>
-          <span className="text-sm font-black tracking-widest text-slate-800">风险分析中心</span>
+          <span className="text-sm font-black tracking-widest text-slate-800">风险态势中心</span>
         </div>
 
         <div className="flex-1 space-y-1 overflow-y-auto p-4">

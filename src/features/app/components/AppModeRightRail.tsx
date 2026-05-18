@@ -8,7 +8,7 @@ import RiskAnalysisDashboard from './RiskAnalysisDashboard';
 import type { MessageFeedItem } from './messagePushConfig';
 
 type AppModeRightRailProps = {
-  mode: Exclude<HomeViewMode, 'normal'>;
+  mode: Exclude<HomeViewMode, 'normal' | 'auto'>;
   currentTime: Date;
   selectedHomeShip: HomeShipDetail | null;
   onOpenPlayback: (index: number) => void;
@@ -50,7 +50,7 @@ function SmartDutyRail({
 }) {
   return (
     <PanelShell
-      title="智能值班"
+      title="辅助模式"
       subtitle={`当前值班时段 ${currentTime.toLocaleTimeString('zh-CN', {
         hour: '2-digit',
         minute: '2-digit',
@@ -81,7 +81,7 @@ function CasePlaybackRail({
 }) {
   return (
     <PanelShell
-      title="执法力量"
+      title="执法辅助"
       subtitle="保留地图主页视角，同时在右侧列出可直接进入的典型执法样本。"
     >
       <div className="mb-4 rounded-2xl border border-white/10 bg-white/[0.03] p-4">
@@ -115,7 +115,7 @@ function CasePlaybackRail({
               className="mt-4 flex items-center gap-2 rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-xs font-semibold text-white/80 transition-colors hover:bg-white/10"
             >
               <PlayCircle size={14} />
-              进入执法回放
+              进入执法辅助
             </button>
           </div>
         ))}
@@ -131,7 +131,7 @@ function EmergencyRescueRail({ onOpenPlayback }: { onOpenPlayback: (index: numbe
 
   return (
     <PanelShell
-      title="应急力量"
+      title="应急处置"
       subtitle="以应急联动为主，整合重点告警、处置建议与快捷回放入口。"
     >
       <div className="mb-4 grid grid-cols-2 gap-3">
@@ -163,7 +163,7 @@ function EmergencyRescueRail({ onOpenPlayback }: { onOpenPlayback: (index: numbe
               className="mt-4 flex items-center gap-2 rounded-lg border border-red-400/20 bg-white/5 px-3 py-2 text-xs font-semibold text-red-200 transition-colors hover:bg-white/10"
             >
               <PlayCircle size={14} />
-              查看应急回放
+              查看应急处置
             </button>
           </div>
         ))}
