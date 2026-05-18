@@ -1,0 +1,16 @@
+<svg width="120" height="120" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+  <rect width="120" height="120" fill="none"/>
+  <g transform="translate(60,60)">
+    <animateTransform attributeName="transform" type="scale" additive="sum" values="1;1.2;1" dur="1s" repeatCount="indefinite"/>
+    <g transform="translate(-60,-60)" stroke="#FF2A2A" stroke-width="6" stroke-linecap="round">
+      <line x1="12" y1="12" x2="36" y2="12"/>
+      <line x1="12" y1="12" x2="12" y2="36"/>
+      <line x1="108" y1="12" x2="84" y2="12"/>
+      <line x1="108" y1="12" x2="108" y2="36"/>
+      <line x1="12" y1="108" x2="36" y2="108"/>
+      <line x1="12" y1="108" x2="12" y2="84"/>
+      <line x1="108" y1="108" x2="84" y2="108"/>
+      <line x1="108" y1="108" x2="108" y2="84"/>
+    </g>
+  </g>
+</svg>
