@@ -7,6 +7,7 @@ import { useState, useMemo } from 'react';
 import { 
   AlertCircle,
   BellRing,
+  CheckCircle,
   ShieldAlert, 
   Search, 
   History, 
@@ -26,9 +27,11 @@ import {
   Activity,
   ArrowRight,
   Clock,
+  Plus,
+  Trash2,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { MOCK_RISK_STATS, MOCK_PATROL_BOATS, type PatrolBoat } from '../../mockData';
+import { MOCK_RISK_STATS, MOCK_PATROL_BOATS } from '../../mockData';
 import { Panel, SectionTitle } from '../risk-analysis/RiskSharedComponents';
 import RiskMacroTrend from '../risk-analysis/RiskMacroTrend';
 
@@ -36,11 +39,95 @@ interface LawEnforcementViewProps {
   onOpenPlayback: (index: number) => void;
 }
 
+type EnforcementSeverity = 'low' | 'medium' | 'high';
+type EnforcementStatus = 'pending' | 'in_progress' | 'completed';
+
+type EnforcementCase = {
+  id: string;
+  violationType: string;
+  shipName: string;
+  mmsi: string;
+  location: string;
+  severity: EnforcementSeverity;
+  timestamp: number;
+  proposedActions: string[];
+  status: EnforcementStatus;
+};
+
+type EnforcementFormData = {
+  violationType: string;
+  shipName: string;
+  mmsi: string;
+  location: string;
+  severity: EnforcementSeverity;
+};
+
+const emptyEnforcementForm: EnforcementFormData = {
+  violationType: '',
+  shipName: '',
+  mmsi: '',
+  location: '',
+  severity: 'medium',
+};
+
+const generateProposedActions = (violationType: string, severity: EnforcementSeverity) => {
+  const actionMap: Record<string, Record<EnforcementSeverity, string[]>> = {
+    超速航行: {
+      high: ['立即警告', '罚款 5000 元', '扣留证件'],
+      medium: ['警告', '罚款 2000 元'],
+      low: ['口头警告', '记录在案'],
+    },
+    进入禁航区: {
+      high: ['强制驱离', '罚款 10000 元', '扣船处理'],
+      medium: ['驱离', '罚款 5000 元'],
+      low: ['警告', '罚款 1000 元'],
+    },
+    走锚: {
+      high: ['立即处置', '罚款 8000 元', '扣船'],
+      medium: ['处置', '罚款 3000 元'],
+      low: ['警告', '罚款 1000 元'],
+    },
+    其他违规: {
+      high: ['立即处置', '罚款 5000 元'],
+      medium: ['警告', '罚款 2000 元'],
+      low: ['记录在案', '罚款 500 元'],
+    },
+  };
+
+  return actionMap[violationType]?.[severity] ?? ['待评估'];
+};
+
+const getSeverityLabel = (severity: EnforcementSeverity) =>
+  severity === 'high' ? '高风险' : severity === 'medium' ? '中风险' : '低风险';
+
+const getSeverityClass = (severity: EnforcementSeverity) => {
+  if (severity === 'high') return 'border-red-200 bg-red-50 text-red-600';
+  if (severity === 'medium') return 'border-amber-200 bg-amber-50 text-amber-600';
+  return 'border-emerald-200 bg-emerald-50 text-emerald-600';
+};
+
 export default function LawEnforcementView({ onOpenPlayback }: LawEnforcementViewProps) {
   const [selectedVesselId, setSelectedVesselId] = useState<string | null>(MOCK_RISK_STATS[1]?.id ?? null);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState<'clues' | 'planning'>('clues');
   const [isPlanningModalOpen, setIsPlanningModalOpen] = useState(false);
+  const [showEnforcementForm, setShowEnforcementForm] = useState(false);
+  const [selectedCaseId, setSelectedCaseId] = useState<string | null>(null);
+  const [enforcementForm, setEnforcementForm] =
+    useState<EnforcementFormData>(emptyEnforcementForm);
+  const [enforcementCases, setEnforcementCases] = useState<EnforcementCase[]>([
+    {
+      id: 'case-seed-1',
+      violationType: '进入禁航区',
+      shipName: '江海通8',
+      mmsi: '413000008',
+      location: '吴淞口警戒区',
+      severity: 'high',
+      timestamp: Date.now() - 1000 * 60 * 18,
+      proposedActions: generateProposedActions('进入禁航区', 'high'),
+      status: 'pending',
+    },
+  ]);
 
   const filteredVessels = useMemo(() => {
     return MOCK_RISK_STATS.filter(v => v.name.toLowerCase().includes(searchQuery.toLowerCase()) || v.risk.includes(searchQuery));
@@ -53,6 +140,75 @@ export default function LawEnforcementView({ onOpenPlayback }: LawEnforcementVie
   const selectedIndex = useMemo(() => {
     return MOCK_RISK_STATS.findIndex(v => v.id === selectedVesselId);
   }, [selectedVesselId]);
+
+  const filteredEnforcementCases = useMemo(() => {
+    const keyword = searchQuery.trim().toLowerCase();
+    if (!keyword) return enforcementCases;
+    return enforcementCases.filter((caseItem) =>
+      caseItem.shipName.toLowerCase().includes(keyword) ||
+      caseItem.mmsi.includes(keyword) ||
+      caseItem.violationType.includes(searchQuery) ||
+      caseItem.location.includes(searchQuery),
+    );
+  }, [enforcementCases, searchQuery]);
+
+  const selectedCase = useMemo(
+    () => enforcementCases.find((caseItem) => caseItem.id === selectedCaseId) ?? null,
+    [enforcementCases, selectedCaseId],
+  );
+
+  const selectedCaseActions = useMemo(() => {
+    if (selectedCase) return selectedCase.proposedActions;
+    if (!selectedVessel) return [];
+    const violationType = selectedVessel.risk.includes('禁航')
+      ? '进入禁航区'
+      : selectedVessel.risk.includes('走锚')
+        ? '走锚'
+        : selectedVessel.risk.includes('超速')
+          ? '超速航行'
+          : '其他违规';
+    return generateProposedActions(violationType, selectedVessel.risk.includes('紧急') ? 'high' : 'medium');
+  }, [selectedCase, selectedVessel]);
+
+  const handleCreateEnforcementCase = () => {
+    if (
+      !enforcementForm.violationType ||
+      !enforcementForm.shipName ||
+      !enforcementForm.mmsi ||
+      !enforcementForm.location
+    ) {
+      return;
+    }
+
+    const newCase: EnforcementCase = {
+      ...enforcementForm,
+      id: `case-${Date.now()}`,
+      timestamp: Date.now(),
+      proposedActions: generateProposedActions(
+        enforcementForm.violationType,
+        enforcementForm.severity,
+      ),
+      status: 'pending',
+    };
+
+    setEnforcementCases((prev) => [newCase, ...prev]);
+    setSelectedCaseId(newCase.id);
+    setEnforcementForm(emptyEnforcementForm);
+    setShowEnforcementForm(false);
+  };
+
+  const updateEnforcementStatus = (caseId: string, status: EnforcementStatus) => {
+    setEnforcementCases((prev) =>
+      prev.map((caseItem) => (caseItem.id === caseId ? { ...caseItem, status } : caseItem)),
+    );
+  };
+
+  const removeEnforcementCase = (caseId: string) => {
+    setEnforcementCases((prev) => prev.filter((caseItem) => caseItem.id !== caseId));
+    if (selectedCaseId === caseId) {
+      setSelectedCaseId(null);
+    }
+  };
 
   // Planning logic
   const nearestPatrolBoat = useMemo(() => {
@@ -103,6 +259,89 @@ export default function LawEnforcementView({ onOpenPlayback }: LawEnforcementVie
             <span>疑似违法船舶 ({filteredVessels.length})</span>
             <Layers size={12} />
           </div>
+
+          <button
+            onClick={() => setShowEnforcementForm((value) => !value)}
+            className="flex w-full items-center justify-center gap-2 rounded-xl border border-rose-200 bg-rose-50 py-2 text-xs font-black text-rose-600 transition-all hover:border-rose-300 hover:bg-rose-100"
+          >
+            <Plus size={14} />
+            {showEnforcementForm ? '收起违规录入' : '新增违规信息'}
+          </button>
+
+          <AnimatePresence initial={false}>
+            {showEnforcementForm && (
+              <motion.div
+                initial={{ opacity: 0, y: -8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -8 }}
+                className="space-y-3 rounded-2xl border border-slate-200 bg-slate-50 p-3"
+              >
+                <label className="block space-y-1">
+                  <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">违规类型</span>
+                  <select
+                    value={enforcementForm.violationType}
+                    onChange={(event) =>
+                      setEnforcementForm((prev) => ({ ...prev, violationType: event.target.value }))
+                    }
+                    className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-700 outline-none focus:border-rose-300"
+                  >
+                    <option value="">请选择</option>
+                    <option value="超速航行">超速航行</option>
+                    <option value="进入禁航区">进入禁航区</option>
+                    <option value="走锚">走锚</option>
+                    <option value="其他违规">其他违规</option>
+                  </select>
+                </label>
+                <div className="grid grid-cols-2 gap-2">
+                  <input
+                    value={enforcementForm.shipName}
+                    onChange={(event) =>
+                      setEnforcementForm((prev) => ({ ...prev, shipName: event.target.value }))
+                    }
+                    placeholder="船舶名称"
+                    className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-700 outline-none placeholder:text-slate-300 focus:border-rose-300"
+                  />
+                  <input
+                    value={enforcementForm.mmsi}
+                    onChange={(event) =>
+                      setEnforcementForm((prev) => ({ ...prev, mmsi: event.target.value }))
+                    }
+                    placeholder="MMSI"
+                    className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-700 outline-none placeholder:text-slate-300 focus:border-rose-300"
+                  />
+                </div>
+                <input
+                  value={enforcementForm.location}
+                  onChange={(event) =>
+                    setEnforcementForm((prev) => ({ ...prev, location: event.target.value }))
+                  }
+                  placeholder="位置，如：吴淞口警戒区"
+                  className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-700 outline-none placeholder:text-slate-300 focus:border-rose-300"
+                />
+                <select
+                  value={enforcementForm.severity}
+                  onChange={(event) =>
+                    setEnforcementForm((prev) => ({
+                      ...prev,
+                      severity: event.target.value as EnforcementSeverity,
+                    }))
+                  }
+                  className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-700 outline-none focus:border-rose-300"
+                >
+                  <option value="low">低</option>
+                  <option value="medium">中</option>
+                  <option value="high">高</option>
+                </select>
+                <button
+                  onClick={handleCreateEnforcementCase}
+                  className="flex w-full items-center justify-center gap-2 rounded-lg bg-slate-900 py-2 text-xs font-black text-white transition-all hover:bg-slate-800 active:scale-[0.98]"
+                >
+                  <ShieldAlert size={14} />
+                  生成执法方案
+                </button>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
 
         <div className="flex-1 overflow-y-auto custom-scrollbar-light px-4 pb-4 space-y-2">
@@ -111,7 +350,10 @@ export default function LawEnforcementView({ onOpenPlayback }: LawEnforcementVie
             return (
               <button
                 key={v.id}
-                onClick={() => setSelectedVesselId(v.id)}
+                onClick={() => {
+                  setSelectedVesselId(v.id);
+                  setSelectedCaseId(null);
+                }}
                 className={`group flex w-full flex-col gap-2 rounded-xl border p-3 text-left transition-all ${
                   active 
                     ? 'border-rose-200 bg-rose-50 ring-1 ring-rose-200' 
@@ -133,6 +375,47 @@ export default function LawEnforcementView({ onOpenPlayback }: LawEnforcementVie
               </button>
             );
           })}
+
+          <div className="pt-4">
+            <div className="mb-2 flex items-center justify-between px-1 text-[10px] font-bold uppercase tracking-widest text-slate-400">
+              <span>人工录入案件 ({filteredEnforcementCases.length})</span>
+              <ShieldAlert size={12} />
+            </div>
+            <div className="space-y-2">
+              {filteredEnforcementCases.length === 0 ? (
+                <div className="rounded-xl border border-dashed border-slate-200 p-3 text-center text-[10px] font-bold text-slate-400">
+                  暂无违规案件
+                </div>
+              ) : (
+                filteredEnforcementCases.map((caseItem) => {
+                  const active = selectedCaseId === caseItem.id;
+                  return (
+                    <button
+                      key={caseItem.id}
+                      onClick={() => {
+                        setSelectedCaseId(active ? null : caseItem.id);
+                        setSelectedVesselId(null);
+                      }}
+                      className={`w-full rounded-xl border p-3 text-left transition-all ${
+                        active
+                          ? 'border-rose-200 bg-rose-50 ring-1 ring-rose-200'
+                          : 'border-slate-100 bg-white hover:border-slate-200 hover:bg-slate-50'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="text-[11px] font-black text-slate-800">{caseItem.shipName}</span>
+                        <span className={`rounded-full border px-1.5 py-0.5 text-[8px] font-black ${getSeverityClass(caseItem.severity)}`}>
+                          {getSeverityLabel(caseItem.severity)}
+                        </span>
+                      </div>
+                      <div className="mt-1 text-[10px] font-bold text-rose-500">{caseItem.violationType}</div>
+                      <div className="mt-1 text-[10px] text-slate-400">{caseItem.location}</div>
+                    </button>
+                  );
+                })
+              )}
+            </div>
+          </div>
         </div>
       </aside>
 
@@ -193,21 +476,21 @@ export default function LawEnforcementView({ onOpenPlayback }: LawEnforcementVie
                 </button>
               </div>
 
-              {selectedVessel && (
+              {(selectedVessel || selectedCase) && (
                 <>
                   {/* Vessel Info */}
                   <div className="rounded-2xl bg-slate-900 p-5 text-white shadow-xl relative overflow-hidden group">
                     <div className="relative z-10">
                       <div className="text-[10px] font-black text-white/40 uppercase tracking-widest mb-1">船舶信息</div>
-                      <div className="text-xl font-black">{selectedVessel.name}</div>
+                      <div className="text-xl font-black">{selectedCase?.shipName ?? selectedVessel?.name}</div>
                       <div className="mt-2 grid grid-cols-2 gap-4">
                         <div>
                           <div className="text-[9px] text-white/30 uppercase">MMSI</div>
-                          <div className="text-xs font-bold">{selectedVessel.mmsi || '--'}</div>
+                          <div className="text-xs font-bold">{selectedCase?.mmsi ?? selectedVessel?.mmsi ?? '--'}</div>
                         </div>
                         <div>
                           <div className="text-[9px] text-white/30 uppercase">船型</div>
-                          <div className="text-xs font-bold">{selectedVessel.type || '--'}</div>
+                          <div className="text-xs font-bold">{selectedVessel?.type || '待核验'}</div>
                         </div>
                       </div>
                       <div className="mt-3 text-[10px] text-white/50">所属单位: 上海远洋运输集团</div>
@@ -227,19 +510,75 @@ export default function LawEnforcementView({ onOpenPlayback }: LawEnforcementVie
                         <div className="flex justify-between items-start">
                           <div>
                             <div className="text-[9px] font-black text-slate-400 uppercase">违法类型</div>
-                            <div className="mt-1 text-sm font-black text-rose-600">{selectedVessel.risk}</div>
+                            <div className="mt-1 text-sm font-black text-rose-600">{selectedCase?.violationType ?? selectedVessel?.risk}</div>
                           </div>
                           <div className="text-right">
                             <div className="text-[9px] font-black text-slate-400 uppercase">发生时间</div>
-                            <div className="mt-1 text-xs font-bold text-slate-700">{selectedVessel.time}</div>
+                            <div className="mt-1 text-xs font-bold text-slate-700">
+                              {selectedCase
+                                ? new Date(selectedCase.timestamp).toLocaleString()
+                                : selectedVessel?.time}
+                            </div>
                           </div>
                         </div>
                         <div>
                           <div className="text-[9px] font-black text-slate-400 uppercase">发生地点</div>
-                          <div className="mt-1 text-xs font-bold text-slate-700">{selectedVessel.snapshot.location}</div>
+                          <div className="mt-1 text-xs font-bold text-slate-700">
+                            {selectedCase?.location ?? selectedVessel?.snapshot.location}
+                          </div>
                         </div>
                       </Panel>
                     </div>
+
+                    <Panel className="border-sky-100 bg-sky-50/60 p-4">
+                      <div className="mb-3 flex items-center justify-between">
+                        <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-sky-700">
+                          <ShieldAlert size={12} />
+                          执法方案生成
+                        </div>
+                        {selectedCase && (
+                          <span className={`rounded-full border px-2 py-1 text-[9px] font-black ${getSeverityClass(selectedCase.severity)}`}>
+                            {getSeverityLabel(selectedCase.severity)}
+                          </span>
+                        )}
+                      </div>
+                      <div className="space-y-2">
+                        {selectedCaseActions.map((action, index) => (
+                          <div
+                            key={`${action}-${index}`}
+                            className="flex items-center gap-2 rounded-lg bg-white/70 px-3 py-2 text-[11px] font-bold text-sky-900"
+                          >
+                            <CheckCircle size={12} className="text-sky-500" />
+                            {action}
+                          </div>
+                        ))}
+                      </div>
+                      {selectedCase && (
+                        <div className="mt-3 flex gap-2">
+                          <button
+                            onClick={() => updateEnforcementStatus(selectedCase.id, 'in_progress')}
+                            disabled={selectedCase.status === 'in_progress'}
+                            className="flex-1 rounded-lg bg-amber-500/15 py-2 text-[10px] font-black text-amber-600 transition-all hover:bg-amber-500/25 disabled:opacity-45"
+                          >
+                            执行中
+                          </button>
+                          <button
+                            onClick={() => updateEnforcementStatus(selectedCase.id, 'completed')}
+                            disabled={selectedCase.status === 'completed'}
+                            className="flex-1 rounded-lg bg-emerald-500/15 py-2 text-[10px] font-black text-emerald-600 transition-all hover:bg-emerald-500/25 disabled:opacity-45"
+                          >
+                            已完成
+                          </button>
+                          <button
+                            onClick={() => removeEnforcementCase(selectedCase.id)}
+                            className="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-200 text-slate-500 transition-all hover:bg-rose-100 hover:text-rose-600"
+                            title="删除案件"
+                          >
+                            <Trash2 size={13} />
+                          </button>
+                        </div>
+                      )}
+                    </Panel>
 
                     {/* Evidence Chain */}
                     <div className="space-y-3">
@@ -256,7 +595,9 @@ export default function LawEnforcementView({ onOpenPlayback }: LawEnforcementVie
                         <div className="pb-4 flex-1">
                           <div className="text-[11px] font-bold text-slate-800">轨迹轨迹证据</div>
                           <div className="mt-1 text-[10px] text-slate-500 leading-relaxed">
-                            历史航迹、实时速度({selectedVessel.speed}kn)、船首向({selectedVessel.heading}°)。航迹显示其多次试探禁航区边缘。
+                            {selectedCase
+                              ? '案件已建立待核验航迹证据，需关联 AIS 轨迹、速度变化和航向记录。'
+                              : `历史航迹、实时速度(${selectedVessel?.speed}kn)、船首向(${selectedVessel?.heading}°)。航迹显示其多次试探禁航区边缘。`}
                           </div>
                         </div>
                       </div>
@@ -291,7 +632,7 @@ export default function LawEnforcementView({ onOpenPlayback }: LawEnforcementVie
                         <div className="pb-4 flex-1">
                           <div className="text-[11px] font-bold text-slate-800">系统预警证据</div>
                           <div className="mt-1 text-[10px] text-slate-500 leading-relaxed">
-                            系统共触发 4 次预警。其中“{selectedVessel.risk}”预警等级为“紧急”。
+                            系统共触发 4 次预警。其中“{selectedCase?.violationType ?? selectedVessel?.risk}”预警等级为“紧急”。
                           </div>
                         </div>
                       </div>
@@ -317,10 +658,11 @@ export default function LawEnforcementView({ onOpenPlayback }: LawEnforcementVie
 
                     <button
                       onClick={() => onOpenPlayback(selectedIndex)}
+                      disabled={selectedCase !== null}
                       className="w-full flex items-center justify-center gap-3 rounded-xl bg-slate-900 py-3.5 text-xs font-black text-white shadow-xl transition-all hover:bg-slate-800 hover:scale-[1.02] active:scale-[0.98]"
                     >
                       <Play size={16} fill="currentColor" />
-                      立即复盘动态细节
+                      {selectedCase ? '人工案件待关联回放' : '立即复盘动态细节'}
                     </button>
                   </div>
                 </>

@@ -17,6 +17,12 @@ import {
   type HomeViewMode,
 } from '../utils/viewModes';
 
+const ROUTE_MODE_PATHS: Partial<Record<HomeViewMode, string>> = {
+  'risk-analysis': '/risk-analysis',
+  'case-playback': '/law-enforcement',
+  'emergency-rescue': '/emergency-rescue',
+};
+
 type SidebarPosition = 'left' | 'right';
 
 export type AppBottomBarProps = {
@@ -79,7 +85,14 @@ export default function AppBottomBar({
               return (
                 <button
                   key={option.id}
-                  onClick={() => onModeChange(option.id)}
+                  onClick={() => {
+                    const path = ROUTE_MODE_PATHS[option.id];
+                    if (path) {
+                      window.open(path, '_blank');
+                      return;
+                    }
+                    onModeChange(option.id);
+                  }}
                   className={`rounded-full border px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.18em] transition-all ${
                     active
                       ? 'border-sky-500/40 bg-sky-500/15 text-sky-400 shadow-[0_0_18px_rgba(14,165,233,0.14)]'

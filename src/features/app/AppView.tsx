@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { AnimatePresence } from 'motion/react';
 import {
   type IntentItem,
@@ -36,7 +36,41 @@ import RiskAnalysisView from '../risk-analysis/RiskAnalysisView';
 import LawEnforcementView from '../law-enforcement/LawEnforcementView';
 import AssistantDialog from './components/AssistantDialog';
 
+const getRouteModeFromPath = (): HomeViewMode | null => {
+  if (typeof window === 'undefined') return null;
+  if (window.location.pathname === '/risk-analysis') return 'risk-analysis';
+  if (window.location.pathname === '/law-enforcement') return 'case-playback';
+  if (window.location.pathname === '/emergency-rescue') return 'emergency-rescue';
+  return null;
+};
+
+function RoutePageShell({
+  title,
+  children,
+}: {
+  title: string;
+  children: ReactNode;
+}) {
+  return (
+    <div className="flex h-screen w-screen flex-col overflow-hidden bg-slate-50 text-slate-900">
+      <header className="flex h-12 shrink-0 items-center justify-between border-b border-slate-200 bg-white px-5">
+        <div className="text-sm font-black text-slate-800">{title}</div>
+        <button
+          onClick={() => {
+            window.location.href = '/';
+          }}
+          className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 text-[11px] font-black text-slate-600 transition-all hover:border-sky-200 hover:bg-sky-50 hover:text-sky-700"
+        >
+          返回主工作台
+        </button>
+      </header>
+      <div className="min-h-0 flex-1">{children}</div>
+    </div>
+  );
+}
+
 export default function AppView() {
+  const routeMode = getRouteModeFromPath();
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [sidebarPosition, setSidebarPosition] = useState<'left' | 'right'>('left');
   const [showBars, setShowBars] = useState(true);
@@ -338,6 +372,30 @@ export default function AppView() {
     onToggleUserMenu: () => setShowUserMenu((value) => !value),
     onCloseUserMenu: () => setShowUserMenu(false),
   };
+
+  if (routeMode === 'risk-analysis') {
+    return (
+      <RoutePageShell title="风险态势">
+        <RiskAnalysisView onOpenPlayback={openRiskPlaybackByIndex} />
+      </RoutePageShell>
+    );
+  }
+
+  if (routeMode === 'case-playback') {
+    return (
+      <RoutePageShell title="执法辅助">
+        <LawEnforcementView onOpenPlayback={openRiskPlaybackByIndex} />
+      </RoutePageShell>
+    );
+  }
+
+  if (routeMode === 'emergency-rescue') {
+    return (
+      <RoutePageShell title="应急处置">
+        <main className="h-full bg-slate-50" />
+      </RoutePageShell>
+    );
+  }
 
   return (
     <div className={`vts-home-shell flex h-screen w-screen flex-col overflow-hidden font-sans transition-colors duration-500 ${
