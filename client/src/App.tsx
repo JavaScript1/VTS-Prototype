@@ -10,7 +10,6 @@ import TrafficRiskAwareness from "./pages/TrafficRiskAwareness";
 import ComplianceSupport from "./pages/ComplianceSupport";
 import EmergencyResponse from "./pages/EmergencyResponse";
 
-
 function Router() {
   return (
     <Switch>
