@@ -12,6 +12,10 @@ import {
   LogOut,
 } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
+import {
+  HOME_ROUTE_MODE_OPTIONS,
+  type HomeViewMode,
+} from '../utils/viewModes';
 
 type SidebarPosition = 'left' | 'right';
 
@@ -22,7 +26,9 @@ export type AppBottomBarProps = {
   isToolsExpanded: boolean;
   isAssistantOpen: boolean;
   showUserMenu: boolean;
+  currentMode: HomeViewMode;
   sidebarPosition: SidebarPosition;
+  onModeChange: (mode: HomeViewMode) => void;
   onToggleControlPanel: () => void;
   onToggleAssistant: () => void;
   onToggleTools: () => void;
@@ -39,7 +45,9 @@ export default function AppBottomBar({
   isToolsExpanded,
   isAssistantOpen,
   showUserMenu,
+  currentMode,
   sidebarPosition,
+  onModeChange,
   onToggleControlPanel,
   onToggleAssistant,
   onToggleTools,
@@ -65,7 +73,24 @@ export default function AppBottomBar({
           exit={{ height: 0, opacity: 0 }}
           className="z-[3000] flex shrink-0 items-center justify-between border-t border-white/10 bg-[#0a0a0a] px-4"
         >
-          <div className="flex-1 items-center flex gap-4"></div>
+          <div className="flex flex-1 items-center justify-start gap-2">
+            {HOME_ROUTE_MODE_OPTIONS.map((option) => {
+              const active = option.id === currentMode;
+              return (
+                <button
+                  key={option.id}
+                  onClick={() => onModeChange(option.id)}
+                  className={`rounded-full border px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.18em] transition-all ${
+                    active
+                      ? 'border-sky-500/40 bg-sky-500/15 text-sky-400 shadow-[0_0_18px_rgba(14,165,233,0.14)]'
+                      : 'border-white/10 bg-white/5 text-white/45 hover:border-white/20 hover:text-white'
+                  }`}
+                >
+                  {option.label}
+                </button>
+              );
+            })}
+          </div>
 
           <div className="relative flex items-center gap-8"><button onClick={onToggleAssistant} className={`flex items-center gap-2 rounded-full border px-3 py-1 transition-all ${isAssistantOpen ? "border-sky-500/50 bg-sky-500/20 text-sky-400 shadow-[0_0_15px_rgba(14,165,233,0.2)]" : "border-white/10 bg-white/5 text-white/40 hover:border-white/20 hover:text-white"}`}><Sparkles size={14} className={isAssistantOpen ? "animate-pulse" : ""} /><span className="text-[10px] font-black uppercase tracking-widest">智能助手</span></button>
             <div className="flex items-center gap-3">

@@ -309,7 +309,9 @@ export default function AppView() {
     onToggleAssistant: () => setIsAssistantOpen((value) => !value),
     isToolsExpanded,
     showUserMenu,
+    currentMode: viewMode,
     sidebarPosition,
+    onModeChange: setViewMode,
     onToggleControlPanel: () => setIsControlPanelExpanded((value) => !value),
     onToggleTools: () => setIsToolsExpanded((value) => !value),
     onToggleSidebarPosition: () =>

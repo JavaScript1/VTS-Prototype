@@ -7,7 +7,7 @@ import React, { useState, useRef } from 'react';
 import { Search, Radio, LocateFixed, AlertTriangle, Anchor, Ship, X, LayoutGrid } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import type { ShipSearchResult, SidebarTab } from '../../types';
-import { HOME_VIEW_MODE_OPTIONS, type HomeViewMode } from '../../features/app/utils/viewModes';
+import { HOME_PRIMARY_MODE_OPTIONS, type HomeViewMode } from '../../features/app/utils/viewModes';
 
 type SidebarPanelProps = {
   activeTab: SidebarTab;
@@ -203,7 +203,7 @@ export default function SidebarPanel({
                   className={`absolute bottom-0 z-50 w-48 space-y-1 rounded-2xl border border-white/10 bg-[#05080d]/95 p-2 shadow-2xl backdrop-blur-xl ${isLeft ? 'left-full ml-3' : 'right-full mr-3'}`}
                 >
                   <div className='px-3 py-2 text-[10px] font-black uppercase tracking-[0.2em] text-white/30'>模式切换</div>
-                  {HOME_VIEW_MODE_OPTIONS.map((option) => {
+                  {HOME_PRIMARY_MODE_OPTIONS.map((option) => {
                     const active = option.id === currentMode;
                     return (
                       <button
