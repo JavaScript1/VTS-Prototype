@@ -3,11 +3,12 @@ import AppBottomBar, { type AppBottomBarProps } from './AppBottomBar';
 import AppHomeMap, { type AppHomeMapProps } from './AppHomeMap';
 import AppSidebar, { type AppSidebarProps } from './AppSidebar';
 import type { HomeViewMode } from '../utils/viewModes';
+import type { MessageFeedItem } from './messagePushConfig';
 
 type AppHomeWorkspaceProps = {
   mode: HomeViewMode;
   sidebarProps: AppSidebarProps;
-  mapProps: AppHomeMapProps;
+  mapProps: AppHomeMapProps & { smartDutyMessages?: MessageFeedItem[] };
   bottomBarProps: AppBottomBarProps;
   rightRail?: ReactNode;
   mapOverlay?: ReactNode;

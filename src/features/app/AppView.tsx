@@ -23,7 +23,6 @@ import DynamicPlaybackView from '../../components/Panels/DynamicPlaybackView';
 import AppHomeWorkspace from './components/AppHomeWorkspace';
 import AppModeRightRail from './components/AppModeRightRail';
 import MessagePushAvatar from './components/MessagePushAvatar';
-import MessagePushPanel from './components/MessagePushPanel';
 import type { MessageFeedItem } from './components/messagePushConfig';
 import {
   buildHomeShipDetails,
@@ -32,9 +31,9 @@ import {
 } from './utils/homeViewData';
 import { getRiskPlaybackSession, type AppPlaybackSession } from './utils/playback';
 import { type HomeViewMode } from './utils/viewModes';
-import { normalizeVhfShipName } from './utils/vhf';
 import RiskAnalysisView from '../risk-analysis/RiskAnalysisView';
-import LawEnforcementView from '../law-enforcement/LawEnforcementView';import AssistantDialog from './components/AssistantDialog';
+import LawEnforcementView from '../law-enforcement/LawEnforcementView';
+import AssistantDialog from './components/AssistantDialog';
 
 export default function AppView() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -218,21 +217,14 @@ export default function AppView() {
     );
 
   const smartDutyAvatarOverlay =
-    viewMode === 'smart-duty' ? (
-      <>
-        <MessagePushPanel
-          variant="floating"
-          maxMessages={8}
-          className="right-4 top-4 w-[380px]"
+    viewMode === 'smart-duty' || viewMode === 'auto' ? (
+      <div className="pointer-events-none absolute bottom-4 right-4 z-[410]">
+        <MessagePushAvatar
+          messages={smartDutyMessages}
           onMessagesChange={setSmartDutyMessages}
+          className="w-[420px] drop-shadow-[0_10px_30px_rgba(0,0,0,0.5)]"
         />
-        <div className="pointer-events-none absolute bottom-4 right-4 z-[410]">
-          <MessagePushAvatar
-            messages={smartDutyMessages}
-            className="w-[170px] drop-shadow-[0_10px_30px_rgba(0,0,0,0.5)]"
-          />
-        </div>
-      </>
+      </div>
     ) : null;
 
   const sidebarProps = {
@@ -296,6 +288,7 @@ export default function AppView() {
     homeMapFocusTarget,
     selectedHomeShip,
     selectedHomeShipTrackPoint,
+    smartDutyMessages, // Added
     onMouseMove: setMouseCoords,
     onSelectHomeShip: handleSelectHomeShip,
     onSelectTrackPoint: setSelectedHomeShipTrackPointId,

@@ -1,6 +1,7 @@
 import RealShipMap from '../../real-ship/RealShipMap';
 import type { HomeShipDetail, HomeShipTrackPoint } from '../../../types';
 import type { HomeViewMode } from '../utils/viewModes';
+import type { MessageFeedItem } from './messagePushConfig';
 
 export type AppHomeMapProps = {
   mode?: HomeViewMode;
@@ -8,6 +9,7 @@ export type AppHomeMapProps = {
   homeMapFocusTarget: [number, number] | null;
   selectedHomeShip: HomeShipDetail | null;
   selectedHomeShipTrackPoint: HomeShipTrackPoint | null;
+  smartDutyMessages?: MessageFeedItem[];
   onMouseMove: (coords: { lat: number; lng: number } | null) => void;
   onSelectHomeShip: (shipId: string) => void;
   onSelectTrackPoint: (trackPointId: string) => void;
@@ -20,6 +22,7 @@ export default function AppHomeMap({
   homeMapFocusTarget,
   selectedHomeShip,
   selectedHomeShipTrackPoint,
+  smartDutyMessages,
   onMouseMove,
   onSelectHomeShip,
   onSelectTrackPoint,
@@ -32,6 +35,7 @@ export default function AppHomeMap({
         homeMapFocusTarget={homeMapFocusTarget}
         selectedHomeShip={selectedHomeShip}
         selectedHomeShipTrackPoint={selectedHomeShipTrackPoint}
+        smartDutyMessages={smartDutyMessages}
         onMouseMove={onMouseMove}
         onSelectHomeShip={onSelectHomeShip}
         onSelectTrackPoint={onSelectTrackPoint}

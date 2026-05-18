@@ -10,12 +10,14 @@ import {
 } from '../map/constants';
 import { SHIP_SHAPE_TEMPLATES } from './shipShapeTemplates';
 import { useRealShips } from './useRealShips';
+import type { MessageFeedItem } from '../app/components/messagePushConfig';
 
 type RealShipMapProps = {
   playbackData: { vessel: any; event: any } | null;
   homeMapFocusTarget: [number, number] | null;
   selectedHomeShip: HomeShipDetail | null;
   selectedHomeShipTrackPoint: HomeShipTrackPoint | null;
+  smartDutyMessages?: MessageFeedItem[];
   onMouseMove: (coords: { lat: number; lng: number } | null) => void;
   onSelectHomeShip: (shipId: string) => void;
   onSelectTrackPoint: (trackPointId: string) => void;
@@ -129,6 +131,26 @@ const createPlaybackIcon = (playbackData: any) => {
   });
 };
 
+const createIntentBubbleIcon = (message: MessageFeedItem) => {
+  return (loongship as any).divIcon({
+    className: 'custom-div-icon',
+    html: `
+      <div class="relative -translate-x-1/2 -translate-y-[110%] min-w-[180px]">
+        <div class="bg-sky-500/10 backdrop-blur-md border border-sky-500/40 rounded-xl p-3 shadow-xl ring-1 ring-white/5">
+          <div class="flex items-center gap-1.5 mb-1.5">
+            <div class="w-1.5 h-1.5 rounded-full bg-sky-400"></div>
+            <span class="text-[9px] font-black text-sky-300 uppercase tracking-[0.1em]">${message.title}</span>
+          </div>
+          <p class="text-[11px] text-white/90 leading-snug font-bold line-clamp-2">${message.content}</p>
+          <div class="absolute -bottom-2 left-1/2 -translate-x-1/2 w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-t-[6px] border-t-sky-500/40"></div>
+        </div>
+      </div>
+    `,
+    iconSize: [0, 0],
+    iconAnchor: [0, 0],
+  });
+};
+
 const removeLayer = (layer: any) => {
   if (!layer) return;
   if (typeof layer.clearLayers === 'function') {
@@ -144,6 +166,7 @@ export default function RealShipMap({
   homeMapFocusTarget,
   selectedHomeShip,
   selectedHomeShipTrackPoint,
+  smartDutyMessages = [],
   onMouseMove,
   onSelectHomeShip,
   onSelectTrackPoint,
@@ -154,6 +177,7 @@ export default function RealShipMap({
   const badgeLayerRef = useRef<LayerRef | null>(null);
   const trackLayerRef = useRef<LayerRef | null>(null);
   const playbackLayerRef = useRef<any>(null);
+  const intentBubbleLayerRef = useRef<LayerRef | null>(null);
   const lastFocusKeyRef = useRef<string | null>(null);
   const { error, ships } = useRealShips();
 
@@ -219,6 +243,7 @@ export default function RealShipMap({
     mapRef.current = map;
 
     return () => {
+      removeLayer(intentBubbleLayerRef.current);
       removeLayer(playbackLayerRef.current);
       removeLayer(trackLayerRef.current);
       removeLayer(badgeLayerRef.current);
@@ -344,6 +369,36 @@ export default function RealShipMap({
     marker.addTo(map);
     playbackLayerRef.current = marker;
   }, [playbackData]);
+
+  // 新增：在意图消息中随机船只上方显示气泡
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+
+    removeLayer(intentBubbleLayerRef.current);
+    intentBubbleLayerRef.current = null;
+
+    const intentMessages = smartDutyMessages.filter(msg => msg.type === 'intent');
+    if (intentMessages.length === 0 || ships.length === 0) return;
+
+    const bubbleLayer = (loongship as any).layerGroup();
+    
+    intentMessages.slice(0, 3).forEach((message, index) => {
+      // 随机选一搜船，或者根据 index 选不同的船
+      const shipIndex = (index * 7 + 3) % ships.length;
+      const ship = ships[shipIndex];
+      if (!ship) return;
+
+      const marker = (loongship as any).marker([ship.lat, ship.lng], {
+        icon: createIntentBubbleIcon(message),
+        zIndexOffset: 1000,
+      });
+      bubbleLayer.addLayer(marker);
+    });
+
+    bubbleLayer.addTo(map);
+    intentBubbleLayerRef.current = bubbleLayer;
+  }, [smartDutyMessages, ships]);
 
   useEffect(() => {
     const map = mapRef.current;
