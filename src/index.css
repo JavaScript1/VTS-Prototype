@@ -266,6 +266,18 @@
   display: none !important;
 }
 
+.risk-heatmap-canvas {
+  opacity: 0.94;
+  pointer-events: none;
+  mix-blend-mode: screen;
+}
+
+.leaflet-heatmap-layer {
+  opacity: 0.96;
+  pointer-events: none;
+  mix-blend-mode: normal;
+}
+
 /* 自定义气泡框样式 */
 .custom-vessel-tooltip {
   background: transparent !important;

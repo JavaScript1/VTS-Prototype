@@ -6,7 +6,7 @@ import {
   SkipBack,
   SkipForward,
 } from 'lucide-react';
-import { Circle, CircleMarker, MapContainer, Marker, TileLayer, Tooltip } from 'react-leaflet';
+import { CircleMarker, MapContainer, Marker, TileLayer, Tooltip, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { VTS_CHART_TILE_ATTRIBUTION, VTS_CHART_TILE_URL, HOME_MAP_DEFAULT_CENTER } from '../map/constants';
@@ -19,25 +19,97 @@ import {
   WARNING_TYPE_OPTIONS,
   type Jurisdiction,
   type TimeRange,
+  type WarningLocation,
   type WarningType,
 } from './riskMacroTrendData';
 import RiskTopRankingCard, { type RiskTopRankingSnapshot } from './RiskTopRankingCard';
 
 const PLAYBACK_STEP_MS = 1200;
 
+const RISK_HEAT_GRADIENT = {
+  0.08: '#0369a1',
+  0.28: '#0284c7',
+  0.48: '#eab308',
+  0.66: '#ea580c',
+  0.82: '#dc2626',
+  1: '#7f1d1d',
+};
+
+const clampHeatIntensity = (value: number) => Math.min(1, Math.max(0.12, value));
+
+let leafletHeatPromise: Promise<unknown> | null = null;
+
+const loadLeafletHeat = () => {
+  if (!leafletHeatPromise) {
+    Reflect.set(globalThis, 'L', L);
+    leafletHeatPromise = import('leaflet.heat');
+  }
+
+  return leafletHeatPromise;
+};
+
 const getHeatColor = (intensity: number) => {
-  if (intensity > 0.78) return '#ef4444';
-  if (intensity > 0.62) return '#f97316';
-  if (intensity > 0.45) return '#eab308';
+  if (intensity > 0.72) return '#ef4444';
+  if (intensity > 0.55) return '#f97316';
+  if (intensity > 0.35) return '#facc15';
   return '#0ea5e9';
 };
 
 const getHeatLevel = (intensity: number) => {
-  if (intensity > 0.78) return '极高';
-  if (intensity > 0.62) return '高';
-  if (intensity > 0.45) return '中';
-  return '低';
+  if (intensity > 0.72) return '高数量';
+  if (intensity > 0.45) return '中数量';
+  return '低数量';
 };
+
+function RiskHeatLayer({
+  locations,
+  activeHotspotId,
+  hotspotHeatScores,
+}: {
+  locations: WarningLocation[];
+  activeHotspotId: string | null;
+  hotspotHeatScores: Map<string, number>;
+}) {
+  const map = useMap();
+
+  useEffect(() => {
+    let heatLayer: L.HeatLayer | null = null;
+    let disposed = false;
+
+    const heatPoints: L.HeatLatLngTuple[] = locations.map((location) => {
+      const hotspotScore =
+        location.hotspotId === 'noise' ? 0.2 : hotspotHeatScores.get(location.hotspotId) ?? 0;
+      const eventDensityBoost = Math.min(0.18, location.eventWeight / 78);
+      const focusBoost = location.hotspotId === activeHotspotId ? 0.11 : 0;
+      const intensity =
+        location.hotspotId === 'noise'
+          ? location.intensity * 0.72
+          : location.intensity * 0.46 + hotspotScore * 0.64 + eventDensityBoost + focusBoost;
+
+      return [location.lat, location.lng, clampHeatIntensity(intensity)];
+    });
+
+    loadLeafletHeat().then(() => {
+      if (disposed) return;
+
+      heatLayer = L.heatLayer(heatPoints, {
+        radius: 52,
+        blur: 34,
+        max: 1,
+        maxZoom: 13,
+        minOpacity: 0.24,
+        gradient: RISK_HEAT_GRADIENT,
+      }).addTo(map);
+    });
+
+    return () => {
+      disposed = true;
+      heatLayer?.remove();
+    };
+  }, [activeHotspotId, hotspotHeatScores, locations, map]);
+
+  return null;
+}
 
 const createHotspotIcon = ({
   label,
@@ -71,11 +143,58 @@ const createHotspotIcon = ({
     iconAnchor: [0, 0],
   });
 
+export type RiskMapResourceCategory = 'vessel' | 'team' | 'device' | 'station';
+
+export type RiskMapResource = {
+  id: string;
+  name: string;
+  category: RiskMapResourceCategory;
+  position: [number, number];
+  status: string;
+  description: string;
+};
+
+const getResourceColor = (category: RiskMapResourceCategory) => {
+  if (category === 'vessel') return '#0ea5e9';
+  if (category === 'team') return '#10b981';
+  if (category === 'station') return '#8b5cf6';
+  return '#f59e0b';
+};
+
+const getResourceIconLabel = (category: RiskMapResourceCategory) => {
+  if (category === 'vessel') return '船';
+  if (category === 'team') return '队';
+  if (category === 'station') return '站';
+  return '设';
+};
+
+const createResourceIcon = (resource: RiskMapResource) => {
+  const color = getResourceColor(resource.category);
+
+  return L.divIcon({
+    className: 'law-resource-marker',
+    html: `
+      <div style="display:flex;align-items:center;gap:6px;transform:translate(-50%,-50%);">
+        <div style="position:relative;display:flex;height:30px;width:30px;align-items:center;justify-content:center;border-radius:9999px;background:${color};color:white;font-size:12px;font-weight:900;border:3px solid rgba(255,255,255,0.95);box-shadow:0 12px 28px rgba(15,23,42,0.28),0 0 0 6px ${color}30;">
+          ${getResourceIconLabel(resource.category)}
+        </div>
+        <div style="padding:4px 7px;border-radius:9999px;background:rgba(255,255,255,0.94);border:1px solid rgba(15,23,42,0.1);box-shadow:0 8px 24px rgba(15,23,42,0.16);white-space:nowrap;">
+          <div style="font-size:10px;font-weight:900;color:#0f172a;line-height:1;">${resource.name}</div>
+          <div style="margin-top:3px;font-size:8px;font-weight:800;color:${color};line-height:1;">${resource.status}</div>
+        </div>
+      </div>
+    `,
+    iconSize: [0, 0],
+    iconAnchor: [0, 0],
+  });
+};
+
 type RiskMacroTrendProps = {
   showToolbar?: boolean;
   showTopRanking?: boolean;
   showLegend?: boolean;
   showTimeline?: boolean;
+  mapResources?: RiskMapResource[];
   onTopRankingChange?: (snapshot: RiskTopRankingSnapshot | null) => void;
 };
 
@@ -84,6 +203,7 @@ export default function RiskMacroTrend({
   showTopRanking = true,
   showLegend = true,
   showTimeline = true,
+  mapResources = [],
   onTopRankingChange,
 }: RiskMacroTrendProps) {
   const [timeRange, setTimeRange] = useState<TimeRange>('24h');
@@ -156,6 +276,22 @@ export default function RiskMacroTrend({
   }, [currentFrame.focusHotspotId, hotspotSummaries, visibleHotspots]);
 
   const highlightedHotspot = hotspotSummaries.find((item) => item.id === activeFocusHotspotId);
+
+  const maxHotspotEventCount = useMemo(
+    () => Math.max(1, ...hotspotSummaries.map((hotspot) => hotspot.eventCount)),
+    [hotspotSummaries],
+  );
+
+  const hotspotHeatScores = useMemo(
+    () =>
+      new Map(
+        hotspotSummaries.map((hotspot) => [
+          hotspot.id,
+          hotspot.eventCount / maxHotspotEventCount,
+        ]),
+      ),
+    [hotspotSummaries, maxHotspotEventCount],
+  );
 
   useEffect(() => {
     if (!onTopRankingChange) return;
@@ -268,31 +404,12 @@ export default function RiskMacroTrend({
               <TileLayer url={VTS_CHART_TILE_URL} attribution={VTS_CHART_TILE_ATTRIBUTION} />
 
               {hotspotSummaries.map((hotspot) => {
-                const heatColor = getHeatColor(hotspot.avgIntensity);
+                const heatScore = hotspotHeatScores.get(hotspot.id) ?? 0;
+                const heatColor = getHeatColor(heatScore);
                 const active = hotspot.id === activeFocusHotspotId;
 
                 return (
                   <Fragment key={hotspot.id}>
-                    <Circle
-                      key={`${hotspot.id}-outer`}
-                      center={hotspot.center}
-                      radius={1700 + hotspot.avgIntensity * 4200}
-                      pathOptions={{
-                        stroke: false,
-                        fillColor: heatColor,
-                        fillOpacity: active ? 0.14 : 0.09,
-                      }}
-                    />
-                    <Circle
-                      key={`${hotspot.id}-inner`}
-                      center={hotspot.center}
-                      radius={420 + hotspot.avgIntensity * 1200}
-                      pathOptions={{
-                        stroke: false,
-                        fillColor: heatColor,
-                        fillOpacity: active ? 0.22 : 0.15,
-                      }}
-                    />
                     <Marker
                       key={`${hotspot.id}-marker`}
                       position={hotspot.center}
@@ -314,7 +431,7 @@ export default function RiskMacroTrend({
                           <div className="mt-1 text-[9px] text-slate-500">{hotspot.focus}</div>
                           <div className="mt-2 flex items-center justify-between text-[9px] text-slate-400">
                             <span>预警 {hotspot.eventCount} 起</span>
-                            <span>热度 {hotspot.heatLevel}</span>
+                            <span>热度 {getHeatLevel(heatScore)}</span>
                           </div>
                         </div>
                       </Tooltip>
@@ -323,18 +440,52 @@ export default function RiskMacroTrend({
                 );
               })}
 
-              {filteredLocations.map((location) => (
-                <CircleMarker
-                  key={location.id}
-                  center={[location.lat, location.lng]}
-                  radius={2 + location.intensity * 4}
-                  pathOptions={{
-                    fillColor: getHeatColor(location.intensity),
-                    color: 'transparent',
-                    fillOpacity: location.hotspotId === activeFocusHotspotId ? 0.28 : 0.16,
-                    stroke: false,
-                  }}
-                />
+              <RiskHeatLayer
+                locations={filteredLocations}
+                activeHotspotId={activeFocusHotspotId}
+                hotspotHeatScores={hotspotHeatScores}
+              />
+
+              {filteredLocations.map((location) => {
+                const heatScore =
+                  location.hotspotId === 'noise' ? 0.18 : hotspotHeatScores.get(location.hotspotId) ?? 0;
+
+                return (
+                  <CircleMarker
+                    key={location.id}
+                    center={[location.lat, location.lng]}
+                    radius={2 + heatScore * 4}
+                    pathOptions={{
+                      fillColor: getHeatColor(heatScore),
+                      color: 'transparent',
+                      fillOpacity: location.hotspotId === activeFocusHotspotId ? 0.3 : 0.18,
+                      stroke: false,
+                    }}
+                  />
+                );
+              })}
+
+              {mapResources.map((resource) => (
+                <Marker
+                  key={resource.id}
+                  position={resource.position}
+                  icon={createResourceIcon(resource)}
+                >
+                  <Tooltip
+                    direction="top"
+                    offset={[0, -22]}
+                    opacity={1}
+                    className="custom-map-popup-light"
+                  >
+                    <div className="min-w-[150px] rounded-lg border border-slate-100 bg-white p-2 shadow-xl">
+                      <div className="text-[10px] font-black text-slate-900">{resource.name}</div>
+                      <div className="mt-1 text-[9px] font-bold text-slate-500">{resource.description}</div>
+                      <div className="mt-2 text-[9px] font-black" style={{ color: getResourceColor(resource.category) }}>
+                        {resource.status}
+                      </div>
+                    </div>
+                  </Tooltip>
+                </Marker>
               ))}
             </MapContainer>
 
@@ -422,10 +573,9 @@ export default function RiskMacroTrend({
                 </div>
                 <div className="flex flex-col gap-1.5">
                   {[
-                    { label: '极高风险', color: 'bg-red-500' },
-                    { label: '预警频发', color: 'bg-orange-500' },
-                    { label: '中度波动', color: 'bg-yellow-500' },
-                    { label: '常规密度', color: 'bg-sky-500' },
+                    { label: '高数量', color: 'bg-red-500' },
+                    { label: '中数量', color: 'bg-orange-500' },
+                    { label: '低数量', color: 'bg-yellow-400' },
                   ].map((item) => (
                     <div key={item.label} className="flex items-center gap-2">
                       <div className={`h-2 w-4 rounded-full ${item.color} shadow-sm`} />

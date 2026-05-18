@@ -92,6 +92,39 @@ export const HOTSPOT_CONFIGS: HotspotConfig[] = [
     trend: 'up',
     warningMix: ['走锚预警', '区域入侵', '碰撞预警'],
   },
+  {
+    id: 'baoshanAnchorage',
+    name: '宝山锚泊缓冲区',
+    jurisdiction: '宝山',
+    center: [HOME_MAP_DEFAULT_CENTER[0] - 0.02, HOME_MAP_DEFAULT_CENTER[1] + 0.11],
+    spread: 0.045,
+    weight: 0.52,
+    focus: '锚泊边界 / 慢速交汇扰动',
+    trend: 'down',
+    warningMix: ['走锚预警', '区域入侵', '碰撞预警'],
+  },
+  {
+    id: 'yangshanApproach',
+    name: '洋山进港交汇区',
+    jurisdiction: '洋山',
+    center: [HOME_MAP_DEFAULT_CENTER[0] - 0.13, HOME_MAP_DEFAULT_CENTER[1] + 0.18],
+    spread: 0.052,
+    weight: 0.64,
+    focus: '进港交汇 / 超速风险',
+    trend: 'up',
+    warningMix: ['碰撞预警', '超速预警', '区域入侵'],
+  },
+  {
+    id: 'waigaoqiaoNorth',
+    name: '外高桥北侧待泊区',
+    jurisdiction: '外高桥',
+    center: [HOME_MAP_DEFAULT_CENTER[0] + 0.16, HOME_MAP_DEFAULT_CENTER[1] + 0.01],
+    spread: 0.038,
+    weight: 0.43,
+    focus: '待泊密度 / 靠离泊冲突',
+    trend: 'up',
+    warningMix: ['区域入侵', '走锚预警', '超速预警'],
+  },
 ];
 
 const HOTSPOT_COUNT_SERIES: Record<string, number[]> = {
@@ -99,6 +132,9 @@ const HOTSPOT_COUNT_SERIES: Record<string, number[]> = {
   waigaoqiao: [54, 59, 63, 71, 76, 80, 78, 74, 70, 66, 61, 57],
   beicao: [28, 31, 35, 40, 44, 50, 48, 45, 41, 38, 34, 31],
   jingjie: [24, 28, 31, 35, 38, 40, 39, 37, 34, 32, 29, 26],
+  baoshanAnchorage: [18, 22, 27, 31, 36, 42, 45, 43, 39, 35, 30, 24],
+  yangshanApproach: [32, 36, 41, 47, 52, 58, 64, 61, 55, 50, 44, 38],
+  waigaoqiaoNorth: [16, 19, 23, 26, 30, 35, 33, 31, 28, 25, 21, 18],
 };
 
 const FRAME_TIME_LABELS = [
@@ -129,6 +165,9 @@ const FRAME_FOCUS_SEQUENCE = [
   'wusongkou',
   'waigaoqiao',
   'jingjie',
+  'yangshanApproach',
+  'baoshanAnchorage',
+  'waigaoqiaoNorth',
 ];
 
 function buildHotspotPoints(
@@ -136,7 +175,7 @@ function buildHotspotPoints(
   frameIndex: number,
   eventCount: number,
 ): WarningLocation[] {
-  const visualCount = clamp(Math.round(eventCount / 4), 10, 34);
+  const visualCount = clamp(Math.round(eventCount / 2.6), 14, 54);
   const pointWeight = eventCount / visualCount;
 
   return Array.from({ length: visualCount }, (_, pointIndex) => {
@@ -166,9 +205,16 @@ function buildHotspotPoints(
 }
 
 function buildNoisePoints(frameIndex: number): WarningLocation[] {
-  return Array.from({ length: 28 }, (_, pointIndex) => {
-    const lat = HOME_MAP_DEFAULT_CENTER[0] - 0.12 + ((pointIndex * 19 + frameIndex * 7) % 100) / 220;
-    const lng = HOME_MAP_DEFAULT_CENTER[1] - 0.22 + ((pointIndex * 13 + frameIndex * 9) % 100) / 150;
+  return Array.from({ length: 56 }, (_, pointIndex) => {
+    const band = pointIndex % 3;
+    const lat =
+      HOME_MAP_DEFAULT_CENTER[0] -
+      0.16 +
+      ((pointIndex * 19 + frameIndex * 7) % 100) / (band === 0 ? 210 : 245);
+    const lng =
+      HOME_MAP_DEFAULT_CENTER[1] -
+      0.24 +
+      ((pointIndex * 13 + frameIndex * 9) % 100) / (band === 2 ? 132 : 156);
 
     return {
       id: `noise-${frameIndex}-${pointIndex}`,

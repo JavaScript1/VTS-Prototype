@@ -13,27 +13,24 @@ import {
   History, 
   ChevronRight, 
   Navigation, 
-  Video, 
   Volume2, 
-  Info, 
-  CheckCircle2, 
-  Map as MapIcon,
   Play,
   FileText,
-  Anchor,
-  Wind,
   Layers,
   MoreVertical,
   Activity,
-  ArrowRight,
-  Clock,
   Plus,
+  Ship,
+  Radio,
+  Camera,
+  Users,
   Trash2,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { MOCK_RISK_STATS, MOCK_PATROL_BOATS } from '../../mockData';
+import { MOCK_PATROL_BOATS, MOCK_RISK_STATS } from '../../mockData';
+import { HOME_MAP_DEFAULT_CENTER } from '../map/constants';
 import { Panel, SectionTitle } from '../risk-analysis/RiskSharedComponents';
-import RiskMacroTrend from '../risk-analysis/RiskMacroTrend';
+import RiskMacroTrend, { type RiskMapResource, type RiskMapResourceCategory } from '../risk-analysis/RiskMacroTrend';
 
 interface LawEnforcementViewProps {
   onOpenPlayback: (index: number) => void;
@@ -106,11 +103,73 @@ const getSeverityClass = (severity: EnforcementSeverity) => {
   return 'border-emerald-200 bg-emerald-50 text-emerald-600';
 };
 
+const lawResourceCategoryLabel: Record<RiskMapResourceCategory, string> = {
+  vessel: '海巡艇',
+  team: '执法队伍',
+  device: '取证设备',
+  station: '固定站点',
+};
+
+const lawResourceIconMap = {
+  vessel: Ship,
+  team: Users,
+  device: Camera,
+  station: Radio,
+} satisfies Record<RiskMapResourceCategory, typeof Ship>;
+
+const lawResourceToneClass: Record<RiskMapResourceCategory, string> = {
+  vessel: 'bg-sky-50 text-sky-600 ring-sky-100',
+  team: 'bg-emerald-50 text-emerald-600 ring-emerald-100',
+  device: 'bg-amber-50 text-amber-600 ring-amber-100',
+  station: 'bg-violet-50 text-violet-600 ring-violet-100',
+};
+
+const LAW_ENFORCEMENT_RESOURCES: RiskMapResource[] = [
+  ...MOCK_PATROL_BOATS.map((boat) => ({
+    id: boat.id,
+    name: boat.name,
+    category: 'vessel' as const,
+    position: [boat.lat, boat.lng] as [number, number],
+    status: boat.readiness === 'ready' ? '可调度' : boat.readiness === 'busy' ? '任务中' : '维护中',
+    description: `${boat.type} · ${boat.speed} kn · ${boat.crew} 人`,
+  })),
+  {
+    id: 'team-wusong',
+    name: '吴淞执法一队',
+    category: 'team',
+    position: [HOME_MAP_DEFAULT_CENTER[0] - 0.015, HOME_MAP_DEFAULT_CENTER[1] - 0.035],
+    status: '待命中',
+    description: '登临检查组 · 8 人',
+  },
+  {
+    id: 'device-uav',
+    name: '无人机取证组',
+    category: 'device',
+    position: [HOME_MAP_DEFAULT_CENTER[0] + 0.035, HOME_MAP_DEFAULT_CENTER[1] + 0.085],
+    status: '在线',
+    description: '高清云台 / 夜航补光',
+  },
+  {
+    id: 'station-vhf',
+    name: '北槽 VHF 监听站',
+    category: 'station',
+    position: [HOME_MAP_DEFAULT_CENTER[0] - 0.085, HOME_MAP_DEFAULT_CENTER[1] + 0.105],
+    status: '在线',
+    description: '16 频道录音取证',
+  },
+  {
+    id: 'device-camera',
+    name: '移动视频取证车',
+    category: 'device',
+    position: [HOME_MAP_DEFAULT_CENTER[0] + 0.105, HOME_MAP_DEFAULT_CENTER[1] - 0.02],
+    status: '布控中',
+    description: '岸基长焦 / AIS 联动',
+  },
+];
+
 export default function LawEnforcementView({ onOpenPlayback }: LawEnforcementViewProps) {
   const [selectedVesselId, setSelectedVesselId] = useState<string | null>(MOCK_RISK_STATS[1]?.id ?? null);
   const [searchQuery, setSearchQuery] = useState('');
-  const [activeTab, setActiveTab] = useState<'clues' | 'planning'>('clues');
-  const [isPlanningModalOpen, setIsPlanningModalOpen] = useState(false);
   const [showEnforcementForm, setShowEnforcementForm] = useState(false);
   const [selectedCaseId, setSelectedCaseId] = useState<string | null>(null);
   const [enforcementForm, setEnforcementForm] =
@@ -210,28 +269,6 @@ export default function LawEnforcementView({ onOpenPlayback }: LawEnforcementVie
     }
   };
 
-  // Planning logic
-  const nearestPatrolBoat = useMemo(() => {
-    if (!selectedVessel || !selectedVessel.coords) return null;
-    return MOCK_PATROL_BOATS.reduce((prev, curr) => {
-      const d1 = Math.sqrt(Math.pow(curr.lat - selectedVessel.coords![0], 2) + Math.pow(curr.lng - selectedVessel.coords![1], 2));
-      const d2 = Math.sqrt(Math.pow(prev.lat - selectedVessel.coords![0], 2) + Math.pow(prev.lng - selectedVessel.coords![1], 2));
-      return d1 < d2 ? curr : prev;
-    });
-  }, [selectedVessel]);
-
-  const planningData = useMemo(() => {
-    if (!selectedVessel || !nearestPatrolBoat || !selectedVessel.coords) return null;
-    const distance = 4.2; // Mock distance in nm
-    const eta = Math.round((distance / nearestPatrolBoat.speed) * 60);
-    return {
-      distance,
-      eta,
-      suitability: '高',
-      recommendation: '建议现场拦截检查'
-    };
-  }, [selectedVessel, nearestPatrolBoat]);
-
   return (
     <div className="flex h-full w-full overflow-hidden bg-slate-50">
       {/* 1) Identification Sidebar: 甄别违法船舶 */}
@@ -243,7 +280,7 @@ export default function LawEnforcementView({ onOpenPlayback }: LawEnforcementVie
           <span className="text-sm font-black tracking-widest text-slate-800">违法船舶甄别</span>
         </div>
 
-        <div className="p-4 space-y-4">
+        <div className="space-y-3 p-4">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={14} />
             <input 
@@ -255,14 +292,14 @@ export default function LawEnforcementView({ onOpenPlayback }: LawEnforcementVie
             />
           </div>
           
-          <div className="flex items-center justify-between text-[10px] font-bold text-slate-400 uppercase tracking-widest px-1">
+          <div className="flex items-center justify-between px-1 text-[10px] font-bold uppercase tracking-widest text-slate-400">
             <span>疑似违法船舶 ({filteredVessels.length})</span>
             <Layers size={12} />
           </div>
 
           <button
             onClick={() => setShowEnforcementForm((value) => !value)}
-            className="flex w-full items-center justify-center gap-2 rounded-xl border border-rose-200 bg-rose-50 py-2 text-xs font-black text-rose-600 transition-all hover:border-rose-300 hover:bg-rose-100"
+            className="flex w-full items-center justify-center gap-2 rounded-lg border border-rose-200 bg-rose-50 py-1.5 text-xs font-black text-rose-600 transition-all hover:border-rose-300 hover:bg-rose-100"
           >
             <Plus size={14} />
             {showEnforcementForm ? '收起违规录入' : '新增违规信息'}
@@ -344,7 +381,7 @@ export default function LawEnforcementView({ onOpenPlayback }: LawEnforcementVie
           </AnimatePresence>
         </div>
 
-        <div className="flex-1 overflow-y-auto custom-scrollbar-light px-4 pb-4 space-y-2">
+        <div className="custom-scrollbar-light flex-1 space-y-1.5 overflow-y-auto px-4 pb-4">
           {filteredVessels.map((v) => {
             const active = selectedVesselId === v.id;
             return (
@@ -354,14 +391,14 @@ export default function LawEnforcementView({ onOpenPlayback }: LawEnforcementVie
                   setSelectedVesselId(v.id);
                   setSelectedCaseId(null);
                 }}
-                className={`group flex w-full flex-col gap-2 rounded-xl border p-3 text-left transition-all ${
+                className={`group flex w-full flex-col gap-1 rounded-lg border px-2.5 py-2 text-left transition-all ${
                   active 
                     ? 'border-rose-200 bg-rose-50 ring-1 ring-rose-200' 
                     : 'border-transparent hover:border-slate-200 hover:bg-slate-50'
                 }`}
               >
                 <div className="flex items-center justify-between">
-                  <span className={`text-[11px] font-black ${active ? 'text-rose-600' : 'text-slate-700'}`}>
+                  <span className={`text-[10px] font-black ${active ? 'text-rose-600' : 'text-slate-700'}`}>
                     {v.name}
                   </span>
                   <span className="text-[9px] font-medium text-slate-400">{v.time.split(' ')[1]}</span>
@@ -416,6 +453,45 @@ export default function LawEnforcementView({ onOpenPlayback }: LawEnforcementVie
               )}
             </div>
           </div>
+
+          <div className="pt-4">
+            <div className="mb-2 flex items-center justify-between px-1 text-[10px] font-bold uppercase tracking-widest text-slate-400">
+              <span>执法资源 ({LAW_ENFORCEMENT_RESOURCES.length})</span>
+              <Layers size={12} />
+            </div>
+            <div className="space-y-2">
+              {LAW_ENFORCEMENT_RESOURCES.map((resource) => {
+                const Icon = lawResourceIconMap[resource.category];
+
+                return (
+                  <div
+                    key={resource.id}
+                    className="rounded-xl border border-slate-100 bg-white p-3 shadow-sm transition-all hover:border-slate-200 hover:bg-slate-50"
+                  >
+                    <div className="flex items-start gap-3">
+                      <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ring-1 ${lawResourceToneClass[resource.category]}`}>
+                        <Icon size={15} />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="truncate text-[11px] font-black text-slate-800">{resource.name}</div>
+                          <span className="shrink-0 rounded-full bg-slate-100 px-2 py-0.5 text-[8px] font-black text-slate-500">
+                            {resource.status}
+                          </span>
+                        </div>
+                        <div className="mt-1 text-[10px] font-bold text-slate-400">
+                          {lawResourceCategoryLabel[resource.category]}
+                        </div>
+                        <div className="mt-1 truncate text-[10px] text-slate-500">
+                          {resource.description}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
         </div>
       </aside>
 
@@ -426,32 +502,11 @@ export default function LawEnforcementView({ onOpenPlayback }: LawEnforcementVie
           <div className="flex items-center gap-6">
             <h2 className="text-sm font-black text-slate-800">全域执法态势</h2>
             <nav className="flex items-center gap-1 rounded-xl bg-slate-100 p-1">
-              {[
-                { id: 'clues', label: '执法线索', icon: FileText },
-                { id: 'planning', label: '抓捕规划', icon: Navigation }
-              ].map(tab => (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id as any)}
-                  className={`flex items-center gap-1.5 rounded-lg px-4 py-1.5 text-xs font-bold transition-all ${
-                    activeTab === tab.id
-                      ? 'bg-white text-rose-600 shadow-sm'
-                      : 'text-slate-400 hover:text-slate-600'
-                  }`}
-                >
-                  <tab.icon size={14} />
-                  {tab.label}
-                </button>
-              ))}
+              <div className="flex items-center gap-1.5 rounded-lg bg-white px-4 py-1.5 text-xs font-bold text-rose-600 shadow-sm">
+                <FileText size={14} />
+                执法线索
+              </div>
             </nav>
-          </div>
-          <div className="flex items-center gap-3">
-            <button 
-              onClick={() => setIsPlanningModalOpen(true)}
-              className="flex items-center gap-2 rounded-lg bg-rose-500 px-4 py-1.5 text-xs font-black text-white shadow-lg shadow-rose-500/20 hover:bg-rose-600 transition-all active:scale-95"
-            >
-              <Navigation size={14} /> 启动现场规划
-            </button>
           </div>
         </header>
 
@@ -463,6 +518,7 @@ export default function LawEnforcementView({ onOpenPlayback }: LawEnforcementVie
               showToolbar={false}
               showTopRanking={false}
               showLegend={false}
+              mapResources={LAW_ENFORCEMENT_RESOURCES}
             />
           </div>
 
@@ -671,151 +727,6 @@ export default function LawEnforcementView({ onOpenPlayback }: LawEnforcementVie
           </aside>
         </div>
       </main>
-
-      {/* 3) Planning Modal: 规划抓捕/执法路线 */}
-      <AnimatePresence>
-        {isPlanningModalOpen && (
-          <div className="fixed inset-0 z-[10000] flex items-center justify-center p-8">
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setIsPlanningModalOpen(false)}
-              className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"
-            />
-            <motion.div
-              initial={{ opacity: 0, scale: 0.9, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              className="relative w-full max-w-4xl h-[600px] overflow-hidden rounded-3xl bg-white shadow-2xl flex border border-slate-200"
-            >
-              {/* Left Side: Resource List */}
-              <div className="w-80 border-r border-slate-100 flex flex-col bg-slate-50">
-                <div className="p-6 border-b border-slate-100 bg-white">
-                  <div className="text-xs font-black text-slate-400 uppercase tracking-widest mb-1">执法资源调度</div>
-                  <div className="text-lg font-black text-slate-800">当前可用海巡艇</div>
-                </div>
-                <div className="flex-1 overflow-y-auto p-4 space-y-3">
-                  {MOCK_PATROL_BOATS.map(pb => (
-                    <div 
-                      key={pb.id}
-                      className={`rounded-2xl border p-4 transition-all ${
-                        pb.readiness === 'ready' 
-                          ? 'border-white bg-white shadow-sm ring-1 ring-slate-100' 
-                          : 'border-transparent opacity-60'
-                      }`}
-                    >
-                      <div className="flex items-center justify-between">
-                        <div className="text-sm font-black text-slate-800">{pb.name}</div>
-                        <div className={`h-2 w-2 rounded-full ${pb.readiness === 'ready' ? 'bg-emerald-500' : 'bg-slate-300'}`} />
-                      </div>
-                      <div className="mt-1 text-[10px] text-slate-400 font-bold">{pb.type}</div>
-                      <div className="mt-3 grid grid-cols-2 gap-2">
-                        <div className="rounded-lg bg-slate-100 p-1.5 text-center">
-                          <div className="text-[8px] text-slate-400 uppercase font-black">距离</div>
-                          <div className="text-xs font-black text-slate-700">2.5 nm</div>
-                        </div>
-                        <div className="rounded-lg bg-slate-100 p-1.5 text-center">
-                          <div className="text-[8px] text-slate-400 uppercase font-black">航速</div>
-                          <div className="text-xs font-black text-slate-700">{pb.speed} kn</div>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Center: Interactive Planning Area */}
-              <div className="flex-1 flex flex-col">
-                <div className="h-14 border-b border-slate-100 flex items-center justify-between px-6 bg-white">
-                  <div className="flex items-center gap-2">
-                    <Navigation size={18} className="text-rose-500" />
-                    <span className="text-sm font-black text-slate-800">拦截路线规划详情</span>
-                  </div>
-                  <button onClick={() => setIsPlanningModalOpen(false)} className="text-slate-400 hover:text-slate-600">
-                    <MoreVertical size={20} />
-                  </button>
-                </div>
-
-                <div className="flex-1 p-8 overflow-y-auto bg-slate-50/50">
-                  <div className="max-w-xl mx-auto space-y-8">
-                    {/* Target info card */}
-                    <div className="flex items-center gap-6">
-                      <div className="flex-1 rounded-2xl bg-white p-6 shadow-sm border border-slate-100">
-                        <div className="flex items-center justify-between mb-4">
-                          <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest">目标船舶</div>
-                          <div className="px-2 py-0.5 rounded bg-rose-50 text-[9px] font-black text-rose-500 uppercase">拦截目标</div>
-                        </div>
-                        <div className="text-xl font-black text-slate-800">{selectedVessel?.name}</div>
-                        <div className="mt-1 text-[10px] text-slate-400 font-bold">位置: {selectedVessel?.snapshot.location}</div>
-                      </div>
-                      <div className="flex flex-col items-center">
-                        <ArrowRight size={24} className="text-slate-200" />
-                      </div>
-                      <div className="flex-1 rounded-2xl bg-white p-6 shadow-sm border border-slate-100">
-                        <div className="flex items-center justify-between mb-4">
-                          <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest">推荐海巡艇</div>
-                          <div className="px-2 py-0.5 rounded bg-sky-50 text-[9px] font-black text-sky-500 uppercase">最快到达</div>
-                        </div>
-                        <div className="text-xl font-black text-slate-800">{nearestPatrolBoat?.name}</div>
-                        <div className="mt-1 text-[10px] text-slate-400 font-bold">位置: {nearestPatrolBoat?.destination}</div>
-                      </div>
-                    </div>
-
-                    {/* Planning stats */}
-                    <div className="grid grid-cols-3 gap-6">
-                      {[
-                        { label: '预计航程', value: planningData?.distance + ' nm', icon: Activity },
-                        { label: '预计到达时间', value: planningData?.eta + ' min', icon: Clock },
-                        { label: '任务匹配度', value: planningData?.suitability, icon: CheckCircle2 }
-                      ].map(item => (
-                        <div key={item.label} className="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm text-center">
-                          <div className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-slate-50 text-slate-400 mb-3">
-                            <item.icon size={20} />
-                          </div>
-                          <div className="text-[10px] font-black text-slate-400 uppercase tracking-tighter mb-1">{item.label}</div>
-                          <div className="text-lg font-black text-slate-800">{item.value}</div>
-                        </div>
-                      ))}
-                    </div>
-
-                    {/* Recommendation */}
-                    <div className="rounded-2xl bg-sky-50 p-6 border border-sky-100">
-                      <div className="flex items-center gap-3 text-sky-600 mb-3">
-                        <Info size={18} />
-                        <span className="text-sm font-black">执法方案建议</span>
-                      </div>
-                      <p className="text-sm text-sky-800 leading-relaxed font-medium">
-                        综合目标航速与当前水域交通密度，系统分析认为 <span className="font-bold underline">海巡 01</span> 具备最佳拦截条件。
-                        {planningData?.recommendation}。
-                      </p>
-                      <div className="mt-4 flex gap-3">
-                        <div className="flex-1 flex items-center gap-2 rounded-lg bg-white/60 p-3 text-[10px] font-bold text-sky-700">
-                          <div className="h-2 w-2 rounded-full bg-sky-500 animate-pulse" />
-                          建议 VHF 16 频道通知其接受处理
-                        </div>
-                        <div className="flex-1 flex items-center gap-2 rounded-lg bg-white/60 p-3 text-[10px] font-bold text-sky-700">
-                          <div className="h-2 w-2 rounded-full bg-sky-500 animate-pulse" />
-                          预备靠泊后登船检查
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="flex gap-4">
-                      <button className="flex-1 bg-rose-500 py-4 rounded-2xl text-white font-black text-sm shadow-xl shadow-rose-500/20 hover:bg-rose-600 transition-all active:scale-95">
-                        确认发布执法指令
-                      </button>
-                      <button onClick={() => setIsPlanningModalOpen(false)} className="px-8 bg-slate-100 py-4 rounded-2xl text-slate-500 font-black text-sm hover:bg-slate-200 transition-all">
-                        取消
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
 
       <style dangerouslySetInnerHTML={{ __html: `
         .custom-scrollbar-light::-webkit-scrollbar {
