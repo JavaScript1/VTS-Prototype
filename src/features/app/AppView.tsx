@@ -134,7 +134,7 @@ export default function AppView() {
     setSelectedHomeShipId(shipId);
     setShipSearchQuery('');
     setActiveTab('ship');
-    if (viewMode !== 'smart-duty' && !sidebarOpen) {
+    if (viewMode !== 'smart-duty' && viewMode !== 'auto' && !sidebarOpen) {
       setSidebarOpen(true);
     }
   };
@@ -186,7 +186,7 @@ export default function AppView() {
   }, [homeShipDetails, selectedHomeShipId]);
 
   useEffect(() => {
-    if (viewMode === 'smart-duty') {
+    if (viewMode === 'smart-duty' || viewMode === 'auto') {
       setSidebarPosition('left');
       setSidebarOpen(false);
       return;
