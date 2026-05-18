@@ -4,7 +4,7 @@
  */
 
 import React, { useState, useRef } from 'react';
-import { Search, Maximize2, Radio, LocateFixed, AlertTriangle, Anchor, Ship, X, Settings, User, LayoutGrid, LogOut } from 'lucide-react';
+import { Search, Radio, LocateFixed, AlertTriangle, Anchor, Ship, X, Settings, User, LayoutGrid, LogOut } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import type { ShipSearchResult, SidebarTab } from '../../types';
 import { HOME_VIEW_MODE_OPTIONS, type HomeViewMode } from '../../features/app/utils/viewModes';
@@ -59,7 +59,6 @@ export default function SidebarPanel({
   ];
 
   const isLeft = position === 'left';
-  const isFullscreenView = !showBars;
   const [isSearchExpanded, setIsSearchExpanded] = useState(false);
   const [isModeHovered, setIsModeHovered] = useState(false);
   const modeHoverTimeoutRef = useRef<number | null>(null);
@@ -158,19 +157,6 @@ export default function SidebarPanel({
             )}
           </AnimatePresence>
         </div>
-
-        <button
-          onClick={onToggleBars}
-          className={`group relative rounded-xl p-2.5 transition-all duration-300 hover:scale-105 active:scale-95 ${
-            isFullscreenView
-              ? 'bg-sky-500/10 text-sky-400 shadow-[0_0_20px_rgba(14,165,233,0.15)]'
-              : 'bg-white/5 text-white shadow-[0_0_15px_rgba(255,255,255,0.05)]'
-          }`}
-          title={isFullscreenView ? '退出全屏监控' : '进入全屏监控'}
-        >
-          <div className={`absolute inset-0 rounded-xl border transition-colors duration-300 ${isFullscreenView ? 'border-sky-500/30' : 'border-white/10'}`} />
-          <Maximize2 size={20} className={`transition-transform duration-500 ${isFullscreenView ? 'rotate-180' : 'rotate-0'}`} />
-        </button>
 
         <div className='my-2 h-px w-[60%] bg-white/10' />
 

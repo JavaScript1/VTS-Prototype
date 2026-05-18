@@ -1,5 +1,4 @@
 import RealShipMap from '../../real-ship/RealShipMap';
-import LawEnforcementPanel from './LawEnforcementPanel';
 import type { HomeShipDetail, HomeShipTrackPoint } from '../../../types';
 import type { HomeViewMode } from '../utils/viewModes';
 
@@ -37,12 +36,6 @@ export default function AppHomeMap({
         onSelectHomeShip={onSelectHomeShip}
         onSelectTrackPoint={onSelectTrackPoint}
       />
-
-      <div className="absolute left-4 top-4 z-[1500] flex flex-col gap-4">
-        {(mode === 'normal' || mode === 'smart-duty') && (
-          <LawEnforcementPanel onEnterSystem={() => onModeChange?.('case-playback')} />
-        )}
-      </div>
     </div>
   );
 }

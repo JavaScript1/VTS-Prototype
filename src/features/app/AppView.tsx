@@ -22,7 +22,6 @@ import { AdminPanel } from '../admin';
 import DynamicPlaybackView from '../../components/Panels/DynamicPlaybackView';
 import AppHomeWorkspace from './components/AppHomeWorkspace';
 import AppModeRightRail from './components/AppModeRightRail';
-import AppTopBar from './components/AppTopBar';
 import MessagePushAvatar from './components/MessagePushAvatar';
 import MessagePushPanel from './components/MessagePushPanel';
 import type { MessageFeedItem } from './components/messagePushConfig';
@@ -348,15 +347,6 @@ export default function AppView() {
       </AnimatePresence>
 
       <AssistantDialog isOpen={isAssistantOpen} onClose={() => setIsAssistantOpen(false)} />
-      <AppTopBar
-        showBars={showBars}
-        showUserMenu={showUserMenu}
-        currentMode={viewMode}
-        onModeChange={setViewMode}
-        onOpenAdmin={() => setIsAdminView(true)}
-        onToggleUserMenu={() => setShowUserMenu((value) => !value)}
-        onCloseUserMenu={() => setShowUserMenu(false)}
-      />
 
       {viewMode === 'risk-analysis' ? (
         <RiskAnalysisView onOpenPlayback={openRiskPlaybackByIndex} />
