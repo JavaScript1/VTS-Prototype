@@ -92,7 +92,7 @@ export default function AppBottomBar({
             })}
           </div>
 
-          <div className="relative flex items-center gap-8"><button onClick={onToggleAssistant} className={`flex items-center gap-2 rounded-full border px-3 py-1 transition-all ${isAssistantOpen ? "border-sky-500/50 bg-sky-500/20 text-sky-400 shadow-[0_0_15px_rgba(14,165,233,0.2)]" : "border-white/10 bg-white/5 text-white/40 hover:border-white/20 hover:text-white"}`}><Sparkles size={14} className={isAssistantOpen ? "animate-pulse" : ""} /><span className="text-[10px] font-black uppercase tracking-widest">智能助手</span></button>
+          <div className="relative flex items-center gap-8">
             <div className="flex items-center gap-3">
               <span className="text-[10px] font-bold uppercase tracking-widest text-white/30">
                 比例尺
@@ -276,6 +276,18 @@ export default function AppBottomBar({
                 )}
               </AnimatePresence>
             </div>
+
+            <button
+              onClick={onToggleAssistant}
+              className={`flex items-center gap-2 rounded-full border px-3 py-1 transition-all ${
+                isAssistantOpen
+                  ? 'border-sky-500/50 bg-sky-500/20 text-sky-400 shadow-[0_0_15px_rgba(14,165,233,0.2)]'
+                  : 'border-white/10 bg-white/5 text-white/40 hover:border-white/20 hover:text-white'
+              }`}
+            >
+              <Sparkles size={14} className={isAssistantOpen ? 'animate-pulse' : ''} />
+              <span className="text-[10px] font-black uppercase tracking-widest">智能助手</span>
+            </button>
           </div>
         </motion.footer>
       )}
