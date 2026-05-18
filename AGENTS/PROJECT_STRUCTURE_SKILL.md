@@ -160,11 +160,11 @@
 ### `src/features/risk-analysis/`
 
 - `RiskAnalysisView.tsx`
-  风险分析模式主壳，负责左侧导航和子模块切换。
+  风险分析模式主壳，负责左侧导航、预警回放侧栏整合和子模块切换。
 - `RiskMacroTrend.tsx`
   宏观态势主视图，承载热力地图、热点排行与时间轴回放。
 - `RiskPlaybackCenter.tsx`
-  风险分析模式下的回放中心，支持按普通预警与碰撞预警两种模式复用，右侧主内容区内直接嵌入回放。
+  风险分析模式下的回放中心，统一承载包含碰撞预警在内的案例列表，并在右侧主内容区内直接嵌入回放。
 - `riskMacroTrendData.ts`
   宏观态势的假数据、热区配置与时间帧序列。
 - `RiskWarningManagement.tsx`

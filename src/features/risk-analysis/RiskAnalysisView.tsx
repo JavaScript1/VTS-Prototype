@@ -1,37 +1,41 @@
 import { useState } from 'react';
 import { 
-  AlertTriangle,
   Globe, 
   LayoutDashboard,
   ArrowRight,
-  Database,
-  Activity,
-  Ship,
   History,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import RiskMacroTrend from './RiskMacroTrend';
 import RiskPlaybackCenter from './RiskPlaybackCenter';
+import { useRiskPlaybackState } from './useRiskPlaybackState';
 
-type RiskAnalysisTab = 'macro-trend' | 'risk-playback' | 'collision-playback';
+type RiskAnalysisTab = 'macro-trend' | 'risk-playback';
 
 type RiskAnalysisViewProps = {
   onOpenPlayback: (index: number) => void;
 };
 
-export default function RiskAnalysisView({ onOpenPlayback }: RiskAnalysisViewProps) {
+export default function RiskAnalysisView({ onOpenPlayback: _onOpenPlayback }: RiskAnalysisViewProps) {
   const [activeTab, setActiveTab] = useState<RiskAnalysisTab>('macro-trend');
+  const {
+    filteredCases,
+    isCollisionRisk,
+    playbackSession,
+    selectedCaseId,
+    setSelectedCaseId,
+  } = useRiskPlaybackState();
 
   const menuItems = [
     { id: 'macro-trend', label: '宏观态势', icon: Globe, description: '全辖区风险分布与趋势分析' },
-    { id: 'risk-playback', label: '预警回放', icon: History, description: '普通预警案例筛选、快照查看与回放入口' },
-    { id: 'collision-playback', label: '碰撞预警', icon: AlertTriangle, description: '独立承载多船碰撞态势回放与高危预警复盘' },
+    { id: 'risk-playback', label: '预警回放', icon: History, description: '包含碰撞预警在内的案例筛选、快照查看与回放入口' },
   ];
+  const sidebarWidthClass = activeTab === 'risk-playback' ? 'w-80' : 'w-64';
 
   return (
     <div className="flex h-full w-full overflow-hidden bg-slate-50">
       {/* Sidebar */}
-      <aside className="flex w-64 shrink-0 flex-col border-r border-slate-200 bg-white">
+      <aside className={`flex shrink-0 flex-col border-r border-slate-200 bg-white transition-[width] duration-300 ${sidebarWidthClass}`}>
         <div className="flex h-14 items-center gap-3 border-b border-slate-100 px-6">
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-sky-500 text-white shadow-lg shadow-sky-500/20">
             <LayoutDashboard size={18} />
@@ -66,20 +70,52 @@ export default function RiskAnalysisView({ onOpenPlayback }: RiskAnalysisViewPro
           })}
 
           <div className="my-6 h-px bg-slate-100" />
-          
-          <div className="mb-2 px-2 text-[10px] font-bold uppercase tracking-widest text-slate-400">数据资源</div>
-          <div className="space-y-1">
-            {[
-              { label: '基础物标库', icon: Database },
-              { label: '船舶档案', icon: Ship },
-              { label: '历史轨迹', icon: Activity },
-            ].map((item) => (
-              <button key={item.label} className="flex w-full items-center gap-3 rounded-lg px-4 py-2 text-xs font-medium text-slate-500 hover:bg-slate-50 hover:text-slate-700 transition-colors">
-                <item.icon size={14} className="text-slate-300" />
-                {item.label}
-              </button>
-            ))}
-          </div>
+
+          {activeTab === 'risk-playback' ? (
+            <div className="space-y-2">
+              <div className="custom-scrollbar-light space-y-2 overflow-y-auto">
+                {filteredCases.map((item) => {
+                  const active = selectedCaseId === item.id;
+                  return (
+                    <button
+                      key={item.id}
+                      onClick={() => setSelectedCaseId(item.id)}
+                      className={`group flex w-full flex-col gap-2 rounded-xl border p-3 text-left transition-all ${
+                        active
+                          ? 'border-indigo-200 bg-indigo-50 ring-1 ring-indigo-200'
+                          : 'border-transparent hover:border-slate-200 hover:bg-slate-50'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <span className={`text-[10px] font-black ${active ? 'text-indigo-600' : 'text-slate-700'}`}>
+                            {item.name}
+                          </span>
+                          {isCollisionRisk(item.risk) ? (
+                            <span className="rounded-full border border-rose-200 bg-rose-100 px-1.5 py-0.5 text-[8px] font-bold text-rose-600">
+                              碰撞
+                            </span>
+                          ) : null}
+                          {item.isImageScenario ? (
+                            <span className="rounded-full border border-amber-200 bg-amber-100 px-1.5 py-0.5 text-[8px] font-bold text-amber-600">
+                              实况
+                            </span>
+                          ) : null}
+                        </div>
+                        <span className="text-[9px] font-medium text-slate-400">{item.time.split(' ')[0]}</span>
+                      </div>
+                      <div className="flex items-center justify-between gap-2">
+                        <div className={`truncate text-[10px] font-bold ${active ? 'text-indigo-500/80' : 'text-slate-400'}`}>
+                          {item.risk}
+                        </div>
+                        <ArrowRight size={12} className={active ? 'text-indigo-400' : 'text-slate-300'} />
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          ) : null}
         </div>
 
         <div className="border-t border-slate-100 p-4">
@@ -110,8 +146,7 @@ export default function RiskAnalysisView({ onOpenPlayback }: RiskAnalysisViewPro
             className="flex min-h-0 flex-1 flex-col"
           >
             {activeTab === 'macro-trend' && <RiskMacroTrend />}
-            {activeTab === 'risk-playback' && <RiskPlaybackCenter onOpenPlayback={onOpenPlayback} mode="warning" />}
-            {activeTab === 'collision-playback' && <RiskPlaybackCenter onOpenPlayback={onOpenPlayback} mode="collision" />}
+            {activeTab === 'risk-playback' && <RiskPlaybackCenter playbackSession={playbackSession} />}
           </motion.div>
         </AnimatePresence>
       </main>
