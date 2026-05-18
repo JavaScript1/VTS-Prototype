@@ -206,7 +206,7 @@ export default function AppView() {
   }, [viewMode]);
 
   const rightRail =
-    viewMode === 'normal' || viewMode === 'auto' || viewMode === 'smart-duty' ? null : (
+    viewMode === 'normal' || viewMode === 'auto' ? null : (
       <AppModeRightRail
         mode={viewMode}
         currentTime={currentTime}
@@ -221,8 +221,9 @@ export default function AppView() {
       <div className="pointer-events-none absolute bottom-4 right-4 z-[410]">
         <MessagePushAvatar
           messages={smartDutyMessages}
-          onMessagesChange={setSmartDutyMessages}
-          className="w-[420px] drop-shadow-[0_10px_30px_rgba(0,0,0,0.5)]"
+          onMessagesChange={viewMode === 'auto' ? setSmartDutyMessages : undefined}
+          showBubble={viewMode === 'auto'}
+          className={viewMode === 'auto' ? "w-[420px] drop-shadow-[0_10px_30px_rgba(0,0,0,0.5)]" : "w-[170px] drop-shadow-[0_10px_30px_rgba(0,0,0,0.5)]"}
         />
       </div>
     ) : null;
