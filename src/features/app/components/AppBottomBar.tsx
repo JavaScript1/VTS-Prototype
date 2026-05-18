@@ -3,7 +3,7 @@ import {
   ArrowRight,
   Camera,
   ChevronRight,
-  Ruler,
+  Ruler, Sparkles,
   Video,
   Wrench,
 } from 'lucide-react';
@@ -16,8 +16,10 @@ export type AppBottomBarProps = {
   mouseCoords: { lat: number; lng: number } | null;
   isControlPanelExpanded: boolean;
   isToolsExpanded: boolean;
+  isAssistantOpen: boolean;
   sidebarPosition: SidebarPosition;
   onToggleControlPanel: () => void;
+  onToggleAssistant: () => void;
   onToggleTools: () => void;
   onToggleSidebarPosition: () => void;
 };
@@ -27,8 +29,10 @@ export default function AppBottomBar({
   mouseCoords,
   isControlPanelExpanded,
   isToolsExpanded,
+  isAssistantOpen,
   sidebarPosition,
   onToggleControlPanel,
+  onToggleAssistant,
   onToggleTools,
   onToggleSidebarPosition,
 }: AppBottomBarProps) {
@@ -49,9 +53,9 @@ export default function AppBottomBar({
           exit={{ height: 0, opacity: 0 }}
           className="z-[3000] flex shrink-0 items-center justify-between border-t border-white/10 bg-[#0a0a0a] px-4"
         >
-          <div className="flex-1" />
+          <div className="flex-1 items-center flex gap-4"></div>
 
-          <div className="relative flex items-center gap-8">
+          <div className="relative flex items-center gap-8"><button onClick={onToggleAssistant} className={`flex items-center gap-2 rounded-full border px-3 py-1 transition-all ${isAssistantOpen ? "border-sky-500/50 bg-sky-500/20 text-sky-400 shadow-[0_0_15px_rgba(14,165,233,0.2)]" : "border-white/10 bg-white/5 text-white/40 hover:border-white/20 hover:text-white"}`}><Sparkles size={14} className={isAssistantOpen ? "animate-pulse" : ""} /><span className="text-[10px] font-black uppercase tracking-widest">智能助手</span></button>
             <div className="flex items-center gap-3">
               <span className="text-[10px] font-bold uppercase tracking-widest text-white/30">
                 比例尺

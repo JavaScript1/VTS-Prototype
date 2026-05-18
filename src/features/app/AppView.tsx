@@ -35,7 +35,7 @@ import { getRiskPlaybackSession, type AppPlaybackSession } from './utils/playbac
 import { type HomeViewMode } from './utils/viewModes';
 import { normalizeVhfShipName } from './utils/vhf';
 import RiskAnalysisView from '../risk-analysis/RiskAnalysisView';
-import LawEnforcementView from '../law-enforcement/LawEnforcementView';
+import LawEnforcementView from '../law-enforcement/LawEnforcementView';import AssistantDialog from './components/AssistantDialog';
 
 export default function AppView() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -69,6 +69,7 @@ export default function AppView() {
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [mouseCoords, setMouseCoords] = useState<{ lat: number; lng: number } | null>(null);
   const [isAdminView, setIsAdminView] = useState(false);
+  const [isAssistantOpen, setIsAssistantOpen] = useState(false);
   const [viewMode, setViewMode] = useState<HomeViewMode>('normal');
   const [playbackData, setPlaybackData] = useState<AppPlaybackSession | null>(null);
   const [dynamicPlaybackSession, setDynamicPlaybackSession] =
@@ -287,6 +288,12 @@ export default function AppView() {
     onHoveredShipTypeChange: setHoveredShipType,
     onHoveredDurationTypeChange: setHoveredDurationType,
     onAnchorageTypeViewModeChange: setAnchorageTypeViewMode,
+    currentMode: viewMode,
+    onModeChange: setViewMode,
+    onOpenAdmin: () => setIsAdminView(true),
+    onToggleUserMenu: () => setShowUserMenu((value) => !value),
+    onCloseUserMenu: () => setShowUserMenu(false),
+    showUserMenu,
   };
 
   const mapProps = {
@@ -303,6 +310,8 @@ export default function AppView() {
     showBars,
     mouseCoords,
     isControlPanelExpanded,
+    isAssistantOpen,
+    onToggleAssistant: () => setIsAssistantOpen((value) => !value),
     isToolsExpanded,
     sidebarPosition,
     onToggleControlPanel: () => setIsControlPanelExpanded((value) => !value),
@@ -338,6 +347,7 @@ export default function AppView() {
         )}
       </AnimatePresence>
 
+      <AssistantDialog isOpen={isAssistantOpen} onClose={() => setIsAssistantOpen(false)} />
       <AppTopBar
         showBars={showBars}
         showUserMenu={showUserMenu}

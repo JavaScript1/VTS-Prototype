@@ -25,6 +25,7 @@ import {
   getAnchorageAvailabilityRatio,
 } from '../utils/anchorage';
 import { getCompactIntentLine, getCompactRiskLines } from '../utils/intent';
+import type { HomeViewMode } from '../utils/viewModes';
 
 type SidebarPosition = 'left' | 'right';
 
@@ -75,6 +76,12 @@ export type AppSidebarProps = {
   onHoveredShipTypeChange: (value: string | null) => void;
   onHoveredDurationTypeChange: (value: string | null) => void;
   onAnchorageTypeViewModeChange: (mode: 'chart' | 'tags') => void;
+  currentMode: HomeViewMode;
+  onModeChange: (mode: HomeViewMode) => void;
+  onOpenAdmin: () => void;
+  onToggleUserMenu: () => void;
+  onCloseUserMenu: () => void;
+  showUserMenu: boolean;
 };
 
 export default function AppSidebar({
@@ -124,6 +131,12 @@ export default function AppSidebar({
   onHoveredShipTypeChange,
   onHoveredDurationTypeChange,
   onAnchorageTypeViewModeChange,
+  currentMode,
+  onModeChange,
+  onOpenAdmin,
+  onToggleUserMenu,
+  onCloseUserMenu,
+  showUserMenu,
 }: AppSidebarProps) {
   return (
     <SidebarPanel
@@ -138,10 +151,16 @@ export default function AppSidebar({
       onShipSearchQueryChange={onShipSearchQueryChange}
       shipSearchResults={shipSearchResults}
       onShipSearchSelect={onShipSearchSelect}
+      currentMode={currentMode}
+      onModeChange={onModeChange}
+      onOpenAdmin={onOpenAdmin}
+      onToggleUserMenu={onToggleUserMenu}
+      onCloseUserMenu={onCloseUserMenu}
+      showUserMenu={showUserMenu}
     >
       {activeTab === 'ship' && (
-        <div className="flex h-full min-h-0 flex-col">
-          <div className="custom-scrollbar flex-1 overflow-y-auto">
+        <div className='flex h-full min-h-0 flex-col'>
+          <div className='custom-scrollbar flex-1 overflow-y-auto'>
             <HomeShipDetailPanel
               ship={selectedHomeShip}
               onSelectTrackPoint={onSelectTrackPoint}
