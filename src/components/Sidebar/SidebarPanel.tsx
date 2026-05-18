@@ -4,7 +4,7 @@
  */
 
 import React, { useState, useRef } from 'react';
-import { Search, Radio, LocateFixed, AlertTriangle, Anchor, Ship, X, Settings, User, LayoutGrid, LogOut } from 'lucide-react';
+import { Search, Radio, LocateFixed, AlertTriangle, Anchor, Ship, X, LayoutGrid } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import type { ShipSearchResult, SidebarTab } from '../../types';
 import { HOME_VIEW_MODE_OPTIONS, type HomeViewMode } from '../../features/app/utils/viewModes';
@@ -23,10 +23,6 @@ type SidebarPanelProps = {
   onShipSearchSelect: (shipId: string) => void;
   currentMode: HomeViewMode;
   onModeChange: (mode: HomeViewMode) => void;
-  onOpenAdmin: () => void;
-  onToggleUserMenu: () => void;
-  onCloseUserMenu: () => void;
-  showUserMenu: boolean;
   children: React.ReactNode;
 };
 
@@ -44,10 +40,6 @@ export default function SidebarPanel({
   onShipSearchSelect,
   currentMode,
   onModeChange,
-  onOpenAdmin,
-  onToggleUserMenu,
-  onCloseUserMenu,
-  showUserMenu,
   children,
 }: SidebarPanelProps) {
   const tabs = [
@@ -236,64 +228,6 @@ export default function SidebarPanel({
             </AnimatePresence>
           </div>
 
-          <button
-            onClick={onOpenAdmin}
-            className='rounded-xl p-2.5 text-white/30 transition-all hover:bg-white/5 hover:text-white'
-            title='后台设置'
-          >
-            <Settings size={22} />
-          </button>
-
-          <div className='relative'>
-            <button
-              onClick={onToggleUserMenu}
-              className={`rounded-xl p-2.5 transition-all ${showUserMenu ? 'bg-sky-500/10 text-sky-400' : 'text-white/30 hover:text-white/60'}`}
-              title='个人中心'
-            >
-              <User size={22} />
-            </button>
-
-            <AnimatePresence>
-              {showUserMenu && (
-                <>
-                  <div className='fixed inset-0 z-40 cursor-pointer' onClick={onCloseUserMenu} />
-                  <motion.div
-                    initial={{ opacity: 0, scale: 0.95, y: 10 }}
-                    animate={{ opacity: 1, scale: 1, y: 0 }}
-                    exit={{ opacity: 0, scale: 0.95, y: 10 }}
-                    className={`absolute bottom-0 z-50 w-48 rounded-2xl border border-white/10 bg-[#05080d]/95 p-3 shadow-2xl backdrop-blur-xl ${isLeft ? 'left-full ml-3' : 'right-full mr-3'}`}
-                  >
-                    <div className='space-y-3'>
-                      <div className='flex items-center gap-3 rounded-xl border border-white/5 bg-white/5 p-2'>
-                        <div className='flex h-8 w-8 items-center justify-center rounded-full bg-sky-500/20 text-sky-400'>
-                          <User size={16} />
-                        </div>
-                        <div>
-                          <div className='text-[11px] font-bold text-white/90'>管理员</div>
-                          <div className='text-[9px] text-white/40'>在线</div>
-                        </div>
-                      </div>
-
-                      <div className='mx-1 h-px bg-white/5' />
-
-                      <div className='px-2 py-1'>
-                        <div className='mb-2 text-[9px] font-black uppercase tracking-widest text-white/25'>当前区域</div>
-                        <div className='flex items-center gap-2 text-[10px] text-white/60'>
-                          <div className='h-1.5 w-1.5 rounded-full bg-emerald-500' />
-                          外高桥区域
-                        </div>
-                      </div>
-
-                      <button className='flex w-full items-center gap-2 rounded-lg px-2 py-2 text-[10px] text-rose-400 transition-colors hover:bg-rose-500/10'>
-                        <LogOut size={14} />
-                        退出登录
-                      </button>
-                    </div>
-                  </motion.div>
-                </>
-              )}
-            </AnimatePresence>
-          </div>
         </div>
       </div>
 

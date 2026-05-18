@@ -289,10 +289,6 @@ export default function AppView() {
     onAnchorageTypeViewModeChange: setAnchorageTypeViewMode,
     currentMode: viewMode,
     onModeChange: setViewMode,
-    onOpenAdmin: () => setIsAdminView(true),
-    onToggleUserMenu: () => setShowUserMenu((value) => !value),
-    onCloseUserMenu: () => setShowUserMenu(false),
-    showUserMenu,
   };
 
   const mapProps = {
@@ -312,11 +308,15 @@ export default function AppView() {
     isAssistantOpen,
     onToggleAssistant: () => setIsAssistantOpen((value) => !value),
     isToolsExpanded,
+    showUserMenu,
     sidebarPosition,
     onToggleControlPanel: () => setIsControlPanelExpanded((value) => !value),
     onToggleTools: () => setIsToolsExpanded((value) => !value),
     onToggleSidebarPosition: () =>
       setSidebarPosition((value) => (value === 'left' ? 'right' : 'left')),
+    onOpenAdmin: () => setIsAdminView(true),
+    onToggleUserMenu: () => setShowUserMenu((value) => !value),
+    onCloseUserMenu: () => setShowUserMenu(false),
   };
 
   return (

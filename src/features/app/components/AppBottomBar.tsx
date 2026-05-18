@@ -3,9 +3,13 @@ import {
   ArrowRight,
   Camera,
   ChevronRight,
-  Ruler, Sparkles,
+  Ruler,
+  Settings,
+  Sparkles,
+  User,
   Video,
   Wrench,
+  LogOut,
 } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 
@@ -17,11 +21,15 @@ export type AppBottomBarProps = {
   isControlPanelExpanded: boolean;
   isToolsExpanded: boolean;
   isAssistantOpen: boolean;
+  showUserMenu: boolean;
   sidebarPosition: SidebarPosition;
   onToggleControlPanel: () => void;
   onToggleAssistant: () => void;
   onToggleTools: () => void;
   onToggleSidebarPosition: () => void;
+  onOpenAdmin: () => void;
+  onToggleUserMenu: () => void;
+  onCloseUserMenu: () => void;
 };
 
 export default function AppBottomBar({
@@ -30,11 +38,15 @@ export default function AppBottomBar({
   isControlPanelExpanded,
   isToolsExpanded,
   isAssistantOpen,
+  showUserMenu,
   sidebarPosition,
   onToggleControlPanel,
   onToggleAssistant,
   onToggleTools,
   onToggleSidebarPosition,
+  onOpenAdmin,
+  onToggleUserMenu,
+  onCloseUserMenu,
 }: AppBottomBarProps) {
   const toolItems = [
     { icon: ArrowLeft, label: '上一步' },
@@ -175,6 +187,69 @@ export default function AppBottomBar({
                   }`}
                 />
               </button>
+            </div>
+
+            <button
+              onClick={onOpenAdmin}
+              className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest text-white/40 transition-colors hover:text-white"
+            >
+              设置
+              <Settings size={14} />
+            </button>
+
+            <div className="relative">
+              <button
+                onClick={onToggleUserMenu}
+                className={`flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest transition-colors ${
+                  showUserMenu ? 'text-sky-500' : 'text-white/40 hover:text-white'
+                }`}
+              >
+                账户
+                <User size={14} />
+              </button>
+
+              <AnimatePresence>
+                {showUserMenu && (
+                  <>
+                    <div className="fixed inset-0 z-[4000] cursor-pointer" onClick={onCloseUserMenu} />
+                    <motion.div
+                      initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                      className="absolute bottom-full right-0 z-[5000] mb-2 w-48 rounded-2xl border border-white/10 bg-[#05080d]/95 p-3 shadow-2xl backdrop-blur-xl"
+                    >
+                      <div className="space-y-3">
+                        <div className="flex items-center gap-3 rounded-xl border border-white/5 bg-white/5 p-2">
+                          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-sky-500/20 text-sky-400">
+                            <User size={16} />
+                          </div>
+                          <div>
+                            <div className="text-[11px] font-bold text-white/90">管理员</div>
+                            <div className="text-[9px] text-white/40">在线</div>
+                          </div>
+                        </div>
+
+                        <div className="mx-1 h-px bg-white/5" />
+
+                        <div className="px-2 py-1">
+                          <div className="mb-2 text-[9px] font-black uppercase tracking-widest text-white/25">
+                            当前区域
+                          </div>
+                          <div className="flex items-center gap-2 text-[10px] text-white/60">
+                            <div className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                            外高桥区域
+                          </div>
+                        </div>
+
+                        <button className="flex w-full items-center gap-2 rounded-lg px-2 py-2 text-[10px] text-rose-400 transition-colors hover:bg-rose-500/10">
+                          <LogOut size={14} />
+                          退出登录
+                        </button>
+                      </div>
+                    </motion.div>
+                  </>
+                )}
+              </AnimatePresence>
             </div>
           </div>
         </motion.footer>

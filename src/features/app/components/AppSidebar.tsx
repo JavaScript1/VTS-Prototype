@@ -78,10 +78,6 @@ export type AppSidebarProps = {
   onAnchorageTypeViewModeChange: (mode: 'chart' | 'tags') => void;
   currentMode: HomeViewMode;
   onModeChange: (mode: HomeViewMode) => void;
-  onOpenAdmin: () => void;
-  onToggleUserMenu: () => void;
-  onCloseUserMenu: () => void;
-  showUserMenu: boolean;
 };
 
 export default function AppSidebar({
@@ -133,10 +129,6 @@ export default function AppSidebar({
   onAnchorageTypeViewModeChange,
   currentMode,
   onModeChange,
-  onOpenAdmin,
-  onToggleUserMenu,
-  onCloseUserMenu,
-  showUserMenu,
 }: AppSidebarProps) {
   return (
     <SidebarPanel
@@ -153,10 +145,6 @@ export default function AppSidebar({
       onShipSearchSelect={onShipSearchSelect}
       currentMode={currentMode}
       onModeChange={onModeChange}
-      onOpenAdmin={onOpenAdmin}
-      onToggleUserMenu={onToggleUserMenu}
-      onCloseUserMenu={onCloseUserMenu}
-      showUserMenu={showUserMenu}
     >
       {activeTab === 'ship' && (
         <div className='flex h-full min-h-0 flex-col'>
