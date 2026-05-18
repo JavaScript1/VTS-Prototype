@@ -148,6 +148,15 @@ export const requestJson = async <T>(
 
   const payload = await readJsonSafely(response);
 
+  if (payload?.code === 401 && retryOnUnauthorized) {
+    clearRealShipToken();
+    await ensureRealShipToken();
+    return requestJson<T>(path, {
+      ...options,
+      retryOnUnauthorized: false,
+    });
+  }
+
   if (!response.ok) {
     throw new Error(payload?.msg || `接口请求失败(${response.status})`);
   }
