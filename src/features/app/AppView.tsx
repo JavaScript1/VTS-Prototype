@@ -41,6 +41,7 @@ import { type HomeViewMode } from './utils/viewModes';
 import RiskAnalysisView from '../risk-analysis/RiskAnalysisView';
 import LawEnforcementView from '../law-enforcement/LawEnforcementView';
 import EmergencyRescueView from '../emergency-rescue/EmergencyRescueView';
+import PortNavCoordinationView from '../port-nav-coordination/PortNavCoordinationView';
 import AssistantDialog from './components/AssistantDialog';
 
 type AppRoute =
@@ -48,6 +49,7 @@ type AppRoute =
   | { type: 'risk-analysis' }
   | { type: 'law-enforcement' }
   | { type: 'emergency-rescue' }
+  | { type: 'port-nav-coordination' }
   | { type: 'admin'; item: AdminRouteItem }
   | { type: 'not-found' };
 
@@ -56,6 +58,7 @@ const getAppRouteFromPath = (pathname: string): AppRoute => {
   if (pathname === '/risk-analysis') return { type: 'risk-analysis' };
   if (pathname === '/law-enforcement') return { type: 'law-enforcement' };
   if (pathname === '/emergency-rescue') return { type: 'emergency-rescue' };
+  if (pathname === '/port-nav-coordination') return { type: 'port-nav-coordination' };
   if (pathname === '/admin') return { type: 'admin', item: getAdminRouteByPath(DEFAULT_ADMIN_ROUTE_PATH) ?? ADMIN_ROUTE_ITEMS[4] };
   if (pathname.startsWith('/admin/')) {
     const adminRoute = getAdminRouteByPath(pathname);
@@ -516,6 +519,14 @@ export default function AppView() {
     );
   }
 
+  if (route.type === 'port-nav-coordination') {
+    return (
+      <RoutePageShell title="港航协同" onNavigateHome={() => navigate('/')}>
+        <PortNavCoordinationView />
+      </RoutePageShell>
+    );
+  }
+
   if (route.type === 'admin') {
     return (
       <>
@@ -559,7 +570,7 @@ export default function AppView() {
 
   return (
     <div className={`vts-home-shell flex h-screen w-screen flex-col overflow-hidden font-sans transition-colors duration-500 ${
-      viewMode === 'risk-analysis' || viewMode === 'case-playback' || viewMode === 'emergency-rescue'
+      viewMode === 'risk-analysis' || viewMode === 'case-playback' || viewMode === 'emergency-rescue' || viewMode === 'port-nav-coordination'
         ? 'bg-slate-50 text-slate-900 vts-theme--light group/shell' 
         : 'bg-[#0a0a0a] text-white'
     }`}>
@@ -580,6 +591,8 @@ export default function AppView() {
         <LawEnforcementView onOpenPlayback={openRiskPlaybackByIndex} />
       ) : viewMode === 'emergency-rescue' ? (
         <EmergencyRescueView />
+      ) : viewMode === 'port-nav-coordination' ? (
+        <PortNavCoordinationView />
       ) : (
         <AppHomeWorkspace
           mode={viewMode}

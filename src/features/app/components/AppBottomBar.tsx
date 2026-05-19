@@ -21,6 +21,7 @@ const ROUTE_MODE_PATHS: Partial<Record<HomeViewMode, string>> = {
   'risk-analysis': '/risk-analysis',
   'case-playback': '/law-enforcement',
   'emergency-rescue': '/emergency-rescue',
+  'port-nav-coordination': '/port-nav-coordination',
 };
 
 type SidebarPosition = 'left' | 'right';
