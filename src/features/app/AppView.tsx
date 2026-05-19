@@ -18,7 +18,13 @@ import {
   MOCK_VHF_MESSAGES_RAW,
   SHIP_POSITIONS,
 } from '../../mockData';
-import { AdminPanel } from '../admin';
+import {
+  ADMIN_ROUTE_ITEMS,
+  AdminRouteContent,
+  DEFAULT_ADMIN_ROUTE_PATH,
+  getAdminRouteByPath,
+  type AdminRouteItem,
+} from '../admin';
 import DynamicPlaybackView from '../../components/Panels/DynamicPlaybackView';
 import AppHomeWorkspace from './components/AppHomeWorkspace';
 import AppModeRightRail from './components/AppModeRightRail';
@@ -37,29 +43,64 @@ import LawEnforcementView from '../law-enforcement/LawEnforcementView';
 import EmergencyRescueView from '../emergency-rescue/EmergencyRescueView';
 import AssistantDialog from './components/AssistantDialog';
 
-const getRouteModeFromPath = (): HomeViewMode | null => {
-  if (typeof window === 'undefined') return null;
-  if (window.location.pathname === '/risk-analysis') return 'risk-analysis';
-  if (window.location.pathname === '/law-enforcement') return 'case-playback';
-  if (window.location.pathname === '/emergency-rescue') return 'emergency-rescue';
-  return null;
+type AppRoute =
+  | { type: 'home' }
+  | { type: 'risk-analysis' }
+  | { type: 'law-enforcement' }
+  | { type: 'emergency-rescue' }
+  | { type: 'admin'; item: AdminRouteItem }
+  | { type: 'not-found' };
+
+const getAppRouteFromPath = (pathname: string): AppRoute => {
+  if (pathname === '/' || pathname === '/home') return { type: 'home' };
+  if (pathname === '/risk-analysis') return { type: 'risk-analysis' };
+  if (pathname === '/law-enforcement') return { type: 'law-enforcement' };
+  if (pathname === '/emergency-rescue') return { type: 'emergency-rescue' };
+  if (pathname === '/admin') return { type: 'admin', item: getAdminRouteByPath(DEFAULT_ADMIN_ROUTE_PATH) ?? ADMIN_ROUTE_ITEMS[4] };
+  if (pathname.startsWith('/admin/')) {
+    const adminRoute = getAdminRouteByPath(pathname);
+    return adminRoute ? { type: 'admin', item: adminRoute } : { type: 'not-found' };
+  }
+
+  return { type: 'not-found' };
+};
+
+const getCurrentPathname = () => (typeof window === 'undefined' ? '/' : window.location.pathname);
+
+const usePathname = () => {
+  const [pathname, setPathname] = useState(getCurrentPathname);
+
+  useEffect(() => {
+    const handlePopState = () => setPathname(getCurrentPathname());
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
+  const navigate = (path: string) => {
+    if (window.location.pathname !== path) {
+      window.history.pushState(null, '', path);
+    }
+    setPathname(path);
+  };
+
+  return { pathname, navigate };
 };
 
 function RoutePageShell({
   title,
   children,
+  onNavigateHome,
 }: {
   title: string;
   children: ReactNode;
+  onNavigateHome: () => void;
 }) {
   return (
     <div className="flex h-screen w-screen flex-col overflow-hidden bg-slate-50 text-slate-900">
       <header className="flex h-12 shrink-0 items-center justify-between border-b border-slate-200 bg-white px-5">
         <div className="text-sm font-black text-slate-800">{title}</div>
         <button
-          onClick={() => {
-            window.location.href = '/';
-          }}
+          onClick={onNavigateHome}
           className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 text-[11px] font-black text-slate-600 transition-all hover:border-sky-200 hover:bg-sky-50 hover:text-sky-700"
         >
           返回主工作台
@@ -70,8 +111,86 @@ function RoutePageShell({
   );
 }
 
+function AdminRoutePageShell({
+  activeItem,
+  playbackData,
+  setPlaybackData,
+  setDynamicPlaybackSession,
+  getRiskPlaybackSession,
+  onNavigate,
+}: {
+  activeItem: AdminRouteItem;
+  playbackData: AppPlaybackSession | null;
+  setPlaybackData: (data: AppPlaybackSession | null) => void;
+  setDynamicPlaybackSession: (data: AppPlaybackSession | null) => void;
+  getRiskPlaybackSession: (item: any) => AppPlaybackSession;
+  onNavigate: (path: string) => void;
+}) {
+  return (
+    <div className="flex h-screen w-screen flex-col overflow-hidden bg-[#050a10] text-white">
+      <header className="flex h-12 shrink-0 items-center justify-between border-b border-white/5 bg-[#0a101a] px-4">
+        <div className="flex items-center gap-6">
+          <button
+            onClick={() => onNavigate('/')}
+            className="flex items-center gap-2 rounded-full p-2 text-white/60 transition-all hover:bg-white/5 hover:text-white"
+          >
+            <span className="text-xs font-bold">返回主工作台</span>
+          </button>
+          <div className="h-4 w-px bg-white/10" />
+          <div className="flex items-center gap-3">
+            <h2 className="flex items-center gap-2.5 text-sm font-black tracking-tight text-white/90">
+              <div className="h-3.5 w-1 rounded-full bg-sky-500" />
+              {activeItem.name}
+            </h2>
+            <div className="pt-0.5 text-[10px] font-mono text-white/20">
+              后台管理 / {activeItem.name}
+              {playbackData ? ' / 已选回放对象' : ''}
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <div className="flex min-h-0 flex-1 overflow-hidden">
+        <aside className="flex w-auto min-w-[180px] shrink-0 flex-col border-r border-white/5 bg-[#0a101a]/50">
+          <div className="mb-2 flex items-center gap-2 border-b border-white/5 p-4 text-white/80">
+            <div className="text-sm font-black tracking-widest">后台管理系统</div>
+          </div>
+          <div className="custom-scrollbar flex-1 space-y-1 overflow-y-auto px-3 py-2">
+            <div className="px-3 py-2 text-[10px] font-bold uppercase tracking-widest text-white/20">管理路由</div>
+            {ADMIN_ROUTE_ITEMS.map((item) => (
+              <button
+                key={item.path}
+                onClick={() => onNavigate(item.path)}
+                className={`group flex w-full items-center gap-3 rounded-xl px-3 py-2.5 transition-all ${
+                  activeItem.path === item.path
+                    ? 'border border-sky-500/20 bg-sky-500/10 text-sky-400'
+                    : 'text-white/40 hover:bg-white/5 hover:text-white/60'
+                }`}
+              >
+                <item.icon size={16} className={activeItem.path === item.path ? 'text-sky-400' : 'text-white/20 group-hover:text-white/40'} />
+                <span className="text-xs font-medium">{item.name}</span>
+              </button>
+            ))}
+          </div>
+        </aside>
+
+        <main className="flex min-h-0 flex-1 flex-col overflow-y-auto bg-[#050a10] p-3">
+          <AdminRouteContent
+            activeMenu={activeItem.name}
+            playbackData={playbackData}
+            setPlaybackData={setPlaybackData}
+            setDynamicPlaybackSession={setDynamicPlaybackSession}
+            getRiskPlaybackSession={getRiskPlaybackSession}
+          />
+        </main>
+      </div>
+    </div>
+  );
+}
+
 export default function AppView() {
-  const routeMode = getRouteModeFromPath();
+  const { pathname, navigate } = usePathname();
+  const route = getAppRouteFromPath(pathname);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [sidebarPosition, setSidebarPosition] = useState<'left' | 'right'>('left');
   const [showBars, setShowBars] = useState(true);
@@ -102,7 +221,6 @@ export default function AppView() {
   const [isToolsExpanded, setIsToolsExpanded] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [mouseCoords, setMouseCoords] = useState<{ lat: number; lng: number } | null>(null);
-  const [isAdminView, setIsAdminView] = useState(false);
   const [isAssistantOpen, setIsAssistantOpen] = useState(false);
   const [viewMode, setViewMode] = useState<HomeViewMode>('normal');
   const [playbackData, setPlaybackData] = useState<AppPlaybackSession | null>(null);
@@ -369,31 +487,72 @@ export default function AppView() {
     onToggleTools: () => setIsToolsExpanded((value) => !value),
     onToggleSidebarPosition: () =>
       setSidebarPosition((value) => (value === 'left' ? 'right' : 'left')),
-    onOpenAdmin: () => setIsAdminView(true),
+    onOpenAdmin: () => navigate(DEFAULT_ADMIN_ROUTE_PATH),
     onToggleUserMenu: () => setShowUserMenu((value) => !value),
     onCloseUserMenu: () => setShowUserMenu(false),
   };
 
-  if (routeMode === 'risk-analysis') {
+  if (route.type === 'risk-analysis') {
     return (
-      <RoutePageShell title="风险态势">
+      <RoutePageShell title="风险态势" onNavigateHome={() => navigate('/')}>
         <RiskAnalysisView onOpenPlayback={openRiskPlaybackByIndex} />
       </RoutePageShell>
     );
   }
 
-  if (routeMode === 'case-playback') {
+  if (route.type === 'law-enforcement') {
     return (
-      <RoutePageShell title="执法辅助">
+      <RoutePageShell title="执法辅助" onNavigateHome={() => navigate('/')}>
         <LawEnforcementView onOpenPlayback={openRiskPlaybackByIndex} />
       </RoutePageShell>
     );
   }
 
-  if (routeMode === 'emergency-rescue') {
+  if (route.type === 'emergency-rescue') {
     return (
-      <RoutePageShell title="应急处置">
+      <RoutePageShell title="应急处置" onNavigateHome={() => navigate('/')}>
         <EmergencyRescueView />
+      </RoutePageShell>
+    );
+  }
+
+  if (route.type === 'admin') {
+    return (
+      <>
+        <AnimatePresence>
+          {dynamicPlaybackSession && (
+            <DynamicPlaybackView
+              session={dynamicPlaybackSession}
+              onClose={() => setDynamicPlaybackSession(null)}
+            />
+          )}
+        </AnimatePresence>
+        <AdminRoutePageShell
+          activeItem={route.item}
+          playbackData={playbackData}
+          setPlaybackData={setPlaybackData}
+          setDynamicPlaybackSession={setDynamicPlaybackSession}
+          getRiskPlaybackSession={getRiskPlaybackSession}
+          onNavigate={navigate}
+        />
+      </>
+    );
+  }
+
+  if (route.type === 'not-found') {
+    return (
+      <RoutePageShell title="页面不存在" onNavigateHome={() => navigate('/')}>
+        <div className="flex h-full items-center justify-center">
+          <div className="rounded-2xl border border-slate-200 bg-white p-8 text-center shadow-sm">
+            <div className="text-lg font-black text-slate-800">未找到对应路由</div>
+            <button
+              onClick={() => navigate('/')}
+              className="mt-4 rounded-lg bg-sky-500 px-4 py-2 text-xs font-black text-white transition-all hover:bg-sky-600"
+            >
+              返回首页
+            </button>
+          </div>
+        </div>
       </RoutePageShell>
     );
   }
@@ -409,18 +568,6 @@ export default function AppView() {
           <DynamicPlaybackView
             session={dynamicPlaybackSession}
             onClose={() => setDynamicPlaybackSession(null)}
-          />
-        )}
-      </AnimatePresence>
-
-      <AnimatePresence>
-        {isAdminView && (
-          <AdminPanel
-            onClose={() => setIsAdminView(false)}
-            playbackData={playbackData}
-            setPlaybackData={setPlaybackData}
-            setDynamicPlaybackSession={setDynamicPlaybackSession}
-            getRiskPlaybackSession={getRiskPlaybackSession}
           />
         )}
       </AnimatePresence>
