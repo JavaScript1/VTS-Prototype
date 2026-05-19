@@ -34,6 +34,7 @@ import { getRiskPlaybackSession, type AppPlaybackSession } from './utils/playbac
 import { type HomeViewMode } from './utils/viewModes';
 import RiskAnalysisView from '../risk-analysis/RiskAnalysisView';
 import LawEnforcementView from '../law-enforcement/LawEnforcementView';
+import EmergencyRescueView from '../emergency-rescue/EmergencyRescueView';
 import AssistantDialog from './components/AssistantDialog';
 
 const getRouteModeFromPath = (): HomeViewMode | null => {
@@ -392,7 +393,7 @@ export default function AppView() {
   if (routeMode === 'emergency-rescue') {
     return (
       <RoutePageShell title="应急处置">
-        <main className="h-full bg-slate-50" />
+        <EmergencyRescueView />
       </RoutePageShell>
     );
   }
@@ -431,7 +432,7 @@ export default function AppView() {
       ) : viewMode === 'case-playback' ? (
         <LawEnforcementView onOpenPlayback={openRiskPlaybackByIndex} />
       ) : viewMode === 'emergency-rescue' ? (
-        <main className="flex-1 bg-slate-50" />
+        <EmergencyRescueView />
       ) : (
         <AppHomeWorkspace
           mode={viewMode}
