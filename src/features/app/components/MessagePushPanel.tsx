@@ -32,12 +32,15 @@ function MessageItem({
   onRemove,
   onAutoApprove,
 }: {
-  message: PushMessage;
+  message: MessageFeedItem;
   messageMode: MessageFeedMode;
   onRemove: (id: string) => void;
-  onAutoApprove: (message: PushMessage) => void;
+  onAutoApprove: (message: MessageFeedItem) => void;
 }) {
   const [timeLeft, setTimeLeft] = useState(AUTO_APPROVE_SECONDS);
+
+  const displayContent =
+    messageMode === 'auto' && message.operatorAnswer ? message.operatorAnswer : message.content;
 
   useEffect(() => {
     const timer = window.setInterval(() => {
@@ -82,21 +85,24 @@ function MessageItem({
           <div className="mb-1 flex items-center gap-2">
             <div className="rounded-full bg-white/5 p-1">{icon}</div>
             <span className="text-[10px] font-black uppercase tracking-widest text-white/90">
-              {message.title}
+              {messageMode === 'auto' ? '数字人回复' : message.title}
             </span>
             <span className="ml-auto text-[9px] font-medium tabular-nums text-white/30">
               {message.time}
             </span>
           </div>
 
-          <p className="mb-1 line-clamp-1 text-[11px] font-bold leading-tight text-white">
-            {message.content}
+          <p
+            className={`mb-1 line-clamp-2 text-[11px] font-bold leading-tight ${
+              messageMode === 'auto' ? 'text-sky-300' : 'text-white'
+            }`}
+          >
+            {messageMode === 'auto' ? `“${displayContent}”` : displayContent}
           </p>
 
           {message.suggestion && (
             <p className="line-clamp-1 text-[10px] italic leading-tight text-sky-400/80">
-              {messageMode === 'auto' ? '策略：' : '建议：'}
-              {message.suggestion}
+              {messageMode === 'auto' ? '策略执行中...' : `建议：${message.suggestion}`}
             </p>
           )}
         </div>
@@ -110,19 +116,24 @@ function MessageItem({
               >
                 <Check size={12} className="mr-1" />
                 <span className="text-[9px] font-black">
-                  {messageMode === 'auto' ? `执行(${timeLeft})` : `批准(${timeLeft})`}
+                  {messageMode === 'auto' ? '自动执行' : '批准'}
+                  {`(${timeLeft})`}
                 </span>
               </button>
               <button className="flex h-6 items-center justify-center rounded border border-amber-500/20 bg-amber-500/10 text-amber-400/80 transition-all hover:bg-amber-500/20">
                 <RotateCcw size={10} className="mr-1" />
-                <span className="text-[9px] font-black">{messageMode === 'auto' ? '改派' : '重办'}</span>
+                <span className="text-[9px] font-black">
+                  {messageMode === 'auto' ? '改派' : '重办'}
+                </span>
               </button>
               <button
                 onClick={() => onRemove(message.id)}
                 className="flex h-6 items-center justify-center rounded border border-rose-500/30 bg-rose-500/20 text-rose-400 transition-all hover:bg-rose-500/30"
               >
                 <Ban size={12} className="mr-1" />
-                <span className="text-[9px] font-black">{messageMode === 'auto' ? '终止' : '拒绝'}</span>
+                <span className="text-[9px] font-black">
+                  {messageMode === 'auto' ? '人工接管' : '拒绝'}
+                </span>
               </button>
             </>
           ) : (
