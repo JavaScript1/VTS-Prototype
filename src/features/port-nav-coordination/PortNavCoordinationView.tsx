@@ -21,8 +21,13 @@ import {
   Settings2,
   Bell,
   CheckCircle2,
-  Info
+  Info,
+  FileText,
+  Users
 } from 'lucide-react';
+import ETAPredictionPanel from './ETAPredictionPanel';
+import ManifestParsingPanel from './ManifestParsingPanel';
+import CollaborativeSchedulePanel from './CollaborativeSchedulePanel';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   MapContainer, 
@@ -229,8 +234,11 @@ const createBuoyIcon = (status: string) => {
 
 // --- Main Component ---
 
+type PortNavTab = 'coordination' | 'eta' | 'manifest' | 'schedule';
+
 export default function PortNavCoordinationView() {
   const [isExecuting, setIsExecuting] = useState(false);
+  const [activeTab, setActiveTab] = useState<PortNavTab>('coordination');
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -283,7 +291,38 @@ export default function PortNavCoordinationView() {
           </div>
         </div>
 
+        {/* Tab Navigation */}
+        <div className="flex border-b border-slate-100 px-4 pt-2 bg-white sticky top-0 z-10">
+          {[
+            { id: 'coordination' as PortNavTab, label: '协同调度', icon: Cpu },
+            { id: 'eta' as PortNavTab, label: 'ETA预测', icon: Navigation },
+            { id: 'manifest' as PortNavTab, label: '舱单解析', icon: FileText },
+            { id: 'schedule' as PortNavTab, label: '协同排班', icon: Users },
+          ].map((tab) => {
+            const TabIcon = tab.icon;
+            return (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`flex items-center gap-1.5 px-3 py-2.5 text-[10px] font-black uppercase tracking-wider border-b-2 transition-all ${
+                  activeTab === tab.id
+                    ? 'border-indigo-600 text-indigo-600'
+                    : 'border-transparent text-slate-400 hover:text-slate-600'
+                }`}
+              >
+                <TabIcon size={12} />
+                {tab.label}
+              </button>
+            );
+          })}
+        </div>
+
         <div className="flex-1 overflow-y-auto custom-scrollbar p-6 space-y-8">
+          {activeTab === 'eta' && <ETAPredictionPanel />}
+          {activeTab === 'manifest' && <ManifestParsingPanel />}
+          {activeTab === 'schedule' && <CollaborativeSchedulePanel />}
+          {activeTab === 'coordination' && (
+          <>
           {/* Efficiency Dashboard */}
           <motion.section 
             initial="hidden"
@@ -479,6 +518,8 @@ export default function PortNavCoordinationView() {
               ))}
             </div>
           </div>
+          </>
+          )}
         </div>
       </aside>
 

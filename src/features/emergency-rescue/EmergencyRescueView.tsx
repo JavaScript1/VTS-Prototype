@@ -35,7 +35,12 @@ let DefaultIcon = L.icon({
 });
 L.Marker.prototype.options.icon = DefaultIcon;
 
+import DriftPredictionPanel from './DriftPredictionPanel';
+import RescuePlanPanel from './RescuePlanPanel';
+import IncidentCorrelationPanel from './IncidentCorrelationPanel';
+
 type EmergencyMode = 'typhoon' | 'oil-spill';
+type EmergencyTab = 'scenario' | 'drift' | 'rescue' | 'correlation';
 
 interface Resource {
   id: string;
@@ -84,6 +89,7 @@ const MapAutoCenter = ({ coords }: { coords: [number, number] }) => {
 export default function EmergencyRescueView() {
   const [mode, setMode] = useState<EmergencyMode>('typhoon');
   const [selectedResource, setSelectedResource] = useState<Resource | null>(null);
+  const [activeTab, setActiveTab] = useState<EmergencyTab>('scenario');
 
   const theme = mode === 'typhoon' ? 'sky' : 'slate';
   const isTyphoon = mode === 'typhoon';
@@ -103,7 +109,7 @@ export default function EmergencyRescueView() {
           <p className="text-xs text-slate-400 font-medium">EMERGENCY RESPONSE CONTROL CENTER</p>
         </div>
 
-        {/* Tabs */}
+        {/* Mode Tabs */}
         <div className="flex p-1 bg-slate-100 mx-6 mt-4 rounded-xl border border-slate-200">
           <button
             onClick={() => setMode('typhoon')}
@@ -125,7 +131,34 @@ export default function EmergencyRescueView() {
           </button>
         </div>
 
+        {/* Function Tabs */}
+        <div className="flex border-b border-slate-100 mx-4 mt-3">
+          {[
+            { id: 'scenario' as EmergencyTab, label: '态势' },
+            { id: 'correlation' as EmergencyTab, label: '险情关联' },
+            { id: 'drift' as EmergencyTab, label: '漂移预测' },
+            { id: 'rescue' as EmergencyTab, label: '搜救方案' },
+          ].map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`flex-1 py-2 text-[10px] font-black uppercase tracking-wider border-b-2 transition-all ${
+                activeTab === tab.id
+                  ? 'border-sky-600 text-sky-600'
+                  : 'border-transparent text-slate-400 hover:text-slate-600'
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+
         <div className="flex-1 overflow-y-auto custom-scrollbar px-6 py-6 space-y-6">
+          {activeTab === 'drift' && <DriftPredictionPanel />}
+          {activeTab === 'rescue' && <RescuePlanPanel />}
+          {activeTab === 'correlation' && <IncidentCorrelationPanel />}
+          {activeTab === 'scenario' && (
+          <>
           {/* Scenario Statistics */}
           <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4">
             <div className="flex items-center justify-between mb-4">
@@ -177,6 +210,8 @@ export default function EmergencyRescueView() {
               ))}
             </div>
           </div>
+          </>
+          )}
         </div>
 
         {/* Start Emergency Plan Button */}

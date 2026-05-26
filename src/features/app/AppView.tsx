@@ -363,9 +363,9 @@ export default function AppView() {
   }, [viewMode]);
 
   const rightRail =
-    viewMode === 'normal' || viewMode === 'auto' || viewMode === 'smart-duty' ? null : (
+    viewMode === 'normal' ? null : (
       <AppModeRightRail
-        mode={viewMode}
+        mode={viewMode as Exclude<HomeViewMode, 'normal'>}
         currentTime={currentTime}
         selectedHomeShip={selectedHomeShip}
         onOpenPlayback={openRiskPlaybackByIndex}

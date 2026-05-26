@@ -31,6 +31,9 @@ import { MOCK_PATROL_BOATS, MOCK_RISK_STATS } from '../../mockData';
 import { HOME_MAP_DEFAULT_CENTER } from '../map/constants';
 import { Panel, SectionTitle } from '../risk-analysis/RiskSharedComponents';
 import RiskMacroTrend, { type RiskMapResource, type RiskMapResourceCategory } from '../risk-analysis/RiskMacroTrend';
+import ViolationDetectionPanel from './ViolationDetectionPanel';
+import CrossDeptDispatchPanel from './CrossDeptDispatchPanel';
+import CaseFilePanel from './CaseFilePanel';
 
 interface LawEnforcementViewProps {
   onOpenPlayback: (index: number) => void;
@@ -167,11 +170,14 @@ const LAW_ENFORCEMENT_RESOURCES: RiskMapResource[] = [
   },
 ];
 
+type LawEnforcementTab = 'clues' | 'ai_violation' | 'dispatch' | 'casefile';
+
 export default function LawEnforcementView({ onOpenPlayback }: LawEnforcementViewProps) {
   const [selectedVesselId, setSelectedVesselId] = useState<string | null>(MOCK_RISK_STATS[1]?.id ?? null);
   const [searchQuery, setSearchQuery] = useState('');
   const [showEnforcementForm, setShowEnforcementForm] = useState(false);
   const [selectedCaseId, setSelectedCaseId] = useState<string | null>(null);
+  const [lawTab, setLawTab] = useState<LawEnforcementTab>('clues');
   const [enforcementForm, setEnforcementForm] =
     useState<EnforcementFormData>(emptyEnforcementForm);
   const [enforcementCases, setEnforcementCases] = useState<EnforcementCase[]>([
@@ -502,10 +508,24 @@ export default function LawEnforcementView({ onOpenPlayback }: LawEnforcementVie
           <div className="flex items-center gap-6">
             <h2 className="text-sm font-black text-slate-800">全域执法态势</h2>
             <nav className="flex items-center gap-1 rounded-xl bg-slate-100 p-1">
-              <div className="flex items-center gap-1.5 rounded-lg bg-white px-4 py-1.5 text-xs font-bold text-rose-600 shadow-sm">
-                <FileText size={14} />
-                执法线索
-              </div>
+              {[
+                { id: 'clues' as LawEnforcementTab, label: '执法线索' },
+                { id: 'ai_violation' as LawEnforcementTab, label: 'AI违章识别' },
+                { id: 'dispatch' as LawEnforcementTab, label: '跨部门派单' },
+                { id: 'casefile' as LawEnforcementTab, label: '卷宗生成' },
+              ].map((tab) => (
+                <button
+                  key={tab.id}
+                  onClick={() => setLawTab(tab.id)}
+                  className={`flex items-center gap-1.5 rounded-lg px-4 py-1.5 text-xs font-bold transition-all ${
+                    lawTab === tab.id
+                      ? 'bg-white text-rose-600 shadow-sm'
+                      : 'text-slate-500 hover:text-slate-700'
+                  }`}
+                >
+                  {tab.label}
+                </button>
+              ))}
             </nav>
           </div>
         </header>
@@ -522,9 +542,13 @@ export default function LawEnforcementView({ onOpenPlayback }: LawEnforcementVie
             />
           </div>
 
-          {/* 2) Right: Enforcement Clues (形成执法线索) */}
+          {/* 2) Right: Enforcement Clues / AI Panels */}
           <aside className="w-96 border-l border-slate-200 bg-white overflow-y-auto custom-scrollbar-light">
             <div className="p-6 space-y-6">
+              {lawTab === 'ai_violation' && <ViolationDetectionPanel />}
+              {lawTab === 'dispatch' && <CrossDeptDispatchPanel />}
+              {lawTab === 'casefile' && <CaseFilePanel />}
+              {lawTab === 'clues' && (<>
               <div className="flex items-center justify-between">
                 <SectionTitle title="执法线索证据链" icon={<History size={14} />} />
                 <button className="rounded-lg p-1.5 hover:bg-slate-100 text-slate-400">
@@ -723,6 +747,7 @@ export default function LawEnforcementView({ onOpenPlayback }: LawEnforcementVie
                   </div>
                 </>
               )}
+              </>)}
             </div>
           </aside>
         </div>

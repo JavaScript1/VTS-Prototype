@@ -6,9 +6,12 @@ import type { HomeViewMode } from '../utils/viewModes';
 import MessagePushPanel from './MessagePushPanel';
 import RiskAnalysisDashboard from './RiskAnalysisDashboard';
 import type { MessageFeedItem } from './messagePushConfig';
+import VhfAssistantPanel from './VhfAssistantPanel';
+import AutoApprovalPanel from './AutoApprovalPanel';
+import DutyModeStatusPanel from './DutyModeStatusPanel';
 
 type AppModeRightRailProps = {
-  mode: Exclude<HomeViewMode, 'normal' | 'auto'>;
+  mode: Exclude<HomeViewMode, 'normal'>;
   currentTime: Date;
   selectedHomeShip: HomeShipDetail | null;
   onOpenPlayback: (index: number) => void;
@@ -57,13 +60,54 @@ function SmartDutyRail({
       })}，右侧集中承载消息推送与值班摘要。`}
       hideHeader
     >
-      <MessagePushPanel
-        variant="embedded"
-        title="消息推送"
-        maxMessages={8}
-        className="h-full"
-        onMessagesChange={onMessagesChange}
-      />
+      <div className="h-full flex flex-col gap-4 overflow-y-auto custom-scrollbar">
+        <MessagePushPanel
+          variant="embedded"
+          title="消息推送"
+          maxMessages={8}
+          className="flex-1"
+          onMessagesChange={onMessagesChange}
+        />
+        <div className="shrink-0 border-t border-white/10 pt-4 group-[.vts-theme--light]/shell:border-slate-200">
+          <VhfAssistantPanel />
+        </div>
+      </div>
+    </PanelShell>
+  );
+}
+
+function AutoModeRail({
+  currentTime,
+  onMessagesChange,
+}: {
+  currentTime: Date;
+  onMessagesChange?: (messages: MessageFeedItem[]) => void;
+}) {
+  return (
+    <PanelShell
+      title="自动模式"
+      subtitle={`AI全自动托管中，值班时段 ${currentTime.toLocaleTimeString('zh-CN', {
+        hour: '2-digit',
+        minute: '2-digit',
+      })}。人工可随时介入干预。`}
+      hideHeader
+    >
+      <div className="h-full flex flex-col gap-4 overflow-y-auto custom-scrollbar">
+        <DutyModeStatusPanel />
+        <div className="border-t border-white/10 pt-4 group-[.vts-theme--light]/shell:border-slate-200">
+          <AutoApprovalPanel />
+        </div>
+        <div className="border-t border-white/10 pt-4 group-[.vts-theme--light]/shell:border-slate-200">
+          <MessagePushPanel
+            variant="embedded"
+            title="自动托管日志"
+            maxMessages={5}
+            messageMode="auto"
+            className="flex-1"
+            onMessagesChange={onMessagesChange}
+          />
+        </div>
+      </div>
     </PanelShell>
   );
 }
@@ -179,6 +223,10 @@ export default function AppModeRightRail({
   onOpenPlayback,
   onSmartDutyMessagesChange,
 }: AppModeRightRailProps) {
+  if (mode === 'auto') {
+    return <AutoModeRail currentTime={currentTime} onMessagesChange={onSmartDutyMessagesChange} />;
+  }
+
   if (mode === 'smart-duty') {
     return <SmartDutyRail currentTime={currentTime} onMessagesChange={onSmartDutyMessagesChange} />;
   }

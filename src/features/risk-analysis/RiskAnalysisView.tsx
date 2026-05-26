@@ -10,8 +10,11 @@ import RiskMacroTrend from './RiskMacroTrend';
 import RiskPlaybackCenter from './RiskPlaybackCenter';
 import { useRiskPlaybackState } from './useRiskPlaybackState';
 import RiskTopRankingCard, { type RiskTopRankingSnapshot } from './RiskTopRankingCard';
+import RiskFieldPanel from './RiskFieldPanel';
+import HicommDashboard from './HicommDashboard';
+import AnomalyDetectionPanel from './AnomalyDetectionPanel';
 
-type RiskAnalysisTab = 'macro-trend' | 'risk-playback';
+type RiskAnalysisTab = 'macro-trend' | 'risk-playback' | 'risk-field' | 'hicomm' | 'anomaly';
 
 type RiskAnalysisViewProps = {
   onOpenPlayback: (index: number) => void;
@@ -31,6 +34,9 @@ export default function RiskAnalysisView({ onOpenPlayback: _onOpenPlayback }: Ri
   const menuItems = [
     { id: 'macro-trend', label: '宏观态势', icon: Globe, description: '全辖区风险分布与趋势分析' },
     { id: 'risk-playback', label: '预警回放', icon: History, description: '包含碰撞预警在内的案例筛选、快照查看与回放入口' },
+    { id: 'risk-field', label: '风险场模型', icon: Globe, description: '主动风险场实时计算与预测' },
+    { id: 'hicomm', label: 'HICOMM看板', icon: LayoutDashboard, description: '指挥中心综合态势看板' },
+    { id: 'anomaly', label: '异常识别', icon: Globe, description: 'AI异常行为检测与预警' },
   ];
   const sidebarWidthClass = activeTab === 'risk-playback' ? 'w-80' : 'w-64';
 
@@ -76,6 +82,24 @@ export default function RiskAnalysisView({ onOpenPlayback: _onOpenPlayback }: Ri
           {activeTab === 'macro-trend' && macroTrendRanking ? (
             <RiskTopRankingCard snapshot={macroTrendRanking} />
           ) : null}
+
+          {activeTab === 'risk-field' && (
+            <div className="custom-scrollbar-light overflow-y-auto max-h-[calc(100vh-300px)]">
+              <RiskFieldPanel />
+            </div>
+          )}
+
+          {activeTab === 'hicomm' && (
+            <div className="custom-scrollbar-light overflow-y-auto max-h-[calc(100vh-300px)]">
+              <HicommDashboard />
+            </div>
+          )}
+
+          {activeTab === 'anomaly' && (
+            <div className="custom-scrollbar-light overflow-y-auto max-h-[calc(100vh-300px)]">
+              <AnomalyDetectionPanel />
+            </div>
+          )}
 
           {activeTab === 'risk-playback' ? (
             <div className="space-y-2">
